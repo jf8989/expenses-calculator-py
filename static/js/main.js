@@ -1,4 +1,4 @@
-// static/js/main.js - Parte 1
+// static/js/main.js
 
 document.addEventListener("DOMContentLoaded", function () {
   // Elementos del DOM

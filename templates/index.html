@@ -12,12 +12,15 @@
   <body>
     <h1>Gestor de Gastos Compartidos</h1>
 
-    <div id="login-section">
-      <h2>Iniciar Sesión</h2>
-      <input type="text" id="user-id" placeholder="Ingresa tu ID de usuario" />
+    <div id="auth-section">
+      <h2>Registro / Inicio de Sesión</h2>
+      <input type="email" id="email" placeholder="Correo electrónico" />
+      <input type="password" id="password" placeholder="Contraseña" />
+      <button id="register-btn">Registrarse</button>
       <button id="login-btn">Iniciar Sesión</button>
-      <button id="logout-btn" style="display: none">Cerrar Sesión</button>
     </div>
+
+    <button id="logout-btn" style="display: none">Cerrar Sesión</button>
 
     <div id="app-content" style="display: none">
       <div id="participants-management">

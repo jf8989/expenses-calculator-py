@@ -1,7 +1,10 @@
+# app.py
+
 import sqlite3
 from flask import Flask, session, request, jsonify, g, render_template
 from flask_session import Session
 import os
+from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)  # Clave secreta para las sesiones
@@ -31,22 +34,63 @@ def init_db():
             db.cursor().executescript(f.read())
         db.commit()
 
+# Rutas de autenticación
+
+@app.route('/register', methods=['POST'])
+def register():
+    email = request.json['email']
+    password = request.json['password']
+    db = get_db()
+    
+    # Verificar si el correo ya está registrado
+    if db.execute('SELECT id FROM users WHERE email = ?', (email,)).fetchone() is not None:
+        return jsonify({"error": "El correo electrónico ya está registrado"}), 400
+    
+    # Crear nuevo usuario
+    db.execute(
+        'INSERT INTO users (email, password_hash) VALUES (?, ?)',
+        (email, generate_password_hash(password))
+    )
+    db.commit()
+    
+    return jsonify({"message": "Usuario registrado exitosamente"}), 201
+
+@app.route('/login', methods=['POST'])
+def login():
+    email = request.json['email']
+    password = request.json['password']
+    db = get_db()
+    
+    user = db.execute('SELECT * FROM users WHERE email = ?', (email,)).fetchone()
+    
+    if user is None or not check_password_hash(user['password_hash'], password):
+        return jsonify({"error": "Correo o contraseña incorrectos"}), 401
+    
+    session.clear()
+    session['user_id'] = user['id']
+    
+    return jsonify({"message": "Sesión iniciada exitosamente"}), 200
+
+@app.route('/logout')
+def logout():
+    session.clear()
+    return jsonify({"message": "Sesión cerrada exitosamente"}), 200
+
+@app.route('/user')
+def get_user():
+    user_id = session.get('user_id')
+    if user_id is None:
+        return jsonify({"error": "No has iniciado sesión"}), 401
+    
+    db = get_db()
+    user = db.execute('SELECT id, email FROM users WHERE id = ?', (user_id,)).fetchone()
+    return jsonify({"id": user['id'], "email": user['email']}), 200
+
 # Rutas de la aplicación
 
 @app.route('/')
 def index():
     return render_template('index.html')
-
-@app.route('/login', methods=['POST'])
-def login():
-    user_id = request.json['user_id']
-    session['user_id'] = user_id
-    return jsonify({"message": "Sesión iniciada"}), 200
-
-@app.route('/logout')
-def logout():
-    session.pop('user_id', None)
-    return jsonify({"message": "Sesión cerrada"}), 200
 
 @app.route('/api/participants', methods=['GET', 'POST', 'DELETE'])
 def handle_participants():

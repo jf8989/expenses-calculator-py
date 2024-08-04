@@ -1,60 +1,78 @@
+// static/js/main.js
+
 document.addEventListener("DOMContentLoaded", function () {
+  // Elementos del DOM
+  const registerBtn = document.getElementById("register-btn");
   const loginBtn = document.getElementById("login-btn");
   const logoutBtn = document.getElementById("logout-btn");
   const analyzeBtn = document.getElementById("analyze-btn");
   const addParticipantBtn = document.getElementById("add-participant-btn");
 
+  // Event listeners
+  registerBtn.addEventListener("click", register);
   loginBtn.addEventListener("click", login);
   logoutBtn.addEventListener("click", logout);
   analyzeBtn.addEventListener("click", analyzeTransactions);
   addParticipantBtn.addEventListener("click", addParticipant);
 
+  // Verificar el estado de la sesión al cargar la página
   checkLoginStatus();
 });
 
-function checkLoginStatus() {
-  const userId = localStorage.getItem("userId");
-  if (userId) {
-    document.getElementById("login-btn").style.display = "none";
-    document.getElementById("logout-btn").style.display = "inline";
-    document.getElementById("app-content").style.display = "block";
-    loadParticipants();
-    loadTransactions();
-  } else {
-    document.getElementById("login-btn").style.display = "inline";
-    document.getElementById("logout-btn").style.display = "none";
-    document.getElementById("app-content").style.display = "none";
+// Función para registrar un nuevo usuario
+function register() {
+  const email = document.getElementById("email").value;
+  const password = document.getElementById("password").value;
+  if (email && password) {
+    fetch("/register", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ email: email, password: password }),
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        console.log("Success:", data);
+        alert("Registro exitoso. Por favor, inicia sesión.");
+      })
+      .catch((error) => {
+        console.error("Error:", error);
+        alert("Error en el registro. Por favor, intenta de nuevo.");
+      });
   }
 }
 
+// Función para iniciar sesión
 function login() {
-  const userId = document.getElementById("user-id").value;
-  if (userId) {
+  const email = document.getElementById("email").value;
+  const password = document.getElementById("password").value;
+  if (email && password) {
     fetch("/login", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ user_id: userId }),
+      body: JSON.stringify({ email: email, password: password }),
     })
       .then((response) => response.json())
       .then((data) => {
         console.log("Success:", data);
-        localStorage.setItem("userId", userId);
         checkLoginStatus();
       })
       .catch((error) => {
         console.error("Error:", error);
+        alert("Error en el inicio de sesión. Por favor, intenta de nuevo.");
       });
   }
 }
 
+// Función para cerrar sesión
 function logout() {
   fetch("/logout")
     .then((response) => response.json())
     .then((data) => {
       console.log("Success:", data);
-      localStorage.removeItem("userId");
       checkLoginStatus();
     })
     .catch((error) => {
@@ -62,6 +80,29 @@ function logout() {
     });
 }
 
+// Función para verificar el estado de la sesión
+function checkLoginStatus() {
+  fetch("/user")
+    .then((response) => response.json())
+    .then((data) => {
+      if (data.email) {
+        document.getElementById("auth-section").style.display = "none";
+        document.getElementById("logout-btn").style.display = "inline";
+        document.getElementById("app-content").style.display = "block";
+        loadParticipants();
+        loadTransactions();
+      } else {
+        document.getElementById("auth-section").style.display = "block";
+        document.getElementById("logout-btn").style.display = "none";
+        document.getElementById("app-content").style.display = "none";
+      }
+    })
+    .catch((error) => {
+      console.error("Error:", error);
+    });
+}
+
+// Función para analizar transacciones
 function analyzeTransactions() {
   const transactionsText = document.getElementById("transactions-text").value;
   const transactions = parseTransactions(transactionsText);
@@ -83,6 +124,7 @@ function analyzeTransactions() {
     });
 }
 
+// Función para parsear las transacciones ingresadas
 function parseTransactions(text) {
   const lines = text.split("\n");
   return lines
@@ -103,6 +145,7 @@ function parseTransactions(text) {
     .filter((t) => t !== null);
 }
 
+// Función para añadir un participante
 function addParticipant() {
   const newParticipant = document.getElementById("new-participant").value;
   if (newParticipant) {
@@ -124,6 +167,7 @@ function addParticipant() {
   }
 }
 
+// Función para cargar los participantes
 function loadParticipants() {
   fetch("/api/participants")
     .then((response) => response.json())
@@ -145,6 +189,7 @@ function loadParticipants() {
     });
 }
 
+// Función para eliminar un participante
 function deleteParticipant(participant) {
   fetch("/api/participants", {
     method: "DELETE",
@@ -163,6 +208,7 @@ function deleteParticipant(participant) {
     });
 }
 
+// Función para cargar las transacciones
 function loadTransactions() {
   fetch("/api/transactions")
     .then((response) => response.json())
@@ -174,6 +220,7 @@ function loadTransactions() {
     });
 }
 
+// Función para actualizar la tabla de transacciones
 function updateTransactionsTable(transactions) {
   const table = document.getElementById("transactions-table");
   const tbody = table.querySelector("tbody");
@@ -218,6 +265,7 @@ function updateTransactionsTable(transactions) {
   updateSummaryTable(transactions);
 }
 
+// Función para actualizar la asignación de una transacción
 function updateTransactionAssignment(transaction, assignSelect) {
   const assigned_to = Array.from(assignSelect.selectedOptions).map(
     (option) => option.value
@@ -243,6 +291,7 @@ function updateTransactionAssignment(transaction, assignSelect) {
     });
 }
 
+// Función para actualizar la tabla de resumen
 function updateSummaryTable(transactions) {
   const summaryTable = document.getElementById("summary-table");
   const tbody = summaryTable.querySelector("tbody");

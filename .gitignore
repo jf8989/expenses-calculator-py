@@ -147,3 +147,16 @@ dmypy.json
 # Project-specific files
 
 expenses-calculator/config.py
+
+# Base de datos SQLite
+expense_sharing.db
+
+# Archivos de sesión de Flask
+flask_session/
+
+# Archivos JSON de datos (si se usan para desarrollo/pruebas)
+*.json
+
+# Entorno virtual (ya está incluido, pero por si acaso)
+.venv/
+venv/

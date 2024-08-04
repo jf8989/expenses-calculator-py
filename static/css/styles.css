@@ -2,18 +2,42 @@ body {
   font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
   line-height: 1.6;
   margin: 0;
-  padding: 20px;
+  padding: 0;
   background-color: #f4f4f4;
   color: #333;
+}
+
+header {
+  background-color: #3498db;
+  color: white;
+  padding: 1rem;
+  position: relative;
+}
+
+header h1 {
+  margin: 0;
+}
+
+#logout-btn {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background-color: #e74c3c;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+#logout-btn:hover {
+  background-color: #c0392b;
 }
 
 .container {
   max-width: 1000px;
   margin: 0 auto;
-  background-color: #fff;
   padding: 20px;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-  border-radius: 5px;
 }
 
 h1,
@@ -84,10 +108,86 @@ tr:nth-child(even) {
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 }
 
-#logout-btn {
-  background-color: #e74c3c;
+.checkbox-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 
-#logout-btn:hover {
-  background-color: #c0392b;
+.checkbox-container label {
+  display: flex;
+  align-items: center;
+  margin-bottom: 5px;
+  cursor: pointer;
+}
+
+.checkbox-container input[type="checkbox"] {
+  margin-right: 5px;
+  width: 20px;
+  height: 20px;
+}
+
+@media (max-width: 768px) {
+  body {
+    padding: 10px;
+  }
+
+  table {
+    font-size: 14px;
+  }
+
+  th,
+  td {
+    padding: 8px;
+  }
+
+  .checkbox-container {
+    flex-direction: column;
+  }
+
+  .checkbox-container label {
+    margin-bottom: 10px;
+  }
+
+  button {
+    width: 100%;
+    margin-bottom: 10px;
+  }
+}
+
+button:focus,
+input:focus,
+textarea:focus,
+select:focus {
+  outline: 2px solid #3498db;
+  outline-offset: 2px;
+}
+
+button,
+input[type="checkbox"],
+label {
+  cursor: pointer;
+}
+
+body {
+  font-size: 16px;
+}
+
+@media (max-width: 480px) {
+  body {
+    font-size: 14px;
+  }
+}
+
+#transactions-search {
+  margin-top: 10px;
+  margin-bottom: 10px;
+}
+
+#transaction-search-input {
+  width: 100%;
+  padding: 8px;
+  font-size: 16px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
 }

@@ -20,5 +20,6 @@ CREATE TABLE IF NOT EXISTS transactions (
     description TEXT NOT NULL,
     amount REAL NOT NULL,
     assigned_to TEXT,
+    currency TEXT,
     FOREIGN KEY (user_id) REFERENCES users(id)
 );

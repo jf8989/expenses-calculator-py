@@ -32,6 +32,14 @@ def init_db():
         db = get_db()
         with app.open_resource('schema.sql', mode='r') as f:
             db.cursor().executescript(f.read())
+        
+        # Verificar si la columna 'currency' existe, si no, agregarla
+        cursor = db.cursor()
+        cursor.execute("PRAGMA table_info(transactions)")
+        columns = [column[1] for column in cursor.fetchall()]
+        if 'currency' not in columns:
+            cursor.execute('ALTER TABLE transactions ADD COLUMN currency TEXT')
+        
         db.commit()
 
 # Rutas de autenticación
@@ -117,20 +125,30 @@ def handle_participants():
 @app.route('/api/transactions', methods=['GET', 'POST'])
 def handle_transactions():
     if 'user_id' not in session:
+        app.logger.error("Intento de acceso sin sesión iniciada")
         return jsonify({"error": "No has iniciado sesión"}), 401
 
     user_id = session['user_id']
     db = get_db()
 
     if request.method == 'POST':
-        transactions = request.json
-        for transaction in transactions:
-            db.execute('INSERT INTO transactions (user_id, date, description, amount) VALUES (?, ?, ?, ?)',
-                       (user_id, transaction['date'], transaction['description'], transaction['amount']))
-        db.commit()
-        return jsonify({"message": "Transacciones guardadas exitosamente"}), 200
+        try:
+            transactions = request.json
+            app.logger.info(f"Recibidas {len(transactions)} transacciones para procesar")
+            for transaction in transactions:
+                # Convertir la lista assigned_to a una cadena
+                assigned_to = ','.join(transaction.get('assigned_to', [])) if isinstance(transaction.get('assigned_to'), list) else transaction.get('assigned_to', '')
+                
+                db.execute('INSERT INTO transactions (user_id, date, description, amount, currency, assigned_to) VALUES (?, ?, ?, ?, ?, ?)',
+                           (user_id, transaction['date'], transaction['description'], transaction['amount'], transaction.get('currency', ''), assigned_to))
+            db.commit()
+            app.logger.info("Transacciones guardadas exitosamente")
+            return jsonify({"message": "Transacciones guardadas exitosamente"}), 200
+        except Exception as e:
+            app.logger.error(f"Error al procesar transacciones: {str(e)}")
+            return jsonify({"error": str(e)}), 500
     else:
-        transactions = db.execute('SELECT * FROM transactions WHERE user_id = ?', (user_id,)).fetchall()
+        transactions = db.execute('SELECT id, date, description, amount, currency, assigned_to FROM transactions WHERE user_id = ?', (user_id,)).fetchall()
         return jsonify([dict(t) for t in transactions]), 200
 
 @app.route('/api/assign', methods=['POST'])
@@ -146,6 +164,45 @@ def assign_transaction():
                (', '.join(data['assigned_to']), user_id, data['date'], data['description']))
     db.commit()
     return jsonify({"message": "Asignación actualizada"}), 200
+
+@app.route('/api/transactions/all', methods=['DELETE'])
+def delete_all_transactions():
+    db = get_db()
+    db.execute('DELETE FROM transactions')
+    db.commit()
+    return jsonify({"message": "Todas las transacciones han sido eliminadas"}), 200
+
+@app.route('/api/transactions/unassign-all', methods=['POST'])
+def unassign_all_participants():
+    db = get_db()
+    db.execute('UPDATE transactions SET assigned_to = NULL')
+    db.commit()
+    return jsonify({"message": "Todos los participantes han sido desasignados de todas las transacciones"}), 200
+
+@app.route('/api/assignment-history', methods=['GET'])
+def get_assignment_history():
+    db = get_db()
+    history = db.execute('SELECT description, assigned_to FROM transactions WHERE assigned_to IS NOT NULL').fetchall()
+    return jsonify([dict(row) for row in history]), 200
+
+@app.route('/api/update_transaction_currency', methods=['POST'])
+def update_transaction_currency():
+    if 'user_id' not in session:
+        return jsonify({"error": "No has iniciado sesión"}), 401
+
+    data = request.json
+    transaction_id = data.get('transactionId')
+    new_currency = data.get('currency')
+
+    if not transaction_id or not new_currency:
+        return jsonify({"error": "Datos incompletos"}), 400
+
+    db = get_db()
+    db.execute('UPDATE transactions SET currency = ? WHERE id = ? AND user_id = ?',
+               (new_currency, transaction_id, session['user_id']))
+    db.commit()
+
+    return jsonify({"message": "Divisa actualizada exitosamente"}), 200
 
 if __name__ == '__main__':
     init_db()

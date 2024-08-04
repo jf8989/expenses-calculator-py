@@ -10,7 +10,10 @@
     />
   </head>
   <body>
-    <h1>Gestor de Gastos Compartidos</h1>
+    <header>
+      <h1>Gestor de Gastos Compartidos</h1>
+      <button id="logout-btn" style="display: none">Cerrar Sesión</button>
+    </header>
 
     <div id="auth-section">
       <h2>Registro / Inicio de Sesión</h2>
@@ -20,9 +23,38 @@
       <button id="login-btn">Iniciar Sesión</button>
     </div>
 
-    <button id="logout-btn" style="display: none">Cerrar Sesión</button>
-
     <div id="app-content" style="display: none">
+      <div id="currency-selection">
+        <h2>Selección de Divisas</h2>
+        <p>
+          Divisa principal:
+          <select id="main-currency"></select>
+        </p>
+        <p>
+          Divisa secundaria:
+          <select id="secondary-currency"></select>
+        </p>
+      </div>
+
+      <div id="transactions-input">
+        <h2>Ingreso de Transacciones</h2>
+        <p>
+          Instrucciones: Ingresa las transacciones en el formato "DD/MM/YYYY:
+          Descripción - Monto". Puedes ingresar múltiples transacciones, una por
+          línea. Al presionar "Añadir Transacciones", estas se agregarán a la
+          lista y se ordenarán cronológicamente. El sistema intentará asignar
+          automáticamente los participantes basándose en transacciones similares
+          previas.
+        </p>
+        <p>
+          Ejemplos:<br />
+          15/06/2024: IZI*DON PIZZA - 97.00<br />
+          23/06/2024: OPENAI *CHATGPT SUBSCR - 20.00
+        </p>
+        <textarea id="transactions-text" rows="10" cols="50"></textarea>
+        <button id="add-transactions-btn">Añadir Transacciones</button>
+      </div>
+
       <div id="participants-management">
         <h2>Gestión de Participantes</h2>
         <p>
@@ -38,27 +70,31 @@
         <ul id="participants-list"></ul>
       </div>
 
-      <div id="transactions-input">
-        <h2>Ingreso de Transacciones</h2>
-        <p>
-          Instrucciones: Ingresa las transacciones en el formato "DD/MM/YYYY:
-          Descripción - S/ Monto" o "DD/MM/YYYY: Descripción - $ Monto".
-        </p>
-        <p>
-          Ejemplos:<br />
-          15/06/2024: IZI*DON PIZZA - S/ 97.00<br />
-          23/06/2024: OPENAI *CHATGPT SUBSCR - $20.00
-        </p>
-        <textarea id="transactions-text" rows="10" cols="50"></textarea>
-        <button id="analyze-btn">Analizar Transacciones</button>
-      </div>
-
       <div id="transactions-analysis">
         <h2>Análisis de Transacciones</h2>
         <p>
           Instrucciones: Revisa las transacciones analizadas y asigna
-          participantes según sea necesario.
+          participantes según sea necesario. Puedes seleccionar múltiples
+          participantes marcando las casillas correspondientes. Para eliminar
+          una transacción individual, haz clic en el botón "Eliminar"
+          correspondiente. Haz clic en el monto para cambiar entre la divisa
+          principal y secundaria.
         </p>
+        <button id="delete-all-transactions-btn">
+          Eliminar Todas las Transacciones
+        </button>
+        <button id="unassign-all-participants-btn">
+          Desasignar Todos los Participantes
+        </button>
+
+        <div id="transactions-search">
+          <input
+            type="text"
+            id="transaction-search-input"
+            placeholder="Buscar transacciones..."
+          />
+        </div>
+
         <table id="transactions-table">
           <thead>
             <tr>
@@ -67,6 +103,7 @@
               <th>Descripción</th>
               <th>Monto</th>
               <th>Asignado a</th>
+              <th>Acciones</th>
             </tr>
           </thead>
           <tbody>

@@ -605,7 +605,8 @@ function updateTransactionAssignment(transaction, checkboxContainer) {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      id: transaction.id,
+      date: transaction.date,
+      description: transaction.description,
       assigned_to: assigned_to,
     }),
   })

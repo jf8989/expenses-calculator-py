@@ -3,133 +3,176 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Gestor de Gastos Compartidos</title>
+    <title>ExpenseSplit Pro</title>
     <link
       rel="stylesheet"
       href="{{ url_for('static', filename='css/styles.css') }}"
     />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   </head>
   <body>
     <header>
-      <h1>Gestor de Gastos Compartidos</h1>
-      <button id="logout-btn" style="display: none">Cerrar Sesión</button>
+      <div class="header-content">
+        <h1><i class="fas fa-money-bill-wave"></i> ExpenseSplit Pro</h1>
+        <button id="logout-btn" class="btn btn-danger">
+          <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
+        </button>
+      </div>
     </header>
 
-    <div id="auth-section">
-      <h2>Registro / Inicio de Sesión</h2>
-      <input type="email" id="email" placeholder="Correo electrónico" />
-      <input type="password" id="password" placeholder="Contraseña" />
-      <button id="register-btn">Registrarse</button>
-      <button id="login-btn">Iniciar Sesión</button>
+    <div id="auth-section" class="container">
+      <h2><i class="fas fa-user-lock"></i> Acceso</h2>
+      <div class="form-group">
+        <input type="email" id="email" placeholder="Correo electrónico" />
+        <input type="password" id="password" placeholder="Contraseña" />
+      </div>
+      <div class="btn-group">
+        <button id="register-btn" class="btn btn-primary">
+          <i class="fas fa-user-plus"></i> Registrarse
+        </button>
+        <button id="login-btn" class="btn btn-success">
+          <i class="fas fa-sign-in-alt"></i> Iniciar Sesión
+        </button>
+      </div>
     </div>
 
-    <div id="app-content" style="display: none">
-      <div id="currency-selection">
-        <h2>Selección de Divisas</h2>
-        <p>
-          Divisa principal:
-          <select id="main-currency"></select>
-        </p>
-        <p>
-          Divisa secundaria:
-          <select id="secondary-currency"></select>
-        </p>
+    <div id="app-content" class="container" style="display: none">
+      <div id="currency-selection" class="section">
+        <h2><i class="fas fa-coins"></i> Selección de Divisas</h2>
+        <div class="form-group">
+          <label for="main-currency">Divisa principal:</label>
+          <select id="main-currency" class="form-control"></select>
+        </div>
+        <div class="form-group">
+          <label for="secondary-currency">Divisa secundaria:</label>
+          <select id="secondary-currency" class="form-control"></select>
+        </div>
       </div>
 
-      <div id="transactions-input">
-        <h2>Ingreso de Transacciones</h2>
-        <p>
-          Instrucciones: Ingresa las transacciones en el formato "DD/MM/YYYY:
-          Descripción - Monto". Puedes ingresar múltiples transacciones, una por
-          línea. Al presionar "Añadir Transacciones", estas se agregarán a la
-          lista y se ordenarán cronológicamente. El sistema intentará asignar
-          automáticamente los participantes basándose en transacciones similares
-          previas.
+      <div id="transactions-input" class="section">
+        <h2><i class="fas fa-receipt"></i> Ingreso de Transacciones</h2>
+        <p class="instructions">
+          Ingresa las transacciones en el formato "DD/MM/YYYY: Descripción -
+          Monto". Una transacción por línea. El sistema intentará asignar
+          automáticamente los participantes.
         </p>
-        <p>
-          Ejemplos:<br />
-          15/06/2024: IZI*DON PIZZA - 97.00<br />
-          23/06/2024: OPENAI *CHATGPT SUBSCR - 20.00
-        </p>
-        <textarea id="transactions-text" rows="10" cols="50"></textarea>
-        <button id="add-transactions-btn">Añadir Transacciones</button>
-      </div>
-
-      <div id="participants-management">
-        <h2>Gestión de Participantes</h2>
-        <p>
-          Instrucciones: Añade los nombres de las personas que compartirán los
-          gastos.
-        </p>
-        <input
-          type="text"
-          id="new-participant"
-          placeholder="Nombre del participante"
-        />
-        <button id="add-participant-btn">Añadir Participante</button>
-        <ul id="participants-list"></ul>
-      </div>
-
-      <div id="transactions-analysis">
-        <h2>Análisis de Transacciones</h2>
-        <p>
-          Instrucciones: Revisa las transacciones analizadas y asigna
-          participantes según sea necesario. Puedes seleccionar múltiples
-          participantes marcando las casillas correspondientes. Para eliminar
-          una transacción individual, haz clic en el botón "Eliminar"
-          correspondiente. Haz clic en el monto para cambiar entre la divisa
-          principal y secundaria.
-        </p>
-        <button id="delete-all-transactions-btn">
-          Eliminar Todas las Transacciones
+        <div class="form-group">
+          <textarea
+            id="transactions-text"
+            rows="5"
+            placeholder="15/06/2024: IZI*DON PIZZA - 97.00&#10;23/06/2024: OPENAI *CHATGPT SUBSCR - 20.00"
+          ></textarea>
+        </div>
+        <button id="add-transactions-btn" class="btn btn-primary">
+          <i class="fas fa-plus-circle"></i> Añadir Transacciones
         </button>
-        <button id="unassign-all-participants-btn">
-          Desasignar Todos los Participantes
-        </button>
+      </div>
 
-        <div id="transactions-search">
+      <div id="participants-management" class="section">
+        <h2><i class="fas fa-users"></i> Gestión de Participantes</h2>
+        <div class="form-group">
+          <input
+            type="text"
+            id="new-participant"
+            placeholder="Nombre del participante"
+          />
+          <button id="add-participant-btn" class="btn btn-success">
+            <i class="fas fa-user-plus"></i> Añadir
+          </button>
+        </div>
+        <div id="participants-list">
+          <!-- Aquí es donde se agregarán dinámicamente los participant-card -->
+          <div class="participant-card">
+            <div class="participant-info">
+              <i class="participant-icon fas fa-user"></i>
+              <span class="participant-name">JF</span>
+            </div>
+            <button class="btn btn-danger">Eliminar</button>
+          </div>
+          <div class="participant-card">
+            <div class="participant-info">
+              <i class="participant-icon fas fa-user"></i>
+              <span class="participant-name">Natalia Maribel</span>
+            </div>
+            <button class="btn btn-danger">Eliminar</button>
+          </div>
+          <div class="participant-card">
+            <div class="participant-info">
+              <i class="participant-icon fas fa-user"></i>
+              <span class="participant-name">Primo</span>
+            </div>
+            <button class="btn btn-danger">Eliminar</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="transactions-analysis" class="section">
+        <h2><i class="fas fa-chart-bar"></i> Análisis de Transacciones</h2>
+        <p class="instructions">
+          Revisa y asigna participantes a las transacciones. Selecciona
+          múltiples participantes marcando las casillas. Haz clic en el monto
+          para cambiar entre divisas.
+        </p>
+        <div class="btn-group">
+          <button id="delete-all-transactions-btn" class="btn btn-danger">
+            <i class="fas fa-trash-alt"></i> Eliminar Todo
+          </button>
+          <button id="unassign-all-participants-btn" class="btn btn-warning">
+            <i class="fas fa-user-slash"></i> Desasignar Todos
+          </button>
+        </div>
+        <div id="transactions-search" class="form-group">
           <input
             type="text"
             id="transaction-search-input"
             placeholder="Buscar transacciones..."
           />
         </div>
-
-        <table id="transactions-table">
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>Fecha</th>
-              <th>Descripción</th>
-              <th>Monto</th>
-              <th>Asignado a</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            <!-- Las filas se añadirán dinámicamente -->
-          </tbody>
-        </table>
+        <div class="table-responsive">
+          <table id="transactions-table" class="table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Fecha</th>
+                <th>Descripción</th>
+                <th>Monto</th>
+                <th>Asignado a</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- Las filas se añadirán dinámicamente -->
+            </tbody>
+          </table>
+        </div>
       </div>
 
-      <div id="expenses-summary">
-        <h2>Resumen de Gastos</h2>
-        <p>Resumen de los gastos totales por participante.</p>
-        <table id="summary-table">
-          <thead>
-            <tr>
-              <th>Participante</th>
-              <th>Total (Divisa Principal)</th>
-              <th>Total (Divisa Secundaria)</th>
-            </tr>
-          </thead>
-          <tbody>
-            <!-- Las filas se añadirán dinámicamente -->
-          </tbody>
-        </table>
+      <div id="expenses-summary" class="section">
+        <h2><i class="fas fa-file-invoice-dollar"></i> Resumen de Gastos</h2>
+        <div class="table-responsive">
+          <table id="summary-table" class="table">
+            <thead>
+              <tr>
+                <th>Participante</th>
+                <th>Total (Principal)</th>
+                <th>Total (Secundaria)</th>
+                <th>Porcentaje</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- Las filas se añadirán dinámicamente -->
+            </tbody>
+          </table>
+        </div>
+        <div id="summary-chart"></div>
       </div>
     </div>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
   </body>
 </html>

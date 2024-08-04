@@ -1,193 +1,382 @@
+/* Root variables for consistent theming */
+:root {
+  --primary-color: #3498db;
+  --secondary-color: #2ecc71;
+  --danger-color: #e74c3c;
+  --warning-color: #f39c12;
+  --text-color: #333;
+  --bg-color: #f4f4f4;
+  --card-bg: #ffffff;
+}
+
+/* Base styles */
 body {
   font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
   line-height: 1.6;
   margin: 0;
   padding: 0;
-  background-color: #f4f4f4;
-  color: #333;
-}
-
-header {
-  background-color: #3498db;
-  color: white;
-  padding: 1rem;
-  position: relative;
-}
-
-header h1 {
-  margin: 0;
-}
-
-#logout-btn {
-  position: absolute;
-  top: 1rem;
-  right: 1rem;
-  background-color: #e74c3c;
-  color: white;
-  border: none;
-  padding: 0.5rem 1rem;
-  cursor: pointer;
-  border-radius: 4px;
-}
-
-#logout-btn:hover {
-  background-color: #c0392b;
+  background-color: var(--bg-color);
+  color: var(--text-color);
 }
 
 .container {
-  max-width: 1000px;
+  max-width: 1200px;
   margin: 0 auto;
   padding: 20px;
 }
 
-h1,
-h2 {
-  color: #2c3e50;
-  margin-bottom: 20px;
-}
-
-textarea,
-input[type="text"],
-input[type="email"],
-input[type="password"] {
-  width: 100%;
-  padding: 10px;
-  margin-bottom: 15px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 16px;
-}
-
-button {
-  background-color: #3498db;
+/* Header styles */
+header {
+  background-color: var(--primary-color);
   color: white;
+  padding: 1rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+header h1 {
+  margin: 0;
+  font-size: 1.8rem;
+}
+
+/* Button styles */
+.btn {
   padding: 10px 15px;
   border: none;
-  cursor: pointer;
   border-radius: 4px;
-  font-size: 16px;
-  transition: background-color 0.3s ease;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background-color 0.3s ease, transform 0.1s ease;
 }
 
-button:hover {
-  background-color: #2980b9;
+.btn:hover {
+  transform: translateY(-2px);
 }
 
-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 20px;
-  background-color: #fff;
-}
-
-th,
-td {
-  border: 1px solid #ddd;
-  padding: 12px;
-  text-align: left;
-}
-
-th {
-  background-color: #3498db;
+.btn-primary {
+  background-color: var(--primary-color);
   color: white;
 }
 
-tr:nth-child(even) {
+.btn-success {
+  background-color: var(--secondary-color);
+  color: white;
+}
+
+.btn-danger {
+  background-color: var(--danger-color);
+  color: white;
+}
+
+.btn-warning {
+  background-color: var(--warning-color);
+  color: white;
+}
+
+/* Form styles */
+.form-group {
+  margin-bottom: 1rem;
+}
+
+.form-control {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 1rem;
+}
+
+/* Input group styles */
+.input-group {
+  display: flex;
+  margin-bottom: 1rem;
+}
+
+.input-group input {
+  flex-grow: 1;
+  padding: 10px;
+  font-size: 1rem;
+  border: 1px solid #ddd;
+  border-radius: 4px 0 0 4px;
+}
+
+.input-group .btn {
+  border-radius: 0 4px 4px 0;
+}
+
+/* Section styles */
+.section {
+  background-color: var(--card-bg);
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.section h2 {
+  color: var(--primary-color);
+  margin-bottom: 1rem;
+}
+
+/* Table styles */
+.table-responsive {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table th,
+.table td {
+  padding: 12px;
+  text-align: left;
+  border-bottom: 1px solid #ddd;
+}
+
+.table td {
+  vertical-align: middle;
+}
+
+.table th {
+  background-color: var(--primary-color);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.table tr:nth-child(even) {
   background-color: #f2f2f2;
 }
 
-#auth-section,
-#participants-management,
-#transactions-input,
-#transactions-analysis,
-#expenses-summary {
-  margin-bottom: 30px;
-  background-color: #fff;
-  padding: 20px;
-  border-radius: 5px;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+/* Participants grid */
+.participants-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1rem;
+  padding: 0;
+  list-style-type: none;
 }
 
-.checkbox-container {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-.checkbox-container label {
+.participant-card {
   display: flex;
   align-items: center;
-  margin-bottom: 5px;
-  cursor: pointer;
-}
-
-.checkbox-container input[type="checkbox"] {
-  margin-right: 5px;
-  width: 20px;
-  height: 20px;
-}
-
-@media (max-width: 768px) {
-  body {
-    padding: 10px;
-  }
-
-  table {
-    font-size: 14px;
-  }
-
-  th,
-  td {
-    padding: 8px;
-  }
-
-  .checkbox-container {
-    flex-direction: column;
-  }
-
-  .checkbox-container label {
-    margin-bottom: 10px;
-  }
-
-  button {
-    width: 100%;
-    margin-bottom: 10px;
-  }
-}
-
-button:focus,
-input:focus,
-textarea:focus,
-select:focus {
-  outline: 2px solid #3498db;
-  outline-offset: 2px;
-}
-
-button,
-input[type="checkbox"],
-label {
-  cursor: pointer;
-}
-
-body {
-  font-size: 16px;
-}
-
-@media (max-width: 480px) {
-  body {
-    font-size: 14px;
-  }
-}
-
-#transactions-search {
-  margin-top: 10px;
+  justify-content: space-between;
+  padding: 10px 15px;
   margin-bottom: 10px;
+  background-color: var(--card-bg);
+  border-radius: 4px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
+.participant-card .btn-danger {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  padding: 5px 10px;
+  font-size: 0.9rem;
+}
+
+.participant-info {
+  display: flex;
+  align-items: center;
+}
+
+.participant-icon {
+  margin-right: 10px;
+  font-size: 1.2rem;
+  color: var(--primary-color);
+}
+
+.participant-name {
+  font-weight: bold;
+}
+
+/* Search bar styles */
 #transaction-search-input {
   width: 100%;
-  padding: 8px;
-  font-size: 16px;
-  border: 1px solid #ccc;
+  padding: 10px;
+  font-size: 1rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  margin-bottom: 1rem;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .header-content {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  header h1 {
+    margin-bottom: 10px;
+  }
+
+  .btn-group {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .btn-group .btn {
+    margin-bottom: 10px;
+  }
+
+  .participants-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .participant-card {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .participant-card .btn-danger {
+    margin-top: 10px;
+    align-self: flex-end;
+  }
+
+  .table {
+    font-size: 0.8rem;
+  }
+
+  .table th, .table td {
+    padding: 8px;
+  }
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.section {
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--primary-color);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #2980b9;
+}
+
+/* Loading indicator */
+#loading-indicator {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+
+.spinner {
+  width: 50px;
+  height: 50px;
+  border: 3px solid #f3f3f3;
+  border-top: 3px solid var(--primary-color);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* Toast notifications */
+.toast {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  padding: 10px 20px;
+  border-radius: 4px;
+  color: white;
+  font-weight: bold;
+  z-index: 9999;
+}
+
+.toast-info {
+  background-color: var(--primary-color);
+}
+.toast-success {
+  background-color: var(--secondary-color);
+}
+.toast-error {
+  background-color: var(--danger-color);
+}
+
+/* Confirmation dialog */
+.confirm-dialog {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+
+.confirm-dialog-content {
+  background-color: white;
+  padding: 20px;
+  border-radius: 4px;
+  text-align: center;
+}
+
+.confirm-dialog-content button {
+  margin: 0 10px;
+}
+
+/* Expense chart */
+#expense-chart {
+  max-width: 500px;
+  margin: 20px auto;
+}
+
+#transactions-text {
+  width: 100%;
+  min-height: 100px;
+  resize: vertical;
+  padding: 10px;
+  font-family: monospace;
+  font-size: 14px;
+  line-height: 1.5;
+  border: 1px solid #ddd;
   border-radius: 4px;
 }

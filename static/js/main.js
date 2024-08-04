@@ -592,8 +592,10 @@ function createCheckboxContainer(cell, transaction) {
 
 // Function to update the assignment of a transaction
 function updateTransactionAssignment(transaction, checkboxContainer) {
-  const assigned_to = Array.from(checkboxContainer.querySelectorAll("input:checked")).map(checkbox => checkbox.value);
-  
+  const assigned_to = Array.from(
+    checkboxContainer.querySelectorAll("input:checked")
+  ).map((checkbox) => checkbox.value);
+
   // Actualizar la propiedad assigned_to de la transacción local
   transaction.assigned_to = assigned_to;
 
@@ -607,13 +609,13 @@ function updateTransactionAssignment(transaction, checkboxContainer) {
       assigned_to: assigned_to,
     }),
   })
-    .then(response => response.json())
-    .then(data => {
+    .then((response) => response.json())
+    .then((data) => {
       console.log("Assignment updated:", data);
       // Actualizar inmediatamente el resumen de gastos
       updateSummaryTable();
     })
-    .catch(error => {
+    .catch((error) => {
       console.error("Error updating assignment:", error);
     });
 
@@ -689,15 +691,19 @@ function unassignAllParticipants() {
 }
 
 function updateSummaryTable() {
-  const transactions = Array.from(document.querySelectorAll("#transactions-table tbody tr")).map(row => {
+  const transactions = Array.from(
+    document.querySelectorAll("#transactions-table tbody tr")
+  ).map((row) => {
     const cells = row.cells;
     return {
       id: row.dataset.transactionId,
       date: cells[1].textContent,
       description: cells[2].textContent,
-      amount: parseFloat(cells[3].textContent.split(' ')[1]),
-      currency: cells[3].textContent.split(' ')[0],
-      assigned_to: Array.from(row.querySelectorAll('.checkbox-container input:checked')).map(cb => cb.value)
+      amount: parseFloat(cells[3].textContent.split(" ")[1]),
+      currency: cells[3].textContent.split(" ")[0],
+      assigned_to: Array.from(
+        row.querySelectorAll(".checkbox-container input:checked")
+      ).map((cb) => cb.value),
     };
   });
 
@@ -706,19 +712,19 @@ function updateSummaryTable() {
 
   const totals = {};
 
-  transactions.forEach(transaction => {
+  transactions.forEach((transaction) => {
     console.log("Processing transaction:", transaction); // Log para debugging
 
     if (transaction.assigned_to && transaction.assigned_to.length > 0) {
       const share = transaction.amount / transaction.assigned_to.length;
-      
-      transaction.assigned_to.forEach(participant => {
+
+      transaction.assigned_to.forEach((participant) => {
         if (!totals[participant]) {
           totals[participant] = { [mainCurrency]: 0, [secondaryCurrency]: 0 };
         }
-        
+
         const transactionCurrency = transaction.currency || mainCurrency;
-        
+
         if (transactionCurrency === mainCurrency) {
           totals[participant][mainCurrency] += share;
         } else if (transactionCurrency === secondaryCurrency) {
@@ -744,7 +750,11 @@ function updateSummaryTable() {
   for (const [participant, amounts] of Object.entries(totals)) {
     const row = tbody.insertRow();
     row.insertCell().textContent = participant;
-    row.insertCell().textContent = `${mainCurrency} ${amounts[mainCurrency].toFixed(2)}`;
-    row.insertCell().textContent = `${secondaryCurrency} ${amounts[secondaryCurrency].toFixed(2)}`;
+    row.insertCell().textContent = `${mainCurrency} ${amounts[
+      mainCurrency
+    ].toFixed(2)}`;
+    row.insertCell().textContent = `${secondaryCurrency} ${amounts[
+      secondaryCurrency
+    ].toFixed(2)}`;
   }
 }

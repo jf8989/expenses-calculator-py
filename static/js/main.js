@@ -65,11 +65,35 @@ function loadCurrencyOptions() {
     mainCurrencySelect.add(option.cloneNode(true));
     secondaryCurrencySelect.add(option);
   });
+
+  // Cargar las preferencias de divisa después de añadir las opciones
+  loadCurrencyPreferences();
 }
 
 // Función para actualizar la divisa
 function updateCurrency() {
+  const mainCurrency = document.getElementById("main-currency").value;
+  const secondaryCurrency = document.getElementById("secondary-currency").value;
+
+  // Guardar las selecciones en localStorage
+  localStorage.setItem("mainCurrency", mainCurrency);
+  localStorage.setItem("secondaryCurrency", secondaryCurrency);
+
   loadTransactions();
+}
+
+// Función para cargar las preferencias de divisa
+function loadCurrencyPreferences() {
+  const mainCurrency = localStorage.getItem("mainCurrency");
+  const secondaryCurrency = localStorage.getItem("secondaryCurrency");
+
+  if (mainCurrency) {
+    document.getElementById("main-currency").value = mainCurrency;
+  }
+
+  if (secondaryCurrency) {
+    document.getElementById("secondary-currency").value = secondaryCurrency;
+  }
 }
 
 // Función para registrar un nuevo usuario
@@ -292,14 +316,40 @@ function addParticipant() {
     })
       .then((response) => response.json())
       .then((data) => {
-        console.log("Success:", data);
+        console.log("Participante añadido:", data);
         loadParticipants();
-        updateParticipantsInTransactions([newParticipant]);
+        // Actualizar la tabla de transacciones con el nuevo participante
+        updateTransactionsWithNewParticipant(newParticipant);
       })
       .catch((error) => {
-        console.error("Error:", error);
+        console.error("Error al añadir participante:", error);
       });
   }
+}
+
+// Función para actualizar las transacciones con el nuevo participante
+function updateTransactionsWithNewParticipant(newParticipant) {
+  const checkboxContainers = document.querySelectorAll(".checkbox-container");
+  checkboxContainers.forEach((container) => {
+    if (!container.querySelector(`input[value="${newParticipant}"]`)) {
+      const checkboxLabel = document.createElement("label");
+      const checkbox = document.createElement("input");
+      checkbox.type = "checkbox";
+      checkbox.value = newParticipant;
+      checkbox.addEventListener("change", () =>
+        updateTransactionAssignment(
+          getTransactionFromCheckboxContainer(container),
+          container
+        )
+      );
+      checkboxLabel.appendChild(checkbox);
+      checkboxLabel.appendChild(document.createTextNode(newParticipant));
+      container.appendChild(checkboxLabel);
+    }
+  });
+
+  // Actualizar la tabla de resumen después de añadir el nuevo participante
+  updateSummaryTable();
 }
 
 // static/js/main.js - Parte 2
@@ -399,7 +449,7 @@ function getTransactionFromCheckboxContainer(container) {
   };
 }
 
-/// Función para cargar las transacciones
+// Función para cargar las transacciones
 function loadTransactions() {
   fetch("/api/transactions")
     .then((response) => response.json())
@@ -455,10 +505,6 @@ function updateTransactionsTable(transactions) {
 
     // Insertar celda para asignación de participantes
     const assignedCell = row.insertCell();
-    // Convertir la cadena assigned_to de vuelta a una lista si es necesario
-    transaction.assigned_to = transaction.assigned_to
-      ? transaction.assigned_to.split(",")
-      : [];
     createCheckboxContainer(assignedCell, transaction);
 
     // Insertar celda para acciones (botón de eliminar)
@@ -515,26 +561,22 @@ function createCheckboxContainer(cell, transaction) {
   fetch("/api/participants")
     .then((response) => response.json())
     .then((participants) => {
-      if (participants.length > 0) {
-        const checkboxContainer = document.createElement("div");
-        checkboxContainer.className = "checkbox-container";
-        participants.forEach((participant) => {
-          const checkboxLabel = document.createElement("label");
-          const checkbox = document.createElement("input");
-          checkbox.type = "checkbox";
-          checkbox.value = participant;
-          checkbox.checked = transaction.assigned_to.includes(participant);
-          checkbox.addEventListener("change", () =>
-            updateTransactionAssignment(transaction, checkboxContainer)
-          );
-          checkboxLabel.appendChild(checkbox);
-          checkboxLabel.appendChild(document.createTextNode(participant));
-          checkboxContainer.appendChild(checkboxLabel);
-        });
-        cell.appendChild(checkboxContainer);
-      } else {
-        cell.textContent = "No hay participantes";
-      }
+      const checkboxContainer = document.createElement("div");
+      checkboxContainer.className = "checkbox-container";
+      participants.forEach((participant) => {
+        const checkboxLabel = document.createElement("label");
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.value = participant;
+        checkbox.checked = transaction.assigned_to.includes(participant);
+        checkbox.addEventListener("change", () =>
+          updateTransactionAssignment(transaction, checkboxContainer)
+        );
+        checkboxLabel.appendChild(checkbox);
+        checkboxLabel.appendChild(document.createTextNode(participant));
+        checkboxContainer.appendChild(checkboxLabel);
+      });
+      cell.appendChild(checkboxContainer);
     });
 }
 
@@ -566,23 +608,28 @@ function updateTransactionAssignment(transaction, checkboxContainer) {
 
 // Función para eliminar una transacción
 function deleteTransaction(transaction) {
-  fetch("/api/transactions", {
+  // Registrar la información de la transacción que se intenta eliminar
+  console.log("Intentando eliminar transacción:", transaction);
+
+  fetch(`/api/transactions/${transaction.id}`, {
     method: "DELETE",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({
-      date: transaction.date,
-      description: transaction.description,
-    }),
   })
-    .then((response) => response.json())
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      return response.json();
+    })
     .then((data) => {
       console.log("Transacción eliminada exitosamente:", data);
       loadTransactions();
     })
     .catch((error) => {
       console.error("Error al eliminar la transacción:", error);
+      alert(`Error al eliminar la transacción: ${error.message}`);
     });
 }
 

@@ -204,6 +204,23 @@ def update_transaction_currency():
 
     return jsonify({"message": "Divisa actualizada exitosamente"}), 200
 
+@app.route('/api/transactions/<int:transaction_id>', methods=['DELETE'])
+def delete_transaction(transaction_id):
+    if 'user_id' not in session:
+        return jsonify({"error": "No has iniciado sesión"}), 401
+
+    user_id = session['user_id']
+    db = get_db()
+
+    try:
+        db.execute('DELETE FROM transactions WHERE id = ? AND user_id = ?', (transaction_id, user_id))
+        db.commit()
+        return jsonify({"message": "Transacción eliminada exitosamente"}), 200
+    except Exception as e:
+        db.rollback()
+        app.logger.error(f"Error al eliminar la transacción: {str(e)}")
+        return jsonify({"error": str(e)}), 500
+
 if __name__ == '__main__':
     init_db()
     app.run(debug=True)

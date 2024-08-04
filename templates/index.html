@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestor de Gastos Compartidos</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+    <h1>Gestor de Gastos Compartidos</h1>
+    
+    <div id="transactions-input">
+        <h2>Ingrese las Transacciones</h2>
+        <textarea id="transactions-text" rows="10" cols="50"></textarea>
+        <button id="analyze-btn">Analizar Transacciones</button>
+    </div>
+
+    <div id="participants-management">
+        <h2>Gestión de Participantes</h2>
+        <input type="text" id="new-participant">
+        <button id="add-participant-btn">Añadir Participante</button>
+        <ul id="participants-list"></ul>
+    </div>
+
+    <div id="transactions-analysis">
+        <h2>Análisis de Transacciones</h2>
+        <table id="transactions-table">
+            <thead>
+                <tr>
+                    <th>Fecha</th>
+                    <th>Descripción</th>
+                    <th>Monto</th>
+                    <!-- Participantes se añadirán dinámicamente -->
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Las filas se añadirán dinámicamente -->
+            </tbody>
+        </table>
+    </div>
+
+    <div id="expenses-summary">
+        <h2>Resumen de Gastos</h2>
+        <table id="summary-table">
+            <thead>
+                <tr>
+                    <th>Participante</th>
+                    <th>Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Las filas se añadirán dinámicamente -->
+            </tbody>
+        </table>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

@@ -464,7 +464,7 @@ function loadTransactions() {
     });
 }
 
-// Función para actualizar la tabla de transacciones
+// Function to update the transactions table
 function updateTransactionsTable(transactions) {
   const table = document.getElementById("transactions-table");
   const tbody = table.querySelector("tbody");
@@ -475,17 +475,18 @@ function updateTransactionsTable(transactions) {
 
   transactions.forEach((transaction, index) => {
     const row = tbody.insertRow();
+    row.dataset.transactionId = transaction.id;
 
-    // Insertar número de fila
+    // Insert row number
     row.insertCell().textContent = index + 1;
 
-    // Insertar fecha
+    // Insert date
     row.insertCell().textContent = transaction.date;
 
-    // Insertar descripción
+    // Insert description
     row.insertCell().textContent = transaction.description;
 
-    // Insertar monto con funcionalidad para alternar divisa
+    // Insert amount with currency toggle functionality
     const amountCell = row.insertCell();
     const amountSpan = document.createElement("span");
     amountSpan.textContent = `${
@@ -503,11 +504,11 @@ function updateTransactionsTable(transactions) {
     );
     amountCell.appendChild(amountSpan);
 
-    // Insertar celda para asignación de participantes
+    // Insert cell for participant assignment
     const assignedCell = row.insertCell();
     createCheckboxContainer(assignedCell, transaction);
 
-    // Insertar celda para acciones (botón de eliminar)
+    // Insert cell for actions (delete button)
     const actionsCell = row.insertCell();
     const deleteBtn = document.createElement("button");
     deleteBtn.textContent = "Eliminar";
@@ -515,11 +516,10 @@ function updateTransactionsTable(transactions) {
     actionsCell.appendChild(deleteBtn);
   });
 
-  // Actualizar la tabla de resumen después de modificar las transacciones
+  // Update the summary table after modifying transactions
   updateSummaryTable();
 }
 
-// Función para alternar entre divisas principal y secundaria
 function toggleCurrency(
   element,
   transactionId,
@@ -550,13 +550,14 @@ function toggleCurrency(
     .then((response) => response.json())
     .then((data) => {
       console.log("Currency updated successfully:", data);
+      updateSummaryTable(); // Actualizar el resumen después de cambiar la divisa
     })
     .catch((error) => {
       console.error("Error updating currency:", error);
     });
 }
 
-// Función para crear el contenedor de checkboxes
+// Function to create the checkbox container
 function createCheckboxContainer(cell, transaction) {
   fetch("/api/participants")
     .then((response) => response.json())
@@ -568,7 +569,16 @@ function createCheckboxContainer(cell, transaction) {
         const checkbox = document.createElement("input");
         checkbox.type = "checkbox";
         checkbox.value = participant;
-        checkbox.checked = transaction.assigned_to.includes(participant);
+
+        // Asegúrate de que transaction.assigned_to sea siempre un array
+        const assignedTo = Array.isArray(transaction.assigned_to)
+          ? transaction.assigned_to
+          : transaction.assigned_to
+          ? transaction.assigned_to.split(",").map((p) => p.trim())
+          : [];
+
+        checkbox.checked = assignedTo.includes(participant);
+
         checkbox.addEventListener("change", () =>
           updateTransactionAssignment(transaction, checkboxContainer)
         );
@@ -580,30 +590,35 @@ function createCheckboxContainer(cell, transaction) {
     });
 }
 
-// Función para actualizar la asignación de una transacción
+// Function to update the assignment of a transaction
 function updateTransactionAssignment(transaction, checkboxContainer) {
-  const assigned_to = Array.from(
-    checkboxContainer.querySelectorAll("input:checked")
-  ).map((checkbox) => checkbox.value);
+  const assigned_to = Array.from(checkboxContainer.querySelectorAll("input:checked")).map(checkbox => checkbox.value);
+  
+  // Actualizar la propiedad assigned_to de la transacción local
+  transaction.assigned_to = assigned_to;
+
   fetch("/api/assign", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      date: transaction.date,
-      description: transaction.description,
+      id: transaction.id,
       assigned_to: assigned_to,
     }),
   })
-    .then((response) => response.json())
-    .then((data) => {
-      console.log("Success:", data);
+    .then(response => response.json())
+    .then(data => {
+      console.log("Assignment updated:", data);
+      // Actualizar inmediatamente el resumen de gastos
       updateSummaryTable();
     })
-    .catch((error) => {
-      console.error("Error:", error);
+    .catch(error => {
+      console.error("Error updating assignment:", error);
     });
+
+  // Actualizar inmediatamente el resumen de gastos sin esperar la respuesta del servidor
+  updateSummaryTable();
 }
 
 // Función para eliminar una transacción
@@ -673,44 +688,63 @@ function unassignAllParticipants() {
   }
 }
 
-// Función para actualizar la tabla de resumen
 function updateSummaryTable() {
-  fetch("/api/transactions")
-    .then((response) => response.json())
-    .then((transactions) => {
-      const summaryTable = document.getElementById("summary-table");
-      const tbody = summaryTable.querySelector("tbody");
-      tbody.innerHTML = "";
+  const transactions = Array.from(document.querySelectorAll("#transactions-table tbody tr")).map(row => {
+    const cells = row.cells;
+    return {
+      id: row.dataset.transactionId,
+      date: cells[1].textContent,
+      description: cells[2].textContent,
+      amount: parseFloat(cells[3].textContent.split(' ')[1]),
+      currency: cells[3].textContent.split(' ')[0],
+      assigned_to: Array.from(row.querySelectorAll('.checkbox-container input:checked')).map(cb => cb.value)
+    };
+  });
 
-      const totals = {};
-      transactions.forEach((transaction) => {
-        if (transaction.assigned_to && transaction.assigned_to.length > 0) {
-          const assigned = Array.isArray(transaction.assigned_to)
-            ? transaction.assigned_to
-            : transaction.assigned_to.split(",").map((p) => p.trim());
-          const share = transaction.amount / assigned.length;
-          assigned.forEach((participant) => {
-            if (!totals[participant]) {
-              totals[participant] = {};
-            }
-            if (!totals[participant][transaction.currency]) {
-              totals[participant][transaction.currency] = 0;
-            }
-            totals[participant][transaction.currency] += share;
-          });
+  const mainCurrency = document.getElementById("main-currency").value;
+  const secondaryCurrency = document.getElementById("secondary-currency").value;
+
+  const totals = {};
+
+  transactions.forEach(transaction => {
+    console.log("Processing transaction:", transaction); // Log para debugging
+
+    if (transaction.assigned_to && transaction.assigned_to.length > 0) {
+      const share = transaction.amount / transaction.assigned_to.length;
+      
+      transaction.assigned_to.forEach(participant => {
+        if (!totals[participant]) {
+          totals[participant] = { [mainCurrency]: 0, [secondaryCurrency]: 0 };
         }
+        
+        const transactionCurrency = transaction.currency || mainCurrency;
+        
+        if (transactionCurrency === mainCurrency) {
+          totals[participant][mainCurrency] += share;
+        } else if (transactionCurrency === secondaryCurrency) {
+          totals[participant][secondaryCurrency] += share;
+        } else {
+          console.warn(`Moneda no reconocida: ${transactionCurrency}`);
+          totals[participant][mainCurrency] += share;
+        }
+
+        console.log(`Added ${share} ${transactionCurrency} to ${participant}`); // Log para debugging
       });
+    } else {
+      console.warn("Transaction without assigned participants:", transaction);
+    }
+  });
 
-      for (const [participant, currencies] of Object.entries(totals)) {
-        const row = tbody.insertRow();
-        row.insertCell().textContent = participant;
-        const totalCell = row.insertCell();
-        for (const [currency, total] of Object.entries(currencies)) {
-          totalCell.innerHTML += `${currency} ${total.toFixed(2)}<br>`;
-        }
-      }
-    })
-    .catch((error) => {
-      console.error("Error:", error);
-    });
+  console.log("Final totals:", totals); // Log para debugging
+
+  const summaryTable = document.getElementById("summary-table");
+  const tbody = summaryTable.querySelector("tbody");
+  tbody.innerHTML = "";
+
+  for (const [participant, amounts] of Object.entries(totals)) {
+    const row = tbody.insertRow();
+    row.insertCell().textContent = participant;
+    row.insertCell().textContent = `${mainCurrency} ${amounts[mainCurrency].toFixed(2)}`;
+    row.insertCell().textContent = `${secondaryCurrency} ${amounts[secondaryCurrency].toFixed(2)}`;
+  }
 }

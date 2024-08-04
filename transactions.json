@@ -1,15 +1,268 @@
 [
-    {"date": "11/06/2024", "description": "MFA393 EL GOLF", "amount": "S/ 85.80"},
-    {"date": "15/06/2024", "description": "IZI*DON PIZZA", "amount": "S/ 97.00"},
-    {"date": "15/06/2024", "description": "DP *Fazil App", "amount": "S/ 85.25"},
-    {"date": "16/06/2024", "description": "VM*STARS BARBER", "amount": "S/ 52.50"},
-    {"date": "16/06/2024", "description": "DLC*Rappi", "amount": "S/ 21.10"},
-    {"date": "16/06/2024", "description": "CHIFA SHIN LI", "amount": "S/ 55.50"},
-    {"date": "17/06/2024", "description": "LUZ DEL SUR", "amount": "S/ 111.20"},
-    {"date": "17/06/2024", "description": "IZI*EL BUEN SABOR", "amount": "S/ 29.50"},
-    {"date": "18/06/2024", "description": "INTERNET VISA BB", "amount": "S/ 25.90"},
-    {"date": "20/06/2024", "description": "DLC*Rappi", "amount": "S/ 19.00"},
-    {"date": "21/06/2024", "description": "SMARTFIT", "amount": "S/ 109.90"},
-    {"date": "23/06/2024", "description": "OPENAI *CHATGPT SUBSCR", "amount": "$20.00"},
-    {"date": "14/02/2024", "description": "IZI*NATALIA ASENJO", "amount": "S/ 57.78"}
-  ]
+  {
+    "date": "11/06/2024",
+    "description": "MFA393 EL GOLF",
+    "amount": "S/ 85.80",
+    "assigned_to": [
+      "JF"
+    ]
+  },
+  {
+    "date": "15/06/2024",
+    "description": "IZI*DON PIZZA",
+    "amount": "S/ 97.00",
+    "assigned_to": [
+      "JF"
+    ]
+  },
+  {
+    "date": "15/06/2024",
+    "description": "DP *Fazil App",
+    "amount": "S/ 85.25"
+  },
+  {
+    "date": "16/06/2024",
+    "description": "VM*STARS BARBER",
+    "amount": "S/ 52.50"
+  },
+  {
+    "date": "16/06/2024",
+    "description": "DLC*Rappi",
+    "amount": "S/ 21.10"
+  },
+  {
+    "date": "16/06/2024",
+    "description": "CHIFA SHIN LI",
+    "amount": "S/ 55.50"
+  },
+  {
+    "date": "17/06/2024",
+    "description": "LUZ DEL SUR",
+    "amount": "S/ 111.20"
+  },
+  {
+    "date": "17/06/2024",
+    "description": "IZI*EL BUEN SABOR",
+    "amount": "S/ 29.50",
+    "assigned_to": [
+      "Nat"
+    ]
+  },
+  {
+    "date": "18/06/2024",
+    "description": "INTERNET VISA BB",
+    "amount": "S/ 25.90",
+    "assigned_to": [
+      "Nat"
+    ]
+  },
+  {
+    "date": "20/06/2024",
+    "description": "DLC*Rappi",
+    "amount": "S/ 19.00"
+  },
+  {
+    "date": "21/06/2024",
+    "description": "SMARTFIT",
+    "amount": "S/ 109.90"
+  },
+  {
+    "date": "23/06/2024",
+    "description": "OPENAI *CHATGPT SUBSCR",
+    "amount": "$20.00",
+    "assigned_to": [
+      "Nat"
+    ]
+  },
+  {
+    "date": "14/02/2024",
+    "description": "IZI*NATALIA ASENJO",
+    "amount": "S/ 57.78"
+  },
+  {
+    "date": "11/06/2024",
+    "description": "MFA393 EL GOLF",
+    "amount": "S/ 85.80",
+    "assigned_to": []
+  },
+  {
+    "date": "15/06/2024",
+    "description": "IZI*DON PIZZA",
+    "amount": "S/ 97.00",
+    "assigned_to": []
+  },
+  {
+    "date": "15/06/2024",
+    "description": "DP *Fazil App",
+    "amount": "S/ 85.25",
+    "assigned_to": []
+  },
+  {
+    "date": "16/06/2024",
+    "description": "VM*STARS BARBER",
+    "amount": "S/ 52.50",
+    "assigned_to": []
+  },
+  {
+    "date": "16/06/2024",
+    "description": "DLC*Rappi",
+    "amount": "S/ 21.10",
+    "assigned_to": []
+  },
+  {
+    "date": "16/06/2024",
+    "description": "CHIFA SHIN LI",
+    "amount": "S/ 55.50",
+    "assigned_to": []
+  },
+  {
+    "date": "17/06/2024",
+    "description": "LUZ DEL SUR",
+    "amount": "S/ 111.20",
+    "assigned_to": []
+  },
+  {
+    "date": "17/06/2024",
+    "description": "IZI*EL BUEN SABOR",
+    "amount": "S/ 29.50",
+    "assigned_to": []
+  },
+  {
+    "date": "18/06/2024",
+    "description": "INTERNET VISA BB",
+    "amount": "S/ 25.90",
+    "assigned_to": []
+  },
+  {
+    "date": "20/06/2024",
+    "description": "DLC*Rappi",
+    "amount": "S/ 19.00",
+    "assigned_to": []
+  },
+  {
+    "date": "21/06/2024",
+    "description": "SMARTFIT",
+    "amount": "S/ 109.90",
+    "assigned_to": []
+  },
+  {
+    "date": "22/06/2024",
+    "description": "IKF E31 DELIVERY CENTER S",
+    "amount": "S/ 16.50",
+    "assigned_to": []
+  },
+  {
+    "date": "22/06/2024",
+    "description": "SANTIGAS",
+    "amount": "S/ 53.00",
+    "assigned_to": []
+  },
+  {
+    "date": "22/06/2024",
+    "description": "DLC*Rappi",
+    "amount": "S/ 39.29",
+    "assigned_to": []
+  },
+  {
+    "date": "23/06/2024",
+    "description": "INTERNET VISA BB",
+    "amount": "S/ 35.90",
+    "assigned_to": []
+  },
+  {
+    "date": "24/06/2024",
+    "description": "IZI*EL BUEN SABOR",
+    "amount": "S/ 30.50",
+    "assigned_to": []
+  },
+  {
+    "date": "25/06/2024",
+    "description": "DLC*Rappi",
+    "amount": "S/ 21.10",
+    "assigned_to": []
+  },
+  {
+    "date": "26/06/2024",
+    "description": "INTERNET VISA BB",
+    "amount": "S/ 18.90",
+    "assigned_to": []
+  },
+  {
+    "date": "26/06/2024",
+    "description": "DP *Fazil App",
+    "amount": "S/ 117.58",
+    "assigned_to": []
+  },
+  {
+    "date": "26/06/2024",
+    "description": "DP *Fazil App",
+    "amount": "S/ 117.81",
+    "assigned_to": []
+  },
+  {
+    "date": "26/06/2024",
+    "description": "ECM*SERVICIOS DIGITALES",
+    "amount": "S/ 29.99",
+    "assigned_to": []
+  },
+  {
+    "date": "27/06/2024",
+    "description": "PYU*UBER",
+    "amount": "S/ 33.90",
+    "assigned_to": []
+  },
+  {
+    "date": "28/06/2024",
+    "description": "DLC*Rappi",
+    "amount": "S/ 21.10",
+    "assigned_to": []
+  },
+  {
+    "date": "30/06/2024",
+    "description": "DP *Fazil App",
+    "amount": "S/ 98.19",
+    "assigned_to": []
+  },
+  {
+    "date": "01/07/2024",
+    "description": "SEG010724 01824000314974",
+    "amount": "S/ 179.89",
+    "assigned_to": []
+  },
+  {
+    "date": "02/07/2024",
+    "description": "PYU*UBER",
+    "amount": "S/ 30.90",
+    "assigned_to": []
+  },
+  {
+    "date": "06/07/2024",
+    "description": "LA PACA RISTORANTE",
+    "amount": "S/ 177.00",
+    "assigned_to": []
+  },
+  {
+    "date": "07/07/2024",
+    "description": "MOVISTAR RECIBOS HOGAR",
+    "amount": "S/ 59.95",
+    "assigned_to": []
+  },
+  {
+    "date": "07/07/2024",
+    "description": "FACTURACION MOVIL CE",
+    "amount": "S/ 39.95",
+    "assigned_to": []
+  },
+  {
+    "date": "07/07/2024",
+    "description": "DP *Fazil App",
+    "amount": "S/ 81.88",
+    "assigned_to": []
+  },
+  {
+    "date": "10/07/2024",
+    "description": "SEGURO DE DESGRAVAMEN",
+    "amount": "S/ 14.71",
+    "assigned_to": []
+  }
+]

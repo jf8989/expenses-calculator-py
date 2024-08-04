@@ -1,13 +1,66 @@
 document.addEventListener("DOMContentLoaded", function () {
+  const loginBtn = document.getElementById("login-btn");
+  const logoutBtn = document.getElementById("logout-btn");
   const analyzeBtn = document.getElementById("analyze-btn");
   const addParticipantBtn = document.getElementById("add-participant-btn");
 
+  loginBtn.addEventListener("click", login);
+  logoutBtn.addEventListener("click", logout);
   analyzeBtn.addEventListener("click", analyzeTransactions);
   addParticipantBtn.addEventListener("click", addParticipant);
 
-  loadParticipants();
-  loadTransactions();
+  checkLoginStatus();
 });
+
+function checkLoginStatus() {
+  const userId = localStorage.getItem("userId");
+  if (userId) {
+    document.getElementById("login-btn").style.display = "none";
+    document.getElementById("logout-btn").style.display = "inline";
+    document.getElementById("app-content").style.display = "block";
+    loadParticipants();
+    loadTransactions();
+  } else {
+    document.getElementById("login-btn").style.display = "inline";
+    document.getElementById("logout-btn").style.display = "none";
+    document.getElementById("app-content").style.display = "none";
+  }
+}
+
+function login() {
+  const userId = document.getElementById("user-id").value;
+  if (userId) {
+    fetch("/login", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ user_id: userId }),
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        console.log("Success:", data);
+        localStorage.setItem("userId", userId);
+        checkLoginStatus();
+      })
+      .catch((error) => {
+        console.error("Error:", error);
+      });
+  }
+}
+
+function logout() {
+  fetch("/logout")
+    .then((response) => response.json())
+    .then((data) => {
+      console.log("Success:", data);
+      localStorage.removeItem("userId");
+      checkLoginStatus();
+    })
+    .catch((error) => {
+      console.error("Error:", error);
+    });
+}
 
 function analyzeTransactions() {
   const transactionsText = document.getElementById("transactions-text").value;
@@ -64,7 +117,6 @@ function addParticipant() {
       .then((data) => {
         console.log("Success:", data);
         loadParticipants();
-        loadTransactions();
       })
       .catch((error) => {
         console.error("Error:", error);
@@ -105,7 +157,6 @@ function deleteParticipant(participant) {
     .then((data) => {
       console.log("Success:", data);
       loadParticipants();
-      loadTransactions();
     })
     .catch((error) => {
       console.error("Error:", error);
@@ -130,7 +181,7 @@ function updateTransactionsTable(transactions) {
 
   transactions.forEach((transaction, index) => {
     const row = tbody.insertRow();
-    row.insertCell().textContent = index + 1; // Numeración
+    row.insertCell().textContent = index + 1;
     row.insertCell().textContent = transaction.date;
     row.insertCell().textContent = transaction.description;
     row.insertCell().textContent = transaction.amount;
@@ -142,7 +193,7 @@ function updateTransactionsTable(transactions) {
         if (participants.length > 0) {
           const assignSelect = document.createElement("select");
           assignSelect.multiple = true;
-          assignSelect.size = Math.min(4, participants.length); // Mostrar hasta 4 opciones a la vez
+          assignSelect.size = Math.min(4, participants.length);
           participants.forEach((participant) => {
             const option = document.createElement("option");
             option.value = participant;

@@ -83,7 +83,9 @@
     "date": "11/06/2024",
     "description": "MFA393 EL GOLF",
     "amount": "S/ 85.80",
-    "assigned_to": []
+    "assigned_to": [
+      "JF"
+    ]
   },
   {
     "date": "15/06/2024",
@@ -185,7 +187,9 @@
     "date": "26/06/2024",
     "description": "INTERNET VISA BB",
     "amount": "S/ 18.90",
-    "assigned_to": []
+    "assigned_to": [
+      "JF"
+    ]
   },
   {
     "date": "26/06/2024",
@@ -227,13 +231,17 @@
     "date": "01/07/2024",
     "description": "SEG010724 01824000314974",
     "amount": "S/ 179.89",
-    "assigned_to": []
+    "assigned_to": [
+      "Natalia Maribel"
+    ]
   },
   {
     "date": "02/07/2024",
     "description": "PYU*UBER",
     "amount": "S/ 30.90",
-    "assigned_to": []
+    "assigned_to": [
+      "Natalia Maribel"
+    ]
   },
   {
     "date": "06/07/2024",
@@ -245,7 +253,9 @@
     "date": "07/07/2024",
     "description": "MOVISTAR RECIBOS HOGAR",
     "amount": "S/ 59.95",
-    "assigned_to": []
+    "assigned_to": [
+      "Natalia Maribel"
+    ]
   },
   {
     "date": "07/07/2024",
@@ -263,6 +273,8 @@
     "date": "10/07/2024",
     "description": "SEGURO DE DESGRAVAMEN",
     "amount": "S/ 14.71",
-    "assigned_to": []
+    "assigned_to": [
+      "Natalia Maribel"
+    ]
   }
 ]

@@ -1,81 +1,43 @@
-# Byte-compiled / optimized / DLL files
+# Entorno virtual
+.venv/
+venv/
+
+# Base de datos
+*.db
+expense_sharing.db
+
+# Archivos de sesión de Flask
+flask_session/
+
+# Archivos Python compilados
 __pycache__/
 *.py[cod]
 *$py.class
 
-# C extensions
-*.so
+# Archivos de datos JSON (ajusta según sea necesario)
+participants.json
+transactions.json
 
-# Distribution / packaging
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-
-# PyInstaller
-*.manifest
-*.spec
-
-# Installer logs
-pip-log.txt
-pip-delete-this-directory.txt
-
-# Unit test / coverage reports
-htmlcov/
-.tox/
-.nox/
-.coverage
-.coverage.*
-.cache
-nosetests.xml
-coverage.xml
-*.cover
-.hypothesis/
-
-# Flask stuff:
-instance/
-.webassets-cache
-
-# Environments
+# Archivos de ambiente
 .env
-.venv
-env/
-venv/
-ENV/
-env.bak/
-venv.bak/
 
-# IDE files
-.idea/
+# Archivos de IDE
 .vscode/
+.idea/
 *.swp
 
-# Project-specific files
-config.py
-expense_sharing.db
-flask_session/
-*.json
+# Archivos del sistema operativo
+.DS_Store
+Thumbs.db
 
 # Logs
 *.log
 
-# OS generated files
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
+# Archivos de caché de Python
+.pytest_cache/
+.mypy_cache/
+
+# Archivos de distribución
+dist/
+build/
+*.egg-info/

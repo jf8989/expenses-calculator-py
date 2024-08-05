@@ -374,7 +374,7 @@ function updateParticipantsList(participants) {
     const li = document.createElement("li");
     li.textContent = participant;
     const deleteBtn = document.createElement("button");
-    deleteBtn.textContent = "Eliminar";
+    deleteBtn.textContent = "Delete";
     deleteBtn.onclick = () => deleteParticipant(participant);
     li.appendChild(deleteBtn);
     participantsList.appendChild(li);
@@ -511,7 +511,7 @@ function updateTransactionsTable(transactions) {
     // Insert cell for actions (delete button)
     const actionsCell = row.insertCell();
     const deleteBtn = document.createElement("button");
-    deleteBtn.textContent = "Eliminar";
+    deleteBtn.textContent = "Delete";
     deleteBtn.onclick = () => deleteTransaction(transaction);
     actionsCell.appendChild(deleteBtn);
   });

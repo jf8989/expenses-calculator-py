@@ -5,15 +5,11 @@ from flask import Flask, session, request, jsonify, g, render_template
 from flask_session import Session
 import os
 from werkzeug.security import generate_password_hash, check_password_hash
-from auth import auth  # Import the auth blueprint
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)  # Clave secreta para las sesiones
 app.config['SESSION_TYPE'] = 'filesystem'
 Session(app)
-
-# Register the auth blueprint
-app.register_blueprint(auth, url_prefix='/auth')
 
 # Configuración de la base de datos SQLite
 DATABASE = 'expense_sharing.db'

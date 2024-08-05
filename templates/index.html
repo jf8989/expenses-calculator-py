@@ -12,11 +12,15 @@
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
     />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&family=Roboto+Mono&display=swap"
+      rel="stylesheet"
+    />
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   </head>
   <body>
     <header>
-      <div class="header-content">
+      <div class="header-content container">
         <h1><i class="fas fa-money-bill-wave"></i> ExpenseSplit Pro</h1>
         <button id="logout-btn" class="btn btn-danger">
           <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
@@ -24,11 +28,33 @@
       </div>
     </header>
 
-    <div id="auth-section" class="container">
+    <div id="auth-section" class="container section">
       <h2><i class="fas fa-user-lock"></i> Acceso</h2>
+      <div id="auth-disclaimer" class="disclaimer">
+        <h3><i class="fas fa-info-circle"></i> ¿Por qué necesitamos que te registres?</h3>
+        <p>El registro es necesario para ofrecerte la mejor experiencia posible con ExpenseSplit Pro:</p>
+        <ul>
+            <li>Mantener un seguimiento preciso de tus transacciones y preferencias.</li>
+            <li>Garantizar la seguridad y privacidad de tus datos financieros.</li>
+            <li>Permitirte acceder a tus gastos compartidos desde cualquier dispositivo.</li>
+            <li>Ofrecerte análisis personalizados y sugerencias para optimizar tus finanzas compartidas.</li>
+        </ul>
+        <p>Tu información está segura con nosotros y nunca la compartiremos con terceros. 
+           Al registrarte, aceptas nuestros términos de servicio y política de privacidad.</p>
+    </div>
       <div class="form-group">
-        <input type="email" id="email" placeholder="Correo electrónico" />
-        <input type="password" id="password" placeholder="Contraseña" />
+        <input
+          type="email"
+          id="email"
+          class="form-control"
+          placeholder="Correo electrónico"
+        />
+        <input
+          type="password"
+          id="password"
+          class="form-control"
+          placeholder="Contraseña"
+        />
       </div>
       <div class="btn-group">
         <button id="register-btn" class="btn btn-primary">
@@ -63,6 +89,7 @@
         <div class="form-group">
           <textarea
             id="transactions-text"
+            class="form-control"
             rows="5"
             placeholder="15/06/2024: IZI*DON PIZZA - 97.00&#10;23/06/2024: OPENAI *CHATGPT SUBSCR - 20.00"
           ></textarea>
@@ -78,35 +105,15 @@
           <input
             type="text"
             id="new-participant"
+            class="form-control"
             placeholder="Nombre del participante"
           />
           <button id="add-participant-btn" class="btn btn-success">
             <i class="fas fa-user-plus"></i> Añadir
           </button>
         </div>
-        <div id="participants-list">
-          <!-- Aquí es donde se agregarán dinámicamente los participant-card -->
-          <div class="participant-card">
-            <div class="participant-info">
-              <i class="participant-icon fas fa-user"></i>
-              <span class="participant-name">JF</span>
-            </div>
-            <button class="btn btn-danger">Eliminar</button>
-          </div>
-          <div class="participant-card">
-            <div class="participant-info">
-              <i class="participant-icon fas fa-user"></i>
-              <span class="participant-name">Natalia Maribel</span>
-            </div>
-            <button class="btn btn-danger">Eliminar</button>
-          </div>
-          <div class="participant-card">
-            <div class="participant-info">
-              <i class="participant-icon fas fa-user"></i>
-              <span class="participant-name">Primo</span>
-            </div>
-            <button class="btn btn-danger">Eliminar</button>
-          </div>
+        <div id="participants-list" class="participants-grid">
+          <!-- Los participant-card se agregarán dinámicamente aquí -->
         </div>
       </div>
 
@@ -129,6 +136,7 @@
           <input
             type="text"
             id="transaction-search-input"
+            class="form-control"
             placeholder="Buscar transacciones..."
           />
         </div>
@@ -160,7 +168,6 @@
                 <th>Participante</th>
                 <th>Total (Principal)</th>
                 <th>Total (Secundaria)</th>
-                <th>Porcentaje</th>
               </tr>
             </thead>
             <tbody>
@@ -168,9 +175,52 @@
             </tbody>
           </table>
         </div>
-        <div id="summary-chart"></div>
+        <div id="expense-chart"></div>
       </div>
     </div>
+
+    <div id="loading-indicator" style="display: none">
+      <div class="spinner"></div>
+    </div>
+
+    <footer class="site-footer">
+      <div class="footer-content">
+        <div class="footer-section about">
+          <h3>Sobre ExpenseSplit Pro</h3>
+          <p>
+            Una herramienta avanzada para calcular y analizar gastos
+            compartidos, desarrollada con precisión y cuidado por JF8989.
+          </p>
+        </div>
+        <div class="footer-section contact">
+          <h3>Contacto</h3>
+          <p><i class="fas fa-envelope"></i> juanfrajf.contacto@gmail.com</p>
+        </div>
+        <div class="footer-section social">
+          <h3>Sígueme</h3>
+          <a
+            href="https://www.linkedin.com/in/jfmarcenaroa/"
+            class="social-icon"
+            target="_blank"
+            ><i class="fab fa-linkedin"></i
+          ></a>
+          <a
+            href="https://github.com/jf8989?tab=repositories"
+            class="social-icon"
+            target="_blank"
+            ><i class="fab fa-github"></i
+          ></a>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p class="copyright">
+          © 2024 JF8989. Todos los derechos reservados. Este software y su
+          código fuente están protegidos por leyes de derechos de autor. No se
+          otorga ninguna licencia para su uso, modificación o distribución sin
+          el permiso expreso por escrito del autor.
+        </p>
+      </div>
+    </footer>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>

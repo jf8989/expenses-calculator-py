@@ -15,7 +15,7 @@
 
 /* Base styles */
 body {
-  font-family: 'Roboto', sans-serif;
+  font-family: "Roboto", sans-serif;
   line-height: 1.6;
   margin: 0;
   padding: 0;
@@ -28,7 +28,8 @@ body {
 }
 
 /* Estilos para fijar el footer al fondo */
-html, body {
+html,
+body {
   height: 100%;
   margin: 0;
   padding: 0;
@@ -85,10 +86,22 @@ header h1 {
   filter: brightness(110%);
 }
 
-.btn-primary { background-color: var(--primary-color); color: white; }
-.btn-success { background-color: var(--secondary-color); color: white; }
-.btn-danger { background-color: var(--danger-color); color: white; }
-.btn-warning { background-color: var(--warning-color); color: white; }
+.btn-primary {
+  background-color: var(--primary-color);
+  color: white;
+}
+.btn-success {
+  background-color: var(--secondary-color);
+  color: white;
+}
+.btn-danger {
+  background-color: var(--danger-color);
+  color: white;
+}
+.btn-warning {
+  background-color: var(--warning-color);
+  color: white;
+}
 
 /* Form styles */
 .form-group {
@@ -291,17 +304,35 @@ header h1 {
 
 /* Animations */
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
-.section { animation: fadeIn 0.5s ease-out; }
+.section {
+  animation: fadeIn 0.5s ease-out;
+}
 
 /* Custom scrollbar */
-::-webkit-scrollbar { width: 10px; }
-::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 5px; }
-::-webkit-scrollbar-thumb { background: var(--primary-color); border-radius: 5px; }
-::-webkit-scrollbar-thumb:hover { background: #2980b9; }
+::-webkit-scrollbar {
+  width: 10px;
+}
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 5px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--primary-color);
+  border-radius: 5px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #2980b9;
+}
 
 /* Loading indicator */
 #loading-indicator {
@@ -327,8 +358,12 @@ header h1 {
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 /* Toast notifications */
@@ -347,12 +382,21 @@ header h1 {
 }
 
 @keyframes fadeInUp {
-  to { opacity: 1; transform: translateY(0); }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
-.toast-info { background-color: var(--primary-color); }
-.toast-success { background-color: var(--secondary-color); }
-.toast-error { background-color: var(--danger-color); }
+.toast-info {
+  background-color: var(--primary-color);
+}
+.toast-success {
+  background-color: var(--secondary-color);
+}
+.toast-error {
+  background-color: var(--danger-color);
+}
 
 /* Confirmation dialog */
 .confirm-dialog {
@@ -406,7 +450,7 @@ header h1 {
   min-height: 120px;
   resize: vertical;
   padding: 15px;
-  font-family: 'Roboto Mono', monospace;
+  font-family: "Roboto Mono", monospace;
   font-size: 14px;
   line-height: 1.6;
   border: 1px solid #ddd;
@@ -421,10 +465,16 @@ header h1 {
 }
 
 /* Add smooth scrolling */
-html { scroll-behavior: smooth; }
+html {
+  scroll-behavior: smooth;
+}
 
 /* Add transition to form inputs */
-input, select, textarea { transition: var(--transition); }
+input,
+select,
+textarea {
+  transition: var(--transition);
+}
 
 /* Improve readability of instructions */
 .instructions {
@@ -486,7 +536,7 @@ input, select, textarea { transition: var(--transition); }
   padding: 15px;
   margin-bottom: 20px;
   border-radius: 0 8px 8px 0;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .disclaimer h3 {
@@ -528,8 +578,9 @@ input, select, textarea { transition: var(--transition); }
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
   }
-  
-  .table th,
-  .table td { white-space: nowrap; }
-}
 
+  .table th,
+  .table td {
+    white-space: nowrap;
+  }
+}

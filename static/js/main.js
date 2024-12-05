@@ -714,7 +714,7 @@ function updateSummaryTable() {
   const totals = {};
 
   transactions.forEach((transaction) => {
-    console.log("Processing transaction:", transaction); // Log para debugging
+    console.log("Processing transaction:", transaction);
 
     if (transaction.assigned_to && transaction.assigned_to.length > 0) {
       const share = transaction.amount / transaction.assigned_to.length;
@@ -735,19 +735,23 @@ function updateSummaryTable() {
           totals[participant][mainCurrency] += share;
         }
 
-        console.log(`Added ${share} ${transactionCurrency} to ${participant}`); // Log para debugging
+        console.log(`Added ${share} ${transactionCurrency} to ${participant}`);
       });
     } else {
       console.warn("Transaction without assigned participants:", transaction);
     }
   });
 
-  console.log("Final totals:", totals); // Log para debugging
+  console.log("Final totals:", totals);
 
   const summaryTable = document.getElementById("summary-table");
   const tbody = summaryTable.querySelector("tbody");
   tbody.innerHTML = "";
 
+  // Initialize grand totals
+  let grandTotal = { [mainCurrency]: 0, [secondaryCurrency]: 0 };
+
+  // Add participant rows and calculate grand total
   for (const [participant, amounts] of Object.entries(totals)) {
     const row = tbody.insertRow();
     row.insertCell().textContent = participant;
@@ -757,5 +761,23 @@ function updateSummaryTable() {
     row.insertCell().textContent = `${secondaryCurrency} ${amounts[
       secondaryCurrency
     ].toFixed(2)}`;
+
+    // Add to grand total
+    grandTotal[mainCurrency] += amounts[mainCurrency];
+    grandTotal[secondaryCurrency] += amounts[secondaryCurrency];
   }
+
+  // Add total row with styling
+  const totalRow = tbody.insertRow();
+  totalRow.style.fontWeight = "bold";
+  totalRow.style.borderTop = "2px solid #e0e0e0";
+  totalRow.style.backgroundColor = "#f8f9fa";
+
+  totalRow.insertCell().textContent = "TOTAL";
+  totalRow.insertCell().textContent = `${mainCurrency} ${grandTotal[
+    mainCurrency
+  ].toFixed(2)}`;
+  totalRow.insertCell().textContent = `${secondaryCurrency} ${grandTotal[
+    secondaryCurrency
+  ].toFixed(2)}`;
 }

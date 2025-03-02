@@ -2,7 +2,7 @@
 
 from flask import Blueprint, request, jsonify, session
 from werkzeug.security import generate_password_hash, check_password_hash
-from app import get_db  # Importamos get_db directamente de app.py
+from database import get_db  # Import get_db from database.py
 
 auth = Blueprint('auth', __name__)
 
@@ -12,11 +12,11 @@ def register():
     password = request.json['password']
     db = get_db()
     
-    # Verificar si el correo ya está registrado
+    # Check if email is already registered
     if db.execute('SELECT id FROM users WHERE email = ?', (email,)).fetchone() is not None:
         return jsonify({"error": "El correo electrónico ya está registrado"}), 400
     
-    # Crear nuevo usuario
+    # Create new user
     db.execute(
         'INSERT INTO users (email, password_hash) VALUES (?, ?)',
         (email, generate_password_hash(password))

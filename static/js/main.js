@@ -1,18 +1,14 @@
 // static/js/main.js
 
 document.addEventListener("DOMContentLoaded", function () {
-  // Elementos del DOM
+  // DOM Elements
   const registerBtn = document.getElementById("register-btn");
   const loginBtn = document.getElementById("login-btn");
   const logoutBtn = document.getElementById("logout-btn");
   const addTransactionsBtn = document.getElementById("add-transactions-btn");
   const addParticipantBtn = document.getElementById("add-participant-btn");
-  const deleteAllTransactionsBtn = document.getElementById(
-    "delete-all-transactions-btn"
-  );
-  const unassignAllParticipantsBtn = document.getElementById(
-    "unassign-all-participants-btn"
-  );
+  const deleteAllTransactionsBtn = document.getElementById("delete-all-transactions-btn");
+  const unassignAllParticipantsBtn = document.getElementById("unassign-all-participants-btn");
   const mainCurrencySelect = document.getElementById("main-currency");
   const secondaryCurrencySelect = document.getElementById("secondary-currency");
 
@@ -27,22 +23,20 @@ document.addEventListener("DOMContentLoaded", function () {
   mainCurrencySelect.addEventListener("change", updateCurrency);
   secondaryCurrencySelect.addEventListener("change", updateCurrency);
 
-  // Nuevo event listener para la barra de búsqueda
-  document
-    .getElementById("transaction-search-input")
-    .addEventListener("input", filterTransactions);
+  // New event listener for search bar
+  document.getElementById("transaction-search-input").addEventListener("input", filterTransactions);
 
-  // Verificar el estado de la sesión al cargar la página
+  // Check login status when page loads
   checkLoginStatus();
 
-  // Actualizar el resumen de gastos al cargar la página
+  // Update expense summary when page loads
   updateSummaryTable();
 
-  // Cargar las opciones de divisas
+  // Load currency options
   loadCurrencyOptions();
 });
 
-// Función para cargar las opciones de divisas
+// Function to load currency options
 function loadCurrencyOptions() {
   const currencies = [
     { code: "USD", symbol: "$", name: "US Dollar" },
@@ -51,38 +45,35 @@ function loadCurrencyOptions() {
     { code: "JPY", symbol: "¥", name: "Japanese Yen" },
     { code: "CNY", symbol: "¥", name: "Chinese Yuan" },
     { code: "PEN", symbol: "S/", name: "Peruvian Sol" },
-    // Añadir más divisas según sea necesario
+    // Add more currencies as needed
   ];
 
   const mainCurrencySelect = document.getElementById("main-currency");
   const secondaryCurrencySelect = document.getElementById("secondary-currency");
 
   currencies.forEach((currency) => {
-    const option = new Option(
-      `${currency.name} (${currency.symbol})`,
-      currency.code
-    );
+    const option = new Option(`${currency.name} (${currency.symbol})`, currency.code);
     mainCurrencySelect.add(option.cloneNode(true));
     secondaryCurrencySelect.add(option);
   });
 
-  // Cargar las preferencias de divisa después de añadir las opciones
+  // Load currency preferences after adding options
   loadCurrencyPreferences();
 }
 
-// Función para actualizar la divisa
+// Function to update currency
 function updateCurrency() {
   const mainCurrency = document.getElementById("main-currency").value;
   const secondaryCurrency = document.getElementById("secondary-currency").value;
 
-  // Guardar las selecciones en localStorage
+  // Save selections to localStorage
   localStorage.setItem("mainCurrency", mainCurrency);
   localStorage.setItem("secondaryCurrency", secondaryCurrency);
 
   loadTransactions();
 }
 
-// Función para cargar las preferencias de divisa
+// Function to load currency preferences
 function loadCurrencyPreferences() {
   const mainCurrency = localStorage.getItem("mainCurrency");
   const secondaryCurrency = localStorage.getItem("secondaryCurrency");
@@ -96,7 +87,7 @@ function loadCurrencyPreferences() {
   }
 }
 
-// Función para registrar un nuevo usuario
+// Function to register a new user
 function register() {
   const email = document.getElementById("email").value;
   const password = document.getElementById("password").value;
@@ -111,16 +102,16 @@ function register() {
       .then((response) => response.json())
       .then((data) => {
         console.log("Success:", data);
-        alert("Registro exitoso. Por favor, inicia sesión.");
+        alert("Registration successful. Please log in.");
       })
       .catch((error) => {
         console.error("Error:", error);
-        alert("Error en el registro. Por favor, intenta de nuevo.");
+        alert("Registration error. Please try again.");
       });
   }
 }
 
-// Función para iniciar sesión
+// Function to log in
 function login() {
   const email = document.getElementById("email").value;
   const password = document.getElementById("password").value;
@@ -139,12 +130,12 @@ function login() {
       })
       .catch((error) => {
         console.error("Error:", error);
-        alert("Error en el inicio de sesión. Por favor, intenta de nuevo.");
+        alert("Login error. Please try again.");
       });
   }
 }
 
-// Función para cerrar sesión
+// Function to log out
 function logout() {
   fetch("/logout")
     .then((response) => response.json())
@@ -157,7 +148,7 @@ function logout() {
     });
 }
 
-// Función para verificar el estado de la sesión
+// Function to check login status
 function checkLoginStatus() {
   fetch("/user")
     .then((response) => response.json())
@@ -179,18 +170,18 @@ function checkLoginStatus() {
     });
 }
 
-// Función para añadir transacciones
+// Function to add transactions
 function addTransactions() {
   const transactionsText = document.getElementById("transactions-text").value;
   const newTransactions = parseTransactions(transactionsText);
 
   console.log(`Parsed ${newTransactions.length} transactions`);
 
-  // Obtener el historial de asignaciones
+  // Get assignment history
   fetch("/api/assignment-history")
     .then((response) => response.json())
     .then((history) => {
-      // Asignar automáticamente basándose en el historial
+      // Auto-assign based on history
       newTransactions.forEach((transaction) => {
         const similarTransaction = findSimilarTransaction(transaction, history);
         if (similarTransaction) {
@@ -198,7 +189,7 @@ function addTransactions() {
         }
       });
 
-      // Enviar las transacciones con asignaciones automáticas
+      // Send transactions with auto-assignments
       return fetch("/api/transactions", {
         method: "POST",
         headers: {
@@ -214,35 +205,38 @@ function addTransactions() {
       return response.json();
     })
     .then((data) => {
-      console.log("Transacciones añadidas exitosamente:", data);
+      console.log("Transactions added successfully:", data);
       loadTransactions();
-      document.getElementById("transactions-text").value = ""; // Limpiar el textarea
+      document.getElementById("transactions-text").value = ""; // Clear textarea
     })
     .catch((error) => {
-      console.error("Error al añadir transacciones:", error);
-      alert(`Error al añadir transacciones: ${error.message}`);
+      console.error("Error adding transactions:", error);
+      alert(`Error adding transactions: ${error.message}`);
     });
 }
 
-// Función para encontrar una transacción similar en el historial
+// Function to find a similar transaction in history
 function findSimilarTransaction(newTransaction, history) {
   return history.find(
-    (historyTransaction) =>
-      historyTransaction.description
+    (historyTransaction) => {
+      if (!historyTransaction.description || !newTransaction.description) return false;
+
+      return historyTransaction.description
         .toLowerCase()
         .includes(newTransaction.description.toLowerCase()) ||
-      newTransaction.description
-        .toLowerCase()
-        .includes(historyTransaction.description.toLowerCase())
+        newTransaction.description
+          .toLowerCase()
+          .includes(historyTransaction.description.toLowerCase());
+    }
   );
 }
 
-// Función para parsear las transacciones ingresadas
+// Function to parse transactions
 function parseTransactions(text) {
   const lines = text.split("\n");
   return lines
     .map((line) => {
-      // Expresión regular más flexible para manejar diferentes formatos
+      // More flexible regex for different formats
       const match = line.match(
         /(\d{2}\/\d{2}\/\d{4})\s*:\s*(.+?)\s*-\s*([-\d.,]+)(?:\s*\(?.*\)?)?$/
       );
@@ -266,7 +260,7 @@ function parseTransactions(text) {
     .filter((t) => t !== null);
 }
 
-// Agrega esta nueva función para filtrar las transacciones
+// New function to filter transactions
 function filterTransactions() {
   const searchTerm = document
     .getElementById("transaction-search-input")
@@ -278,22 +272,22 @@ function filterTransactions() {
     const description = row.cells[2].textContent.toLowerCase();
     const amount = row.cells[3].textContent.toLowerCase();
 
-    // Combina toda la información de la transacción en una sola cadena para buscar
+    // Combine transaction info into one string for searching
     const transactionInfo = `${date} ${description} ${amount}`;
 
-    // Verifica si el término de búsqueda está contenido en la información de la transacción
+    // Check if search term is in transaction info
     if (transactionInfo.includes(searchTerm)) {
-      row.style.display = ""; // Muestra la fila si coincide
+      row.style.display = ""; // Show row if match
     } else {
-      row.style.display = "none"; // Oculta la fila si no coincide
+      row.style.display = "none"; // Hide row if no match
     }
   });
 
-  // Actualiza la numeración de las filas visibles
+  // Update row numbers for visible rows
   updateRowNumbers();
 }
 
-// Función para actualizar la numeración de las filas visibles
+// Function to update row numbers for visible rows
 function updateRowNumbers() {
   const visibleRows = document.querySelectorAll(
     "#transactions-table tbody tr:not([style*='display: none'])"
@@ -303,7 +297,7 @@ function updateRowNumbers() {
   });
 }
 
-// Función para añadir un participante
+// Function to add a participant
 function addParticipant() {
   const newParticipant = document.getElementById("new-participant").value;
   if (newParticipant) {
@@ -316,18 +310,18 @@ function addParticipant() {
     })
       .then((response) => response.json())
       .then((data) => {
-        console.log("Participante añadido:", data);
+        console.log("Participant added:", data);
         loadParticipants();
-        // Actualizar la tabla de transacciones con el nuevo participante
+        // Update transactions table with new participant
         updateTransactionsWithNewParticipant(newParticipant);
       })
       .catch((error) => {
-        console.error("Error al añadir participante:", error);
+        console.error("Error adding participant:", error);
       });
   }
 }
 
-// Función para actualizar las transacciones con el nuevo participante
+// Function to update transactions with new participant
 function updateTransactionsWithNewParticipant(newParticipant) {
   const checkboxContainers = document.querySelectorAll(".checkbox-container");
   checkboxContainers.forEach((container) => {
@@ -348,13 +342,11 @@ function updateTransactionsWithNewParticipant(newParticipant) {
     }
   });
 
-  // Actualizar la tabla de resumen después de añadir el nuevo participante
+  // Update the summary table after adding new participant
   updateSummaryTable();
 }
 
-// static/js/main.js - Parte 2
-
-// Función para cargar los participantes
+// Function to load participants
 function loadParticipants() {
   fetch("/api/participants")
     .then((response) => response.json())
@@ -366,7 +358,7 @@ function loadParticipants() {
     });
 }
 
-// Función para actualizar la lista de participantes
+// Function to update the participants list
 function updateParticipantsList(participants) {
   const participantsList = document.getElementById("participants-list");
   participantsList.innerHTML = "";
@@ -381,7 +373,7 @@ function updateParticipantsList(participants) {
   });
 }
 
-// Función para eliminar un participante
+// Function to delete a participant
 function deleteParticipant(participant) {
   fetch("/api/participants", {
     method: "DELETE",
@@ -401,7 +393,7 @@ function deleteParticipant(participant) {
     });
 }
 
-// Función para actualizar los participantes en las transacciones existentes
+// Function to update participants in existing transactions
 function updateParticipantsInTransactions(newParticipants) {
   const checkboxContainers = document.querySelectorAll(".checkbox-container");
   checkboxContainers.forEach((container) => {
@@ -425,7 +417,7 @@ function updateParticipantsInTransactions(newParticipants) {
   });
 }
 
-// Función para remover un participante de las transacciones existentes
+// Function to remove a participant from existing transactions
 function removeParticipantFromTransactions(participant) {
   const checkboxContainers = document.querySelectorAll(".checkbox-container");
   checkboxContainers.forEach((container) => {
@@ -439,7 +431,7 @@ function removeParticipantFromTransactions(participant) {
   updateSummaryTable();
 }
 
-// Función auxiliar para obtener la transacción asociada a un contenedor de checkbox
+// Helper function to get transaction from checkbox container
 function getTransactionFromCheckboxContainer(container) {
   const row = container.closest("tr");
   return {
@@ -449,18 +441,18 @@ function getTransactionFromCheckboxContainer(container) {
   };
 }
 
-// Función para cargar las transacciones
+// Function to load transactions
 function loadTransactions() {
   fetch("/api/transactions")
     .then((response) => response.json())
     .then((transactions) => {
-      console.log("Transacciones cargadas:", transactions);
+      console.log("Transactions loaded:", transactions);
       transactions.sort((a, b) => new Date(a.date) - new Date(b.date));
       updateTransactionsTable(transactions);
-      filterTransactions(); // Aplica el filtro actual después de cargar las transacciones
+      filterTransactions(); // Apply current filter after loading transactions
     })
     .catch((error) => {
-      console.error("Error al cargar transacciones:", error);
+      console.error("Error loading transactions:", error);
     });
 }
 
@@ -472,6 +464,8 @@ function updateTransactionsTable(transactions) {
 
   const mainCurrency = document.getElementById("main-currency").value;
   const secondaryCurrency = document.getElementById("secondary-currency").value;
+
+  const checkboxPromises = [];
 
   transactions.forEach((transaction, index) => {
     const row = tbody.insertRow();
@@ -489,9 +483,8 @@ function updateTransactionsTable(transactions) {
     // Insert amount with currency toggle functionality
     const amountCell = row.insertCell();
     const amountSpan = document.createElement("span");
-    amountSpan.textContent = `${
-      transaction.currency || mainCurrency
-    } ${transaction.amount.toFixed(2)}`;
+    amountSpan.textContent = `${transaction.currency || mainCurrency
+      } ${transaction.amount.toFixed(2)}`;
     amountSpan.style.cursor = "pointer";
     amountSpan.addEventListener("click", () =>
       toggleCurrency(
@@ -506,7 +499,8 @@ function updateTransactionsTable(transactions) {
 
     // Insert cell for participant assignment
     const assignedCell = row.insertCell();
-    createCheckboxContainer(assignedCell, transaction);
+    const promise = createCheckboxContainer(assignedCell, transaction);
+    checkboxPromises.push(promise);
 
     // Insert cell for actions (delete button)
     const actionsCell = row.insertCell();
@@ -516,19 +510,22 @@ function updateTransactionsTable(transactions) {
     actionsCell.appendChild(deleteBtn);
   });
 
-  // Update the summary table after modifying transactions
-  updateSummaryTable();
+  // Wait for all checkboxes to be created before updating summary
+  Promise.all(checkboxPromises).then(() => {
+    updateSummaryTable();
+  });
 }
 
-function toggleCurrency(
-  element,
-  transactionId,
-  amount,
-  mainCurrency,
-  secondaryCurrency
-) {
+// Function to toggle currency
+function toggleCurrency(element, transactionId, amount, mainCurrency, secondaryCurrency) {
   let newCurrency;
-  if (element.textContent.startsWith(mainCurrency)) {
+
+  // Properly extract current currency
+  const currentText = element.textContent.trim();
+  const currentParts = currentText.split(/\s+/);
+  const currentCurrency = currentParts[0];
+
+  if (currentCurrency === mainCurrency) {
     newCurrency = secondaryCurrency;
     element.textContent = `${secondaryCurrency} ${amount.toFixed(2)}`;
   } else {
@@ -536,7 +533,7 @@ function toggleCurrency(
     element.textContent = `${mainCurrency} ${amount.toFixed(2)}`;
   }
 
-  // Enviar la actualización al servidor
+  // Send the update to the server
   fetch("/api/update_transaction_currency", {
     method: "POST",
     headers: {
@@ -547,19 +544,26 @@ function toggleCurrency(
       currency: newCurrency,
     }),
   })
-    .then((response) => response.json())
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      return response.json();
+    })
     .then((data) => {
       console.log("Currency updated successfully:", data);
-      updateSummaryTable(); // Actualizar el resumen después de cambiar la divisa
+      updateSummaryTable(); // Update summary after changing currency
     })
     .catch((error) => {
       console.error("Error updating currency:", error);
+      // Revert UI change if server update failed
+      element.textContent = `${currentCurrency} ${amount.toFixed(2)}`;
     });
 }
 
 // Function to create the checkbox container
 function createCheckboxContainer(cell, transaction) {
-  fetch("/api/participants")
+  return fetch("/api/participants")
     .then((response) => response.json())
     .then((participants) => {
       const checkboxContainer = document.createElement("div");
@@ -570,12 +574,12 @@ function createCheckboxContainer(cell, transaction) {
         checkbox.type = "checkbox";
         checkbox.value = participant;
 
-        // Asegúrate de que transaction.assigned_to sea siempre un array
+        // Ensure transaction.assigned_to is always an array
         const assignedTo = Array.isArray(transaction.assigned_to)
           ? transaction.assigned_to
           : transaction.assigned_to
-          ? transaction.assigned_to.split(",").map((p) => p.trim())
-          : [];
+            ? transaction.assigned_to.split(",").map((p) => p.trim())
+            : [];
 
         checkbox.checked = assignedTo.includes(participant);
 
@@ -587,6 +591,7 @@ function createCheckboxContainer(cell, transaction) {
         checkboxContainer.appendChild(checkboxLabel);
       });
       cell.appendChild(checkboxContainer);
+      return checkboxContainer; // Return for promise chaining
     });
 }
 
@@ -596,7 +601,7 @@ function updateTransactionAssignment(transaction, checkboxContainer) {
     checkboxContainer.querySelectorAll("input:checked")
   ).map((checkbox) => checkbox.value);
 
-  // Actualizar la propiedad assigned_to de la transacción local
+  // Update local transaction assigned_to property
   transaction.assigned_to = assigned_to;
 
   fetch("/api/assign", {
@@ -613,21 +618,21 @@ function updateTransactionAssignment(transaction, checkboxContainer) {
     .then((response) => response.json())
     .then((data) => {
       console.log("Assignment updated:", data);
-      // Actualizar inmediatamente el resumen de gastos
+      // Immediately update expense summary
       updateSummaryTable();
     })
     .catch((error) => {
       console.error("Error updating assignment:", error);
     });
 
-  // Actualizar inmediatamente el resumen de gastos sin esperar la respuesta del servidor
+  // Immediately update expense summary without waiting for server response
   updateSummaryTable();
 }
 
-// Función para eliminar una transacción
+// Function to delete a transaction
 function deleteTransaction(transaction) {
-  // Registrar la información de la transacción que se intenta eliminar
-  console.log("Intentando eliminar transacción:", transaction);
+  // Log transaction info being deleted
+  console.log("Attempting to delete transaction:", transaction);
 
   fetch(`/api/transactions/${transaction.id}`, {
     method: "DELETE",
@@ -642,19 +647,19 @@ function deleteTransaction(transaction) {
       return response.json();
     })
     .then((data) => {
-      console.log("Transacción eliminada exitosamente:", data);
+      console.log("Transaction deleted successfully:", data);
       loadTransactions();
     })
     .catch((error) => {
-      console.error("Error al eliminar la transacción:", error);
-      alert(`Error al eliminar la transacción: ${error.message}`);
+      console.error("Error deleting transaction:", error);
+      alert(`Error deleting transaction: ${error.message}`);
     });
 }
 
-// Función para eliminar todas las transacciones
+// Function to delete all transactions
 function deleteAllTransactions() {
   if (
-    confirm("¿Estás seguro de que quieres eliminar todas las transacciones?")
+    confirm("Are you sure you want to delete all transactions?")
   ) {
     fetch("/api/transactions/all", {
       method: "DELETE",
@@ -670,11 +675,11 @@ function deleteAllTransactions() {
   }
 }
 
-// Función para desasignar todos los participantes de todas las transacciones
+// Function to unassign all participants from all transactions
 function unassignAllParticipants() {
   if (
     confirm(
-      "¿Estás seguro de que quieres desasignar todos los participantes de todas las transacciones?"
+      "Are you sure you want to unassign all participants from all transactions?"
     )
   ) {
     fetch("/api/transactions/unassign-all", {
@@ -691,17 +696,34 @@ function unassignAllParticipants() {
   }
 }
 
+// Function to update the summary table
 function updateSummaryTable() {
   const transactions = Array.from(
     document.querySelectorAll("#transactions-table tbody tr")
   ).map((row) => {
     const cells = row.cells;
+
+    // More robust amount parsing
+    const amountText = cells[3].textContent.trim();
+    const currencyAndAmount = amountText.split(/\s+/);
+    let currency, amount;
+
+    if (currencyAndAmount.length >= 2) {
+      currency = currencyAndAmount[0];
+      // Handle amount with potential thousand separators and decimal points
+      amount = parseFloat(currencyAndAmount[1].replace(/,/g, ''));
+    } else {
+      // Fallback if format is unexpected
+      currency = document.getElementById("main-currency").value;
+      amount = parseFloat(amountText.replace(/[^\d.-]/g, ''));
+    }
+
     return {
       id: row.dataset.transactionId,
       date: cells[1].textContent,
       description: cells[2].textContent,
-      amount: parseFloat(cells[3].textContent.split(" ")[1]),
-      currency: cells[3].textContent.split(" ")[0],
+      amount: amount,
+      currency: currency,
       assigned_to: Array.from(
         row.querySelectorAll(".checkbox-container input:checked")
       ).map((cb) => cb.value),
@@ -714,7 +736,11 @@ function updateSummaryTable() {
   const totals = {};
 
   transactions.forEach((transaction) => {
-    console.log("Processing transaction:", transaction);
+    // Skip invalid transactions
+    if (isNaN(transaction.amount)) {
+      console.warn("Invalid amount for transaction:", transaction);
+      return;
+    }
 
     if (transaction.assigned_to && transaction.assigned_to.length > 0) {
       const share = transaction.amount / transaction.assigned_to.length;
@@ -731,7 +757,7 @@ function updateSummaryTable() {
         } else if (transactionCurrency === secondaryCurrency) {
           totals[participant][secondaryCurrency] += share;
         } else {
-          console.warn(`Moneda no reconocida: ${transactionCurrency}`);
+          console.warn(`Unrecognized currency: ${transactionCurrency}, using main currency instead`);
           totals[participant][mainCurrency] += share;
         }
 
@@ -755,12 +781,8 @@ function updateSummaryTable() {
   for (const [participant, amounts] of Object.entries(totals)) {
     const row = tbody.insertRow();
     row.insertCell().textContent = participant;
-    row.insertCell().textContent = `${mainCurrency} ${amounts[
-      mainCurrency
-    ].toFixed(2)}`;
-    row.insertCell().textContent = `${secondaryCurrency} ${amounts[
-      secondaryCurrency
-    ].toFixed(2)}`;
+    row.insertCell().textContent = `${mainCurrency} ${amounts[mainCurrency].toFixed(2)}`;
+    row.insertCell().textContent = `${secondaryCurrency} ${amounts[secondaryCurrency].toFixed(2)}`;
 
     // Add to grand total
     grandTotal[mainCurrency] += amounts[mainCurrency];
@@ -774,10 +796,6 @@ function updateSummaryTable() {
   totalRow.style.backgroundColor = "#f8f9fa";
 
   totalRow.insertCell().textContent = "TOTAL";
-  totalRow.insertCell().textContent = `${mainCurrency} ${grandTotal[
-    mainCurrency
-  ].toFixed(2)}`;
-  totalRow.insertCell().textContent = `${secondaryCurrency} ${grandTotal[
-    secondaryCurrency
-  ].toFixed(2)}`;
+  totalRow.insertCell().textContent = `${mainCurrency} ${grandTotal[mainCurrency].toFixed(2)}`;
+  totalRow.insertCell().textContent = `${secondaryCurrency} ${grandTotal[secondaryCurrency].toFixed(2)}`;
 }

@@ -11,6 +11,7 @@ document.addEventListener("DOMContentLoaded", function () {
   const unassignAllParticipantsBtn = document.getElementById("unassign-all-participants-btn");
   const mainCurrencySelect = document.getElementById("main-currency");
   const secondaryCurrencySelect = document.getElementById("secondary-currency");
+  const saveSessionBtn = document.getElementById("save-session-btn"); // Add this line
 
   // Event listeners
   registerBtn.addEventListener("click", register);
@@ -22,6 +23,7 @@ document.addEventListener("DOMContentLoaded", function () {
   unassignAllParticipantsBtn.addEventListener("click", unassignAllParticipants);
   mainCurrencySelect.addEventListener("change", updateCurrency);
   secondaryCurrencySelect.addEventListener("change", updateCurrency);
+  saveSessionBtn.addEventListener("click", saveSession);
 
   // New event listener for search bar
   document.getElementById("transaction-search-input").addEventListener("input", filterTransactions);
@@ -34,6 +36,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // Load currency options
   loadCurrencyOptions();
+
+  // Load saved sessions
+  loadSessions();
 });
 
 // Function to load currency options
@@ -798,4 +803,164 @@ function updateSummaryTable() {
   totalRow.insertCell().textContent = "TOTAL";
   totalRow.insertCell().textContent = `${mainCurrency} ${grandTotal[mainCurrency].toFixed(2)}`;
   totalRow.insertCell().textContent = `${secondaryCurrency} ${grandTotal[secondaryCurrency].toFixed(2)}`;
+}
+
+// Function to save the current session
+function saveSession() {
+  const sessionName = document.getElementById("session-name").value;
+
+  fetch("/api/sessions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      name: sessionName,
+      description: ""
+    }),
+  })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error("Network response was not ok");
+      }
+      return response.json();
+    })
+    .then(data => {
+      console.log("Session saved:", data);
+      alert(`Session "${data.name}" saved with ${data.transaction_count} transactions`);
+      loadSessions(); // Refresh the sessions list
+      document.getElementById("session-name").value = "";
+    })
+    .catch(error => {
+      console.error("Error saving session:", error);
+      alert("Error saving session. Please try again.");
+    });
+}
+
+// Function to load all saved sessions
+function loadSessions() {
+  fetch("/api/sessions")
+    .then(response => {
+      if (!response.ok) {
+        throw new Error("Network response was not ok");
+      }
+      return response.json();
+    })
+    .then(sessions => {
+      updateSessionsTable(sessions);
+    })
+    .catch(error => {
+      console.error("Error loading sessions:", error);
+    });
+}
+
+// Function to update sessions table
+function updateSessionsTable(sessions) {
+  const table = document.getElementById("sessions-table");
+  const tbody = table.querySelector("tbody");
+  tbody.innerHTML = "";
+
+  if (sessions.length === 0) {
+    const row = tbody.insertRow();
+    const cell = row.insertCell();
+    cell.colSpan = 4;
+    cell.textContent = "No saved sessions";
+    cell.style.textAlign = "center";
+    cell.style.fontStyle = "italic";
+    return;
+  }
+
+  sessions.forEach(session => {
+    const row = tbody.insertRow();
+
+    // Format date
+    const date = new Date(session.created_at);
+    const formattedDate = date.toLocaleDateString() + " " + date.toLocaleTimeString();
+
+    // Session name
+    row.insertCell().textContent = session.name;
+
+    // Creation date
+    row.insertCell().textContent = formattedDate;
+
+    // Transaction count
+    row.insertCell().textContent = session.transaction_count;
+
+    // Actions
+    const actionsCell = row.insertCell();
+
+    // Load button
+    const loadBtn = document.createElement("button");
+    loadBtn.className = "btn btn-success btn-sm";
+    loadBtn.innerHTML = '<i class="fas fa-folder-open"></i> Load';
+    loadBtn.onclick = () => loadSessionData(session.id);
+    actionsCell.appendChild(loadBtn);
+
+    // Delete button
+    const deleteBtn = document.createElement("button");
+    deleteBtn.className = "btn btn-danger btn-sm";
+    deleteBtn.innerHTML = '<i class="fas fa-trash"></i> Delete';
+    deleteBtn.onclick = () => deleteSession(session.id, session.name);
+    deleteBtn.style.marginLeft = "5px";
+    actionsCell.appendChild(deleteBtn);
+  });
+}
+
+// Function to load a specific session
+function loadSessionData(sessionId) {
+  if (confirm("This will replace your current transactions. Continue?")) {
+    fetch(`/api/sessions/${sessionId}/load`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({}),
+    })
+      .then(response => {
+        if (!response.ok) {
+          throw new Error("Network response was not ok");
+        }
+        return response.json();
+      })
+      .then(data => {
+        console.log("Session loaded:", data);
+        alert(`Session loaded with ${data.transaction_count} transactions`);
+
+        // Reload transactions to display the loaded session
+        loadTransactions();
+      })
+      .catch(error => {
+        console.error("Error loading session:", error);
+        alert("Error loading session. Please try again.");
+      });
+  }
+}
+
+// Function to delete a session
+function deleteSession(sessionId, sessionName) {
+  if (confirm(`Delete session "${sessionName}"?`)) {
+    fetch("/api/sessions", {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        id: sessionId
+      }),
+    })
+      .then(response => {
+        if (!response.ok) {
+          throw new Error("Network response was not ok");
+        }
+        return response.json();
+      })
+      .then(data => {
+        console.log("Session deleted:", data);
+        loadSessions(); // Refresh the sessions list
+      })
+      .catch(error => {
+        console.error("Error deleting session:", error);
+        alert("Error deleting session. Please try again.");
+      });
+  }
 }

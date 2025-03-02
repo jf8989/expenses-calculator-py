@@ -8,6 +8,7 @@ import logging
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import escape
 from database import get_db, close_connection, init_db, DATABASE
+from datetime import datetime
 
 # Configure logging
 logging.basicConfig(
@@ -320,6 +321,157 @@ def internal_server_error(e):
     app.logger.error(f"Internal server error: {str(e)}")
     return jsonify({"error": "An internal server error occurred"}), 500
 
+@app.route('/api/sessions', methods=['GET', 'POST', 'DELETE'])
+def handle_sessions():
+    if 'user_id' not in session:
+        return jsonify({"error": "No has iniciado sesión"}), 401
+        
+    user_id = session['user_id']
+    db = get_db()
+    
+    if request.method == 'POST':
+        # Save current state as a session
+        try:
+            # Enable foreign keys
+            db.execute("PRAGMA foreign_keys = ON")
+            
+            # Start transaction explicitly
+            db.execute("BEGIN TRANSACTION")
+            
+            data = request.json
+            name = data.get('name', '').strip()
+            description = data.get('description', '').strip()
+            
+            if not name:
+                today = datetime.now().strftime('%Y-%m-%d')
+                name = f"Session {today}"
+            
+            app.logger.info(f"Creating session: {name} for user_id: {user_id}")
+                
+            # Create the session record
+            cursor = db.execute(
+                'INSERT INTO sessions (user_id, name, description) VALUES (?, ?, ?)',
+                (user_id, escape(name), escape(description))
+            )
+            session_id = cursor.lastrowid
+            app.logger.info(f"Created session with ID: {session_id}")
+            
+            # Save the current transactions in the session_transactions table
+            transactions = db.execute(
+                'SELECT date, description, amount, currency, assigned_to FROM transactions WHERE user_id = ?',
+                (user_id,)
+            ).fetchall()
+            
+            app.logger.info(f"Found {len(transactions)} transactions to copy")
+            
+            for t in transactions:
+                # Handle potential NULL values
+                currency = t['currency'] if t['currency'] else ""
+                assigned_to = t['assigned_to'] if t['assigned_to'] else ""
+                
+                db.execute(
+                    'INSERT INTO session_transactions (session_id, date, description, amount, currency, assigned_to) VALUES (?, ?, ?, ?, ?, ?)',
+                    (session_id, t['date'], t['description'], t['amount'], currency, assigned_to)
+                )
+            
+            app.logger.info("Copied all transactions, committing...")
+            db.execute("COMMIT")
+            
+            return jsonify({
+                "id": session_id,
+                "name": name,
+                "created_at": datetime.now().isoformat(),
+                "transaction_count": len(transactions)
+            }), 201
+                
+        except Exception as e:
+            db.execute("ROLLBACK")
+            app.logger.error(f"Error saving session: {type(e).__name__}: {str(e)}")
+            return jsonify({"error": f"Failed to save session: {str(e)}"}), 500
+            
+    elif request.method == 'DELETE':
+        # Delete a session
+        try:
+            session_id = request.json.get('id')
+            if not session_id:
+                return jsonify({"error": "Session ID required"}), 400
+                
+            db.execute('DELETE FROM sessions WHERE id = ? AND user_id = ?', (session_id, user_id))
+            db.commit()
+            
+            return jsonify({"message": "Session deleted successfully"}), 200
+        except Exception as e:
+            app.logger.error(f"Error deleting session: {str(e)}")
+            return jsonify({"error": str(e)}), 500
+    else:
+        # GET - List all sessions
+        try:
+            sessions = db.execute(
+                'SELECT id, name, description, created_at FROM sessions WHERE user_id = ? ORDER BY created_at DESC',
+                (user_id,)
+            ).fetchall()
+            
+            # Get transaction count for each session
+            result = []
+            for s in sessions:
+                s_dict = dict(s)
+                count = db.execute(
+                    'SELECT COUNT(*) as count FROM session_transactions WHERE session_id = ?',
+                    (s['id'],)
+                ).fetchone()['count']
+                s_dict['transaction_count'] = count
+                result.append(s_dict)
+                
+            return jsonify(result), 200
+        except Exception as e:
+            app.logger.error(f"Error retrieving sessions: {str(e)}")
+            return jsonify({"error": str(e)}), 500
+
+@app.route('/api/sessions/<int:session_id>/load', methods=['POST'])
+def load_session(session_id):
+    if 'user_id' not in session:
+        return jsonify({"error": "No has iniciado sesión"}), 401
+        
+    user_id = session['user_id']
+    db = get_db()
+    
+    try:
+        # Verify the session belongs to this user
+        session_record = db.execute(
+            'SELECT id, name, description, created_at FROM sessions WHERE id = ? AND user_id = ?',
+            (session_id, user_id)
+        ).fetchone()
+        
+        if not session_record:
+            return jsonify({"error": "Session not found"}), 404
+        
+        # Clear existing transactions
+        db.execute('DELETE FROM transactions WHERE user_id = ?', (user_id,))
+        
+        # Load session transactions into current transactions
+        session_transactions = db.execute(
+            'SELECT date, description, amount, currency, assigned_to FROM session_transactions WHERE session_id = ?',
+            (session_id,)
+        ).fetchall()
+        
+        for t in session_transactions:
+            db.execute(
+                'INSERT INTO transactions (user_id, date, description, amount, currency, assigned_to) VALUES (?, ?, ?, ?, ?, ?)',
+                (user_id, t['date'], t['description'], t['amount'], t['currency'], t['assigned_to'])
+            )
+        
+        db.commit()
+        
+        return jsonify({
+            "message": "Session loaded successfully",
+            "transaction_count": len(session_transactions)
+        }), 200
+    except Exception as e:
+        db.rollback()
+        app.logger.error(f"Error loading session: {str(e)}")
+        return jsonify({"error": str(e)}), 500
+
 if __name__ == '__main__':
     init_db(app)
     app.run(debug=True)
+    

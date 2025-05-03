@@ -452,7 +452,34 @@ function loadTransactions() {
     .then((response) => response.json())
     .then((transactions) => {
       console.log("Transactions loaded:", transactions);
-      transactions.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+      // Correctly sort transactions by date (parsing DD/MM/YYYY)
+      transactions.sort((a, b) => {
+        try {
+          // Split date strings into parts [day, month, year]
+          const partsA = a.date.split('/');
+          const partsB = b.date.split('/');
+
+          // Create Date objects: new Date(year, monthIndex, day)
+          // Remember month is 0-indexed in JavaScript Date constructor (0=Jan, 1=Feb, ...)
+          const dateA = new Date(parseInt(partsA[2], 10), parseInt(partsA[1], 10) - 1, parseInt(partsA[0], 10));
+          const dateB = new Date(parseInt(partsB[2], 10), parseInt(partsB[1], 10) - 1, parseInt(partsB[0], 10));
+
+          // Handle potential invalid dates during parsing
+          if (isNaN(dateA.getTime()) || isNaN(dateB.getTime())) {
+            console.warn("Invalid date encountered during sorting:", a.date, b.date);
+            // Fallback to string comparison if dates are invalid
+            return a.date.localeCompare(b.date);
+          }
+
+          return dateA - dateB; // Sort chronologically (older to newer)
+        } catch (e) {
+          console.error("Error parsing dates for sorting:", a.date, b.date, e);
+          // Fallback to basic string comparison in case of unexpected errors
+          return a.date.localeCompare(b.date);
+        }
+      });
+
       updateTransactionsTable(transactions);
       filterTransactions(); // Apply current filter after loading transactions
     })

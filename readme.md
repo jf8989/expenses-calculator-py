@@ -64,8 +64,8 @@ Follow these steps to get the project running locally.
 
 **2. Clone the Repository:**
    ```bash
-   git clone <your-repository-url>
-   cd <repository-folder-name> # e.g., cd expenses-calculator
+   git clone https://github.com/jf8989/expenses-calculator.git
+   cd <expenses-calculator>
    ```
 
 **3. Create and Activate Virtual Environment:**
@@ -164,7 +164,7 @@ Contributions, issues, and feature requests are welcome! Please feel free to ope
 
 ## 📜 License
 
-Distributed under the [Your License Name Here] License. See `LICENSE` file for more information (or specify license directly).
+Distributed under the MIT License. See `LICENSE` file for more information.
 
 ---
 

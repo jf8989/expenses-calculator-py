@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Expense Report</title>
+    <!-- Link directly to the CSS file that WeasyPrint will use -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/pdf_styles.css', _external=True) }}">
+</head>
+
+<body>
+    <h1>Expense Split Report</h1>
+
+    <h2>Transactions</h2>
+    <table id="transactions-table">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Date</th>
+                <th>Description</th>
+                <th>Amount</th>
+                <th>Assigned To</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for txn in transactions %}
+            <tr>
+                <td>{{ loop.index }}</td>
+                <td>{{ txn.date }}</td>
+                <td>{{ txn.description }}</td>
+                <td class="currency">{{ txn.currency or main_currency }} {{ "%.2f"|format(txn.amount) }}</td>
+                <td>
+                    {% if txn.assigned_to_list %}
+                    <ul class="assigned-list">
+                        {% for p in txn.assigned_to_list %}
+                        <li>{{ p }}</li>
+                        {% endfor %}
+                    </ul>
+                    {% else %}
+                    <span class="no-assignment">None</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="5" style="text-align: center;">No transactions found.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <h2>Expenses Summary</h2>
+    <table id="summary-table">
+        <thead>
+            <tr>
+                <th>Participant</th>
+                <th>Total ({{ main_currency }})</th>
+                <th>Total ({{ secondary_currency }})</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for participant, totals in summary.items() %}
+            <tr>
+                <td>{{ participant }}</td>
+                <td>{{ "%.2f"|format(totals[main_currency]) }}</td>
+                <td>{{ "%.2f"|format(totals[secondary_currency]) }}</td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="3" style="text-align: center;">No summary data available.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+        <tfoot>
+            <tr>
+                <td>TOTAL</td>
+                <td>{{ "%.2f"|format(grand_total[main_currency]) }}</td>
+                <td>{{ "%.2f"|format(grand_total[secondary_currency]) }}</td>
+            </tr>
+        </tfoot>
+    </table>
+
+    <div class="footer">
+        Generated on {{ generation_time }}
+    </div>
+</body>
+
+</html>

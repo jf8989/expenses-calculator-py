@@ -9,6 +9,10 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import escape
 from database import get_db, close_connection, init_db, DATABASE
 from datetime import datetime
+from flask import Flask, session, request, jsonify, g, render_template, make_response, url_for
+from weasyprint import HTML, CSS
+from datetime import datetime
+import io # For sending file data
 
 # Configure logging
 logging.basicConfig(
@@ -597,6 +601,105 @@ def update_transaction_amount(transaction_id):
         db.rollback() # Rollback in case of error during commit
         app.logger.error(f"Error updating amount for transaction {transaction_id}: {str(e)}")
         return jsonify({"error": f"Server error: {str(e)}"}), 500
+    
+@app.route('/api/export/pdf')
+def export_pdf():
+    if 'user_id' not in session:
+        return jsonify({"error": "No has iniciado sesión"}), 401
+
+    user_id = session['user_id']
+    db = get_db()
+
+    try:
+        app.logger.info(f"User {user_id} requested PDF export.")
+        # 1. Fetch necessary data
+        transactions_raw = db.execute(
+            'SELECT id, date, description, amount, currency, assigned_to FROM transactions WHERE user_id = ?',
+            (user_id,)
+        ).fetchall()
+
+        participants = db.execute(
+            'SELECT name FROM participants WHERE user_id = ?',
+            (user_id,)
+        ).fetchall()
+        participant_names = [p['name'] for p in participants]
+
+        # TODO: Replace this with actual logic to get user's selected currencies
+        # This might involve fetching from localStorage via a request parameter,
+        # or loading saved user preferences from the database.
+        # For now, using placeholders:
+        main_currency = "PEN"
+        secondary_currency = "USD"
+        # --- End Placeholder ---
+
+        # 2. Process data for the template
+        transactions_processed = []
+        summary = {name: {main_currency: 0.0, secondary_currency: 0.0} for name in participant_names}
+        grand_total = {main_currency: 0.0, secondary_currency: 0.0}
+
+        for t in transactions_raw:
+            transaction = dict(t) # Convert Row object to dict
+            assigned_str = transaction.get('assigned_to') or ''
+            assigned_list = [p.strip() for p in assigned_str.split(',') if p.strip()]
+            transaction['assigned_to_list'] = assigned_list # Add list for template
+
+            transactions_processed.append(transaction)
+
+            # Calculate summary (replicating frontend logic)
+            if assigned_list:
+                amount = float(transaction['amount'])
+                share = amount / len(assigned_list)
+                txn_currency = transaction['currency'] or main_currency
+
+                for participant in assigned_list:
+                    if participant in summary:
+                        if txn_currency == main_currency:
+                            summary[participant][main_currency] += share
+                        elif txn_currency == secondary_currency:
+                            summary[participant][secondary_currency] += share
+                        else: # Handle unexpected currency, add to main?
+                             summary[participant][main_currency] += share
+                    else:
+                         app.logger.warning(f"Participant '{participant}' from transaction {transaction['id']} not found in participants list for user {user_id}.")
+
+
+        # --- CORRECTED GRAND TOTAL CALCULATION ---
+        for participant in summary:
+            grand_total[main_currency] += summary[participant][main_currency] # Use underscore
+            grand_total[secondary_currency] += summary[participant][secondary_currency] # Use underscore
+        # --- END CORRECTION ---
+
+        # 3. Render HTML template
+        generation_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        # Ensure _external=True for WeasyPrint to find the CSS file via URL
+        css_url = url_for('static', filename='css/pdf_styles.css', _external=True)
+        rendered_html = render_template(
+            'pdf_template.html',
+            transactions=transactions_processed,
+            summary=summary,
+            grand_total=grand_total,
+            main_currency=main_currency,
+            secondary_currency=secondary_currency,
+            generation_time=generation_time
+        )
+
+        app.logger.info(f"Rendered HTML for PDF export for user {user_id}.")
+
+        # 4. Generate PDF using WeasyPrint
+        html = HTML(string=rendered_html, base_url=request.url_root)
+        pdf_bytes = html.write_pdf(stylesheets=[CSS(css_url)])
+
+        app.logger.info(f"Generated PDF ({len(pdf_bytes)} bytes) for user {user_id}.")
+
+        # 5. Create response
+        response = make_response(pdf_bytes)
+        response.headers['Content-Type'] = 'application/pdf'
+        response.headers['Content-Disposition'] = 'attachment; filename=expense_report.pdf'
+        return response
+
+    except Exception as e:
+        app.logger.error(f"Error generating PDF for user {user_id}: {str(e)}", exc_info=True)
+        return jsonify({"error": f"Failed to generate PDF report: {str(e)}"}), 500
 
 if __name__ == '__main__':
     init_db(app)

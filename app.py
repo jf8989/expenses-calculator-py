@@ -164,33 +164,49 @@ def assign_transaction():
     user_id = session['user_id']
     try:
         data = request.json
-        if not data or 'date' not in data or 'description' not in data or 'assigned_to' not in data:
-            return jsonify({"error": "Missing required fields"}), 400
-            
-        # Validate assigned_to is a list
-        if not isinstance(data['assigned_to'], list):
+        # --- Get transaction_id instead of date/description ---
+        transaction_id = data.get('transaction_id')
+        assigned_to_list = data.get('assigned_to') # Keep receiving the list
+
+        # --- Validate inputs ---
+        if transaction_id is None or assigned_to_list is None:
+             app.logger.error(f"Missing transaction_id or assigned_to in /api/assign request for user {user_id}. Data: {data}")
+             return jsonify({"error": "Missing required fields (transaction_id, assigned_to)"}), 400
+
+        if not isinstance(transaction_id, int):
+             app.logger.error(f"Invalid transaction_id type in /api/assign request for user {user_id}. ID: {transaction_id}")
+             return jsonify({"error": "Invalid transaction ID"}), 400
+
+        if not isinstance(assigned_to_list, list):
+            app.logger.error(f"Invalid assigned_to type (expected list) in /api/assign request for user {user_id}. Data: {assigned_to_list}")
             return jsonify({"error": "assigned_to must be a list"}), 400
-            
-        # Sanitize inputs
-        date = data['date'].strip()
-        description = escape(data['description'].strip())
-        assigned_to = ', '.join(data['assigned_to'])
-        
+
+        # --- Sanitize and prepare assigned_to string ---
+        # Filter out empty strings just in case, though UI shouldn't send them
+        safe_participants = [escape(p.strip()) for p in assigned_to_list if p.strip()]
+        assigned_to_str = ', '.join(safe_participants)
+
         db = get_db()
+        # --- Update based on transaction_id and user_id ---
         result = db.execute(
-            'UPDATE transactions SET assigned_to = ? WHERE user_id = ? AND date = ? AND description = ?',
-            (assigned_to, user_id, date, description)
+            'UPDATE transactions SET assigned_to = ? WHERE user_id = ? AND id = ?',
+            (assigned_to_str, user_id, transaction_id)
         )
         db.commit()
-        
+
         if result.rowcount == 0:
-            app.logger.warning(f"No transaction found to update assignment: {date}, {description}")
-            return jsonify({"warning": "No transaction was updated"}), 200
-            
-        app.logger.info(f"Updated assignment for transaction: {date}, {description}")
+            # This might happen if the ID is wrong or doesn't belong to the user
+            app.logger.warning(f"No transaction found with ID {transaction_id} for user {user_id} during assignment update.")
+            # Return success anyway, as the desired state (no update) is achieved, or indicate not found?
+            # Let's return a specific message or potentially a 404 if strict checking is desired.
+            # For now, just log it. Consider returning 404 if the ID genuinely doesn't exist for the user.
+            return jsonify({"warning": "No transaction found or updated"}), 200 # Or potentially 404
+
+        app.logger.info(f"Updated assignment for transaction ID {transaction_id} for user {user_id} to: {assigned_to_str}")
         return jsonify({"message": "Assignment updated successfully"}), 200
     except Exception as e:
-        app.logger.error(f"Error updating assignment: {str(e)}")
+        db.rollback() # Rollback on error
+        app.logger.error(f"Error updating assignment for transaction ID {transaction_id} (User: {user_id}): {str(e)}")
         return jsonify({"error": str(e)}), 500
 
 @app.route('/api/transactions/all', methods=['DELETE'])

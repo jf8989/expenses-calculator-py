@@ -766,36 +766,67 @@ function createCheckboxContainer(cell, transaction) {
 }
 
 // Function to update the assignment of a transaction
-function updateTransactionAssignment(transaction, checkboxContainer) {
+function updateTransactionAssignment(transaction, checkboxContainer) { // Keep receiving the full transaction object
   const assigned_to = Array.from(
     checkboxContainer.querySelectorAll("input:checked")
   ).map((checkbox) => checkbox.value);
 
-  // Update local transaction assigned_to property
+  // Update local transaction assigned_to property (important for consistency if UI relies on it before refresh)
   transaction.assigned_to = assigned_to;
+  console.log(`Updating assignment for transaction ID ${transaction.id} to:`, assigned_to); // Debug log
 
+  // Fetch using transaction_id
   fetch("/api/assign", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      date: transaction.date,
-      description: transaction.description,
-      assigned_to: assigned_to,
+      // Send transaction_id instead of date/description
+      transaction_id: transaction.id, // Ensure transaction object has 'id' property
+      assigned_to: assigned_to, // Send the list of participant names
     }),
   })
-    .then((response) => response.json())
+    .then((response) => {
+      // Improved error checking
+      if (!response.ok) {
+        // Try to parse the error json from the backend response
+        return response.json().then(err => {
+          // Throw an error with the message from the backend, or a default one
+          throw new Error(err.error || `Server responded with status: ${response.status}`);
+        }).catch(() => {
+          // If parsing backend error fails, throw a generic error
+          throw new Error(`Server responded with status: ${response.status}`);
+        });
+      }
+      return response.json(); // Parse successful response
+    })
     .then((data) => {
-      console.log("Assignment updated:", data);
-      // Immediately update expense summary
+      console.log("Assignment update successful:", data);
+      // Update the summary table based on the latest DOM state (which reflects user clicks)
       updateSummaryTable();
     })
     .catch((error) => {
       console.error("Error updating assignment:", error);
+      // Provide more specific feedback to the user
+      alert(`Error updating assignment: ${error.message}`);
+      // Optional: You might want to revert the checkbox state visually here
+      // if the backend update failed, though it might conflict with user's intent.
+      // Example (requires finding checkboxes again):
+      /*
+      const currentCheckboxes = checkboxContainer.querySelectorAll("input[type=checkbox]");
+      currentCheckboxes.forEach(cb => {
+          // This part needs the *original* assignment state before the click, which we don't store here easily
+          // cb.checked = wasOriginallyChecked;
+      });
+      */
+      // Re-running updateSummaryTable might be needed if visual state is reverted
+      // updateSummaryTable();
     });
 
-  // Immediately update expense summary without waiting for server response
+  // Keep the immediate update for better perceived responsiveness.
+  // The user clicked the checkbox, the UI should reflect that immediately.
+  // The summary table reads from the current UI state.
   updateSummaryTable();
 }
 

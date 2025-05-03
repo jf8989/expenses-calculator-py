@@ -1051,6 +1051,7 @@ function loadSessions() {
 }
 
 // Function to update sessions table
+// Function to update sessions table
 function updateSessionsTable(sessions) {
   const table = document.getElementById("sessions-table");
   const tbody = table.querySelector("tbody");
@@ -1103,16 +1104,16 @@ function updateSessionsTable(sessions) {
     overwriteBtn.onclick = () => overwriteSessionData(session.id, session.name);
     actionsCell.appendChild(overwriteBtn);
 
-    // --- ADD PDF EXPORT BUTTON for this session ---
+    // --- PDF EXPORT BUTTON for this session ---
     const exportBtn = document.createElement("button");
     exportBtn.className = "btn btn-info btn-sm"; // Use info color
     exportBtn.innerHTML = '<i class="fas fa-file-pdf"></i> Export';
     exportBtn.title = `Export session '${session.name}' as PDF`;
     exportBtn.style.marginLeft = "5px";
-    // Call the export function from export.js (we'll add it next)
+    // Call the export function from export.js
     exportBtn.onclick = () => handleExportSessionPdf(session.id, session.name);
     actionsCell.appendChild(exportBtn);
-    // --- END ADD PDF EXPORT BUTTON ---
+    // --- END PDF EXPORT BUTTON ---
 
     // Delete button
     const deleteBtn = document.createElement("button");

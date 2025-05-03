@@ -249,7 +249,7 @@
     </div>
     <div class="footer-bottom">
       <p class="copyright">
-        © 2024 JF8989. All rights reserved. This software and its source code
+        © 2025 JF8989. All rights reserved. This software and its source code
         are protected by copyright laws. No license is granted for its use,
         modification, or distribution without the express written permission
         of the author.
@@ -258,10 +258,14 @@
   </footer>
 
   <!-- JavaScript Files -->
+  <!-- Chart.js -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
+  <!-- jsPDF Libraries -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
+  <!-- Your Custom JS Files -->
   <script src="{{ url_for('static', filename='js/main.js') }}"></script>
-  <!-- SCRIPT TAG FOR EXPORT.JS ADDED HERE -->
-  <script src="{{ url_for('static', filename='js/export.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/export.js') }}"></script> <!-- Ensure this is included -->
 </body>
 
 </html>

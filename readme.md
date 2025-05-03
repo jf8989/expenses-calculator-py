@@ -1,13 +1,12 @@
-
 # 📊 ExpenseSplit Pro: Shared Expense Manager
 
 [![Python Version](https://img.shields.io/badge/python-3.9%2B-blue.svg)](https://www.python.org/downloads/)
 [![Flask Version](https://img.shields.io/badge/flask-2.x%2B-green.svg)](https://flask.palletsprojects.com/)
-[![License](https://img.shields.io/badge/license-MIT-lightgrey.svg)](LICENSE) <!-- Replace MIT with your actual license -->
+[![License](https://img.shields.io/badge/license-MIT-lightgrey.svg)](LICENSE)
 
-An intuitive web application designed to simplify the tracking, management, and splitting of shared expenses among multiple participants. Built with Python/Flask and SQLite.
+An intuitive web application designed to simplify the tracking, management, and splitting of shared expenses among multiple participants. Built with Python/Flask, SQLite, and Vanilla JavaScript.
 
----
+
 
 <!-- 📸 Add a screenshot or GIF of the application interface here! -->
 <!-- Example: <p align="center"><img src="path/to/screenshot.png" alt="App Screenshot" width="700"></p> -->
@@ -31,8 +30,8 @@ An intuitive web application designed to simplify the tracking, management, and 
     *   **Save:** Save the current state (transactions, assignments) under a specific name.
     *   **Load:** Restore a previously saved session, replacing current data.
     *   **Overwrite:** Update an existing saved session with the current transaction data.
-*   **📄 PDF Export:**
-    *   Generate a detailed PDF report for any **saved session**.
+*   **📄 PDF Export (Client-Side):**
+    *   Generate a detailed PDF report **in the browser** for any **saved session**.
     *   PDF includes session name, transaction list (with assignments), expense summary, and export timestamp.
 *   **📱 Responsive Design:** Functional interface across different screen sizes.
 
@@ -43,7 +42,7 @@ An intuitive web application designed to simplify the tracking, management, and 
 *   **Backend:** Python 3, Flask
 *   **Database:** SQLite
 *   **Frontend:** HTML5, CSS3, JavaScript (Vanilla)
-*   **PDF Generation:** WeasyPrint
+*   **PDF Generation:** jsPDF, jspdf-autotable (Client-Side JavaScript)
 *   **Authentication:** Flask-Session
 *   **Other Libraries:** Werkzeug (Security)
 
@@ -56,16 +55,12 @@ Follow these steps to get the project running locally.
 **1. Prerequisites:**
     *   **Python 3.9+:** Verify installation (`python --version`). Install from [python.org](https://www.python.org/downloads/) if needed. Ensure `pip` is included.
     *   **Git:** Verify installation (`git --version`). Install from [git-scm.com](https://git-scm.com/downloads) if needed.
-    *   **WeasyPrint System Dependencies (Crucial!):** WeasyPrint requires GTK+ libraries (Pango, Cairo, GObject, etc.).
-        *   **Windows:** Follow the **MSYS2 installation method** detailed in the [official WeasyPrint Windows installation guide](https://doc.courtbouillon.org/weasyprint/stable/first_steps.html#windows). **Remember to add the MSYS2 `mingw64/bin` directory to your system PATH environment variable** after installing Pango via `pacman`.
-        *   **macOS:** Use Homebrew: `brew install pango gdk-pixbuf libffi`
-        *   **Linux (Debian/Ubuntu):** `sudo apt-get update && sudo apt-get install python3-dev python3-pip python3-setuptools python3-wheel python3-cffi libcairo2 libpango-1.0-0 libpangocairo-1.0-0 libgdk-pixbuf2.0-0 libffi-dev shared-mime-info`
-        *   **Linux (Fedora):** `sudo dnf install python3-devel python3-pip python3-setuptools python3-wheel python3-cffi cairo pango gdk-pixbuf2 libffi-devel`
+    *   *(No complex system dependencies required for PDF generation anymore!)*
 
 **2. Clone the Repository:**
    ```bash
    git clone https://github.com/jf8989/expenses-calculator.git
-   cd <expenses-calculator>
+   cd expenses-calculator
    ```
 
 **3. Create and Activate Virtual Environment:**
@@ -86,13 +81,12 @@ Follow these steps to get the project running locally.
 **4. Install Python Dependencies:**
    ```bash
    pip install -r requirements.txt
-   # Ensure WeasyPrint is included, or install explicitly:
-   pip install Flask Flask-Session WeasyPrint Werkzeug
    ```
-   *(Update `requirements.txt` if necessary: `pip freeze > requirements.txt`)*
+   *(Ensure `requirements.txt` includes Flask, Flask-Session, Werkzeug, etc., but **not** WeasyPrint).*
+   *(If `requirements.txt` is outdated, update it after installing needed packages: `pip freeze > requirements.txt`)*
 
 **5. Database Initialization:**
-    *   The database (`expense_sharing.db`) and its schema (`schema.sql`) are initialized automatically the first time you run `app.py` if the database file doesn't exist, thanks to the `init_db(app)` call within the `if __name__ == '__main__':` block. No separate command is needed.
+    *   The database (`expense_sharing.db`) and its schema (`schema.sql`) are initialized automatically the first time you run `app.py` if the database file doesn't exist, thanks to the `init_db(app)` call within the `if __name__ == '__main__':` block.
 
 ---
 
@@ -122,7 +116,7 @@ Follow these steps to get the project running locally.
 11. **Manage Sessions:** In the "Saved Sessions" table:
     *   Click **Load** to restore a previous state.
     *   Click **Save** (Overwrite) to update that saved session with the *current* transaction data.
-    *   Click **Export** to download a PDF report for *that specific saved session*.
+    *   Click **Export** to download a PDF report (generated in your browser) for *that specific saved session*.
     *   Click **Delete** to remove the saved session.
 12. **View Summary:** Check the "Expenses Summary" table for the calculated totals owed per participant.
 
@@ -135,20 +129,19 @@ Follow these steps to get the project running locally.
 ├── .venv/                  # Virtual environment files (usually gitignored)
 ├── static/
 │   ├── css/
-│   │   ├── styles.css      # Main application styles
-│   │   └── pdf_styles.css  # Styles specifically for PDF export
+│   │   └── styles.css      # Main application styles (pdf_styles.css removed)
 │   └── js/
 │       ├── main.js         # Core frontend logic
-│       └── export.js       # PDF export trigger logic
+│       └── export.js       # Client-side PDF export logic
 ├── templates/
-│   ├── index.html          # Main application page template
-│   └── pdf_template.html   # Template for PDF report generation
+│   └── index.html          # Main application page template (pdf_template.html removed)
 ├── .gitignore              # Specifies intentionally untracked files
 ├── app.log                 # Application log file
 ├── app.py                  # Main Flask application logic, routes
 ├── auth.py                 # Blueprint for authentication routes
 ├── database.py             # Database connection and initialization logic
 ├── expense_sharing.db      # SQLite database file
+├── LICENSE                 # License file (e.g., MIT)
 ├── readme.md               # This file
 ├── requirements.txt        # Python dependencies
 └── schema.sql              # Database table definitions

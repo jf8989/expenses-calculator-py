@@ -470,6 +470,117 @@ def load_session(session_id):
         db.rollback()
         app.logger.error(f"Error loading session: {str(e)}")
         return jsonify({"error": str(e)}), 500
+    
+@app.route('/api/sessions/<int:session_id>/overwrite', methods=['POST'])
+def overwrite_session(session_id):
+    if 'user_id' not in session:
+        return jsonify({"error": "No has iniciado sesión"}), 401
+
+    user_id = session['user_id']
+    db = get_db()
+
+    try:
+        # Verify the session belongs to this user
+        session_record = db.execute(
+            'SELECT id, name FROM sessions WHERE id = ? AND user_id = ?',
+            (session_id, user_id)
+        ).fetchone()
+
+        if not session_record:
+            return jsonify({"error": "Session not found or access denied"}), 404
+
+        app.logger.info(f"User {user_id} attempting to overwrite session ID {session_id} ('{session_record['name']}')")
+
+        # Start transaction
+        db.execute("BEGIN TRANSACTION")
+
+        # 1. Delete existing transactions for this session
+        delete_cursor = db.execute(
+            'DELETE FROM session_transactions WHERE session_id = ?',
+            (session_id,)
+        )
+        app.logger.info(f"Deleted {delete_cursor.rowcount} old transactions for session {session_id}")
+
+        # 2. Get current transactions from the main table
+        current_transactions = db.execute(
+            'SELECT date, description, amount, currency, assigned_to FROM transactions WHERE user_id = ?',
+            (user_id,)
+        ).fetchall()
+        app.logger.info(f"Found {len(current_transactions)} current transactions to save for session {session_id}")
+
+        # 3. Insert current transactions into session_transactions
+        new_count = 0
+        for t in current_transactions:
+            currency = t['currency'] if t['currency'] else ""
+            assigned_to = t['assigned_to'] if t['assigned_to'] else ""
+            db.execute(
+                'INSERT INTO session_transactions (session_id, date, description, amount, currency, assigned_to) VALUES (?, ?, ?, ?, ?, ?)',
+                (session_id, t['date'], t['description'], t['amount'], currency, assigned_to)
+            )
+            new_count += 1
+
+        # Optionally: Update an 'updated_at' timestamp on the sessions table if you add one
+        # db.execute('UPDATE sessions SET updated_at = CURRENT_TIMESTAMP WHERE id = ?', (session_id,))
+
+        # Commit transaction
+        db.execute("COMMIT")
+
+        app.logger.info(f"Successfully overwrote session {session_id} with {new_count} transactions.")
+        return jsonify({
+            "message": f"Session '{session_record['name']}' overwritten successfully with {new_count} transactions.",
+            "transaction_count": new_count # Return new count
+            }), 200
+
+    except Exception as e:
+        db.execute("ROLLBACK") # Rollback on error
+        app.logger.error(f"Error overwriting session {session_id}: {str(e)}")
+        return jsonify({"error": f"Failed to overwrite session: {str(e)}"}), 500
+    
+@app.route('/api/transactions/<int:transaction_id>/update_amount', methods=['POST'])
+def update_transaction_amount(transaction_id):
+    if 'user_id' not in session:
+        return jsonify({"error": "No has iniciado sesión"}), 401
+
+    user_id = session['user_id']
+    db = get_db()
+
+    try:
+        data = request.json
+        new_amount_str = data.get('amount')
+
+        if new_amount_str is None:
+            return jsonify({"error": "New amount is required"}), 400
+
+        # Validate if the new amount is a valid number
+        try:
+            new_amount = float(new_amount_str)
+        except ValueError:
+            return jsonify({"error": "Invalid amount format"}), 400
+
+        # Check if the transaction exists and belongs to the user
+        transaction = db.execute(
+            'SELECT id FROM transactions WHERE id = ? AND user_id = ?',
+            (transaction_id, user_id)
+        ).fetchone()
+
+        if not transaction:
+            app.logger.warning(f"Attempt to update non-existent or unauthorized transaction {transaction_id} by user {user_id}")
+            return jsonify({"error": "Transaction not found or access denied"}), 404
+
+        # Perform the update
+        db.execute(
+            'UPDATE transactions SET amount = ? WHERE id = ? AND user_id = ?',
+            (new_amount, transaction_id, user_id)
+        )
+        db.commit()
+
+        app.logger.info(f"User {user_id} updated amount for transaction {transaction_id} to {new_amount}")
+        return jsonify({"message": "Amount updated successfully", "new_amount": new_amount}), 200
+
+    except Exception as e:
+        db.rollback() # Rollback in case of error during commit
+        app.logger.error(f"Error updating amount for transaction {transaction_id}: {str(e)}")
+        return jsonify({"error": f"Server error: {str(e)}"}), 500
 
 if __name__ == '__main__':
     init_db(app)

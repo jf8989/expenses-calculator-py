@@ -11,7 +11,7 @@ document.addEventListener("DOMContentLoaded", function () {
   const unassignAllParticipantsBtn = document.getElementById("unassign-all-participants-btn");
   const mainCurrencySelect = document.getElementById("main-currency");
   const secondaryCurrencySelect = document.getElementById("secondary-currency");
-  const saveSessionBtn = document.getElementById("save-session-btn"); // Add this line
+  const saveSessionBtn = document.getElementById("save-session-btn");
 
   // Event listeners
   registerBtn.addEventListener("click", register);
@@ -488,11 +488,11 @@ function loadTransactions() {
     });
 }
 
-// Function to update the transactions table
+// Function to update the transactions table (with inline amount editing)
 function updateTransactionsTable(transactions) {
   const table = document.getElementById("transactions-table");
   const tbody = table.querySelector("tbody");
-  tbody.innerHTML = "";
+  tbody.innerHTML = ""; // Clear existing rows
 
   const mainCurrency = document.getElementById("main-currency").value;
   const secondaryCurrency = document.getElementById("secondary-currency").value;
@@ -501,40 +501,156 @@ function updateTransactionsTable(transactions) {
 
   transactions.forEach((transaction, index) => {
     const row = tbody.insertRow();
-    row.dataset.transactionId = transaction.id;
+    row.dataset.transactionId = transaction.id; // Store transaction ID on the row
 
-    // Insert row number
+    // Row Number, Date, Description (No changes here)
     row.insertCell().textContent = index + 1;
-
-    // Insert date
     row.insertCell().textContent = transaction.date;
-
-    // Insert description
     row.insertCell().textContent = transaction.description;
 
-    // Insert amount with currency toggle functionality
+    // --- NEW Amount Cell Handling with Edit Button ---
     const amountCell = row.insertCell();
-    const amountSpan = document.createElement("span");
-    amountSpan.textContent = `${transaction.currency || mainCurrency
-      } ${transaction.amount.toFixed(2)}`;
-    amountSpan.style.cursor = "pointer";
-    amountSpan.addEventListener("click", () =>
-      toggleCurrency(
-        amountSpan,
-        transaction.id,
-        transaction.amount,
-        mainCurrency,
-        secondaryCurrency
-      )
-    );
-    amountCell.appendChild(amountSpan);
+    amountCell.classList.add("amount-cell"); // Add class for CSS hover effect
 
-    // Insert cell for participant assignment
+    // --- Define INLINE function to render the display elements (span + button) ---
+    const renderDisplayElements = (currentTransaction) => {
+      amountCell.innerHTML = ''; // Clear the cell first
+
+      // 1. Create the Amount Span
+      const amountSpan = document.createElement("span");
+      amountSpan.classList.add("amount-display"); // Add class for styling/selection
+      const displayCurrency = currentTransaction.currency || mainCurrency;
+      const displayAmount = Number(currentTransaction.amount); // Ensure number
+      amountSpan.textContent = `${displayCurrency} ${displayAmount.toFixed(2)}`;
+      amountSpan.style.cursor = "pointer"; // Indicate clickable
+      // --- CHANGE TOOLTIP ---
+      amountSpan.title = "Click to toggle currency"; // Tooltip only for currency toggle
+
+      // --- SINGLE CLICK LISTENER for Currency Toggle (RESTORED) ---
+      amountSpan.addEventListener("click", (event) => {
+        event.stopPropagation(); // Good practice, might prevent unintended effects
+        toggleCurrency(
+          amountSpan, // Pass the span element
+          currentTransaction.id,
+          displayAmount,
+          mainCurrency,
+          secondaryCurrency
+        );
+      });
+
+      // 2. Create the Edit Button (initially hidden by CSS)
+      const editBtn = document.createElement("button");
+      editBtn.innerHTML = "✎"; // Pencil emoji/icon ✏️
+      // Or use text: editBtn.textContent = "Edit";
+      editBtn.classList.add("edit-amount-btn", "btn", "btn-outline-secondary", "btn-sm"); // Add classes for styling
+      editBtn.title = "Edit amount";
+
+      // --- CLICK LISTENER for Edit Button ---
+      editBtn.addEventListener("click", (event) => {
+        event.stopPropagation();
+        switchToEditInput(currentTransaction); // Call function to switch to input
+      });
+
+      // Append both elements to the cell
+      amountCell.appendChild(amountSpan);
+      amountCell.appendChild(editBtn);
+    };
+
+    // --- Define INLINE function to switch cell content to an input field ---
+    const switchToEditInput = (currentTransaction) => {
+      const originalAmount = Number(currentTransaction.amount);
+      const transactionId = currentTransaction.id;
+
+      amountCell.innerHTML = ''; // Clear the cell (removes span and edit button)
+
+      const input = document.createElement("input");
+      input.type = "number";
+      input.value = originalAmount.toFixed(2);
+      input.step = "0.01";
+      // Use CSS classes for styling defined earlier or add inline styles
+      input.classList.add("form-control", "form-control-sm", "d-inline-block", "w-auto");
+
+      amountCell.appendChild(input);
+      input.focus();
+      input.select();
+
+      // Define INLINE function to handle saving/reverting the edit
+      const finishEditing = (saveChanges) => {
+        if (saveChanges) {
+          const newAmountStr = input.value;
+          const newAmount = parseFloat(newAmountStr);
+
+          if (isNaN(newAmount)) {
+            alert("Invalid amount entered.");
+            renderDisplayElements(currentTransaction); // Revert display
+            return;
+          }
+
+          // Only save if the amount actually changed
+          if (newAmount.toFixed(2) !== originalAmount.toFixed(2)) {
+            // --- FETCH TO UPDATE AMOUNT (Backend call) ---
+            fetch(`/api/transactions/${transactionId}/update_amount`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ amount: newAmount }),
+            })
+              .then(response => {
+                if (!response.ok) {
+                  return response.json().then(err => { throw new Error(err.error || `Server error: ${response.status}`) });
+                }
+                return response.json();
+              })
+              .then(data => {
+                console.log("Amount update successful:", data);
+                // IMPORTANT: Update the JS object
+                currentTransaction.amount = data.new_amount;
+                renderDisplayElements(currentTransaction); // Re-render span+button
+                updateSummaryTable(); // Recalculate
+              })
+              .catch(error => {
+                console.error("Error updating amount:", error);
+                alert(`Error updating amount: ${error.message}`);
+                // Revert display ON ERROR
+                renderDisplayElements(currentTransaction);
+              });
+          } else {
+            // No change, just revert display
+            renderDisplayElements(currentTransaction);
+          }
+        } else {
+          // Revert display without saving (Escape key)
+          renderDisplayElements(currentTransaction);
+        }
+      };
+
+      // Add listeners to the input field
+      input.addEventListener("blur", () => {
+        // Use a tiny timeout to allow other clicks to register before reverting
+        setTimeout(() => finishEditing(true), 150);
+      });
+      input.addEventListener("keydown", (event) => {
+        if (event.key === "Enter") {
+          event.preventDefault();
+          finishEditing(true);
+        } else if (event.key === "Escape") {
+          event.preventDefault();
+          finishEditing(false);
+        }
+      });
+    };
+
+    // --- Initial Render ---
+    // Call the inline function to initially display the amount span and edit button
+    renderDisplayElements(transaction);
+    // --- END OF MODIFIED SECTION ---
+
+
+    // Participant Assignment Cell (Keep your original logic)
     const assignedCell = row.insertCell();
     const promise = createCheckboxContainer(assignedCell, transaction);
     checkboxPromises.push(promise);
 
-    // Insert cell for actions (delete button)
+    // Actions Cell (Delete button) (Keep your original logic)
     const actionsCell = row.insertCell();
     const deleteBtn = document.createElement("button");
     deleteBtn.textContent = "Delete";
@@ -542,35 +658,33 @@ function updateTransactionsTable(transactions) {
     actionsCell.appendChild(deleteBtn);
   });
 
-  // Wait for all checkboxes to be created before updating summary
+  // Wait for all checkboxes before initial summary calculation
   Promise.all(checkboxPromises).then(() => {
     updateSummaryTable();
   });
 }
 
 // Function to toggle currency
-function toggleCurrency(element, transactionId, amount, mainCurrency, secondaryCurrency) {
-  let newCurrency;
+function toggleCurrency(amountSpanElement, transactionId, amount, mainCurrency, secondaryCurrency) {
+  // amountSpanElement is the SPAN tag that was double-clicked
 
-  // Properly extract current currency
-  const currentText = element.textContent.trim();
+  let newCurrency;
+  const currentText = amountSpanElement.textContent.trim();
   const currentParts = currentText.split(/\s+/);
-  const currentCurrency = currentParts[0];
+  const currentCurrency = currentParts[0]; // Get currency from the span's text
 
   if (currentCurrency === mainCurrency) {
     newCurrency = secondaryCurrency;
-    element.textContent = `${secondaryCurrency} ${amount.toFixed(2)}`;
   } else {
     newCurrency = mainCurrency;
-    element.textContent = `${mainCurrency} ${amount.toFixed(2)}`;
   }
 
-  // Send the update to the server
+  console.log(`Toggling currency for ${transactionId} from ${currentCurrency} to ${newCurrency}`); // Debug
+
+  // --- FETCH TO UPDATE CURRENCY ---
   fetch("/api/update_transaction_currency", {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       transactionId: transactionId,
       currency: newCurrency,
@@ -578,18 +692,42 @@ function toggleCurrency(element, transactionId, amount, mainCurrency, secondaryC
   })
     .then((response) => {
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        return response.json().then(err => { throw new Error(err.error || `Server error: ${response.status}`) });
       }
       return response.json();
     })
     .then((data) => {
-      console.log("Currency updated successfully:", data);
+      console.log("Currency updated successfully via API:", data);
+
+      // --- Update the SPAN's text directly ---
+      amountSpanElement.textContent = `${newCurrency} ${Number(amount).toFixed(2)}`;
+
+      // --- IMPORTANT (Best Effort): Update underlying transaction data ---
+      // Find the parent row and update the currency in the source 'transactions' array if possible
+      // This part is tricky without a central state management. We'll try to find it.
+      const tableBody = document.querySelector("#transactions-table tbody");
+      // This assumes 'transactions' fetched in loadTransactions is accessible or re-fetched.
+      // This is a common challenge without a framework/library.
+      // A simpler approach might be to just update the display and rely on the summary function
+      // to read the current display, though less robust.
+      // Let's proceed with just updating the display and summary for now.
+
+      // Find the transaction data associated with the element to update currency property (more robust)
+      const row = amountSpanElement.closest('tr');
+      if (row && window.transactionsData) { // Assuming transactionsData holds the array from loadTransactions
+        const transaction = window.transactionsData.find(t => t.id == row.dataset.transactionId);
+        if (transaction) {
+          transaction.currency = newCurrency; // Update the JS object
+          console.log("Updated transaction object currency:", transaction);
+        }
+      }
+
       updateSummaryTable(); // Update summary after changing currency
     })
     .catch((error) => {
       console.error("Error updating currency:", error);
-      // Revert UI change if server update failed
-      element.textContent = `${currentCurrency} ${amount.toFixed(2)}`;
+      alert(`Error updating currency: ${error.message}`);
+      // Don't revert text here, error message is shown.
     });
 }
 
@@ -885,12 +1023,12 @@ function loadSessions() {
 function updateSessionsTable(sessions) {
   const table = document.getElementById("sessions-table");
   const tbody = table.querySelector("tbody");
-  tbody.innerHTML = "";
+  tbody.innerHTML = ""; // Clear existing rows
 
   if (sessions.length === 0) {
     const row = tbody.insertRow();
     const cell = row.insertCell();
-    cell.colSpan = 4;
+    cell.colSpan = 5; // --- ADJUST COLSPAN TO 5 ---
     cell.textContent = "No saved sessions";
     cell.style.textAlign = "center";
     cell.style.fontStyle = "italic";
@@ -899,10 +1037,15 @@ function updateSessionsTable(sessions) {
 
   sessions.forEach(session => {
     const row = tbody.insertRow();
+    row.dataset.sessionId = session.id; // Store session id on the row
 
     // Format date
     const date = new Date(session.created_at);
-    const formattedDate = date.toLocaleDateString() + " " + date.toLocaleTimeString();
+    // More user-friendly date format
+    const formattedDate = date.toLocaleDateString(undefined, {
+      year: 'numeric', month: 'short', day: 'numeric',
+      hour: 'numeric', minute: '2-digit', hour12: true
+    });
 
     // Session name
     row.insertCell().textContent = session.name;
@@ -910,27 +1053,79 @@ function updateSessionsTable(sessions) {
     // Creation date
     row.insertCell().textContent = formattedDate;
 
-    // Transaction count
-    row.insertCell().textContent = session.transaction_count;
+    // Transaction count (add an ID to potentially update it later)
+    const countCell = row.insertCell();
+    countCell.textContent = session.transaction_count;
+    countCell.id = `session-count-${session.id}`; // ID for easy update
 
-    // Actions
+    // Actions Cell
     const actionsCell = row.insertCell();
+    actionsCell.style.whiteSpace = "nowrap"; // Prevent buttons wrapping
 
-    // Load button
+    // Load button (no change)
     const loadBtn = document.createElement("button");
     loadBtn.className = "btn btn-success btn-sm";
     loadBtn.innerHTML = '<i class="fas fa-folder-open"></i> Load';
+    loadBtn.title = "Load this session (replaces current data)";
     loadBtn.onclick = () => loadSessionData(session.id);
     actionsCell.appendChild(loadBtn);
 
-    // Delete button
+    // --- ADD OVERWRITE BUTTON ---
+    const overwriteBtn = document.createElement("button");
+    overwriteBtn.className = "btn btn-warning btn-sm"; // Use warning color
+    overwriteBtn.innerHTML = '<i class="fas fa-save"></i> Save'; // Save icon
+    overwriteBtn.title = "Overwrite this session with current transaction data";
+    overwriteBtn.style.marginLeft = "5px";
+    overwriteBtn.onclick = () => overwriteSessionData(session.id, session.name); // New handler function
+    actionsCell.appendChild(overwriteBtn);
+    // --- END ADD OVERWRITE BUTTON ---
+
+    // Delete button (no change)
     const deleteBtn = document.createElement("button");
     deleteBtn.className = "btn btn-danger btn-sm";
     deleteBtn.innerHTML = '<i class="fas fa-trash"></i> Delete';
-    deleteBtn.onclick = () => deleteSession(session.id, session.name);
+    deleteBtn.title = "Delete this session permanently";
     deleteBtn.style.marginLeft = "5px";
+    deleteBtn.onclick = () => deleteSession(session.id, session.name);
     actionsCell.appendChild(deleteBtn);
   });
+}
+
+function overwriteSessionData(sessionId, sessionName) {
+  if (confirm(`Are you sure you want to overwrite the session "${sessionName}" with your current transactions? This cannot be undone.`)) {
+    console.log(`Attempting to overwrite session: ${sessionId} (${sessionName})`);
+    fetch(`/api/sessions/${sessionId}/overwrite`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      // Body is not needed unless you want to send extra info,
+      // backend fetches current transactions itself
+      body: JSON.stringify({}),
+    })
+      .then(response => {
+        if (!response.ok) {
+          // Try to get error message from backend
+          return response.json().then(err => { throw new Error(err.error || `Failed to overwrite: ${response.status}`) });
+        }
+        return response.json();
+      })
+      .then(data => {
+        console.log("Overwrite successful:", data);
+        alert(data.message || "Session overwritten successfully!"); // Show success message
+
+        // Update the transaction count display in the table for this specific session
+        const countCell = document.getElementById(`session-count-${sessionId}`);
+        if (countCell && data.transaction_count !== undefined) {
+          countCell.textContent = data.transaction_count;
+        }
+        // Optionally reload the whole list if needed: loadSessions();
+      })
+      .catch(error => {
+        console.error("Error overwriting session:", error);
+        alert(`Error overwriting session: ${error.message}`);
+      });
+  }
 }
 
 // Function to load a specific session

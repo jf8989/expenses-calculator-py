@@ -584,3 +584,56 @@ textarea {
     white-space: nowrap;
   }
 }
+
+.amount-cell {
+  position: relative;
+  /* Needed for positioning the button */
+  padding-right: 35px;
+  /* Make space for the button */
+}
+
+.amount-cell .amount-display {
+  cursor: pointer;
+  /* Indicate currency toggle on double-click */
+  display: inline-block;
+  /* Allows padding/margin if needed */
+}
+
+.edit-amount-btn {
+  display: none;
+  /* Hide by default */
+  position: absolute;
+  /* Position relative to the cell */
+  right: 5px;
+  /* Position on the right */
+  top: 50%;
+  /* Center vertically */
+  transform: translateY(-50%);
+  padding: 2px 5px;
+  /* Smaller padding */
+  font-size: 0.8em;
+  /* Smaller font */
+  line-height: 1;
+  /* Adjust line height */
+  cursor: pointer;
+  margin-left: 5px;
+  /* Use background/border or just text/icon */
+  /* Example minimal style */
+  background: none;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  color: #555;
+}
+
+.amount-cell:hover .edit-amount-btn {
+  display: inline-block;
+  /* Show on hover */
+}
+
+/* Optional: Style for the input field when editing */
+.amount-cell input[type="number"] {
+  width: 80px;
+  /* Or adjust as needed */
+  padding: 3px 6px;
+  font-size: 0.9em;
+}

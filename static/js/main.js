@@ -1059,7 +1059,7 @@ function updateSessionsTable(sessions) {
   if (sessions.length === 0) {
     const row = tbody.insertRow();
     const cell = row.insertCell();
-    cell.colSpan = 5; // --- ADJUST COLSPAN TO 5 ---
+    cell.colSpan = 4; // Keep colspan 4 (Name, Date, Transactions, Actions)
     cell.textContent = "No saved sessions";
     cell.style.textAlign = "center";
     cell.style.fontStyle = "italic";
@@ -1068,32 +1068,25 @@ function updateSessionsTable(sessions) {
 
   sessions.forEach(session => {
     const row = tbody.insertRow();
-    row.dataset.sessionId = session.id; // Store session id on the row
+    row.dataset.sessionId = session.id;
 
-    // Format date
     const date = new Date(session.created_at);
-    // More user-friendly date format
     const formattedDate = date.toLocaleDateString(undefined, {
       year: 'numeric', month: 'short', day: 'numeric',
       hour: 'numeric', minute: '2-digit', hour12: true
     });
 
-    // Session name
     row.insertCell().textContent = session.name;
-
-    // Creation date
     row.insertCell().textContent = formattedDate;
 
-    // Transaction count (add an ID to potentially update it later)
     const countCell = row.insertCell();
     countCell.textContent = session.transaction_count;
-    countCell.id = `session-count-${session.id}`; // ID for easy update
+    countCell.id = `session-count-${session.id}`;
 
-    // Actions Cell
     const actionsCell = row.insertCell();
     actionsCell.style.whiteSpace = "nowrap"; // Prevent buttons wrapping
 
-    // Load button (no change)
+    // Load button
     const loadBtn = document.createElement("button");
     loadBtn.className = "btn btn-success btn-sm";
     loadBtn.innerHTML = '<i class="fas fa-folder-open"></i> Load';
@@ -1101,17 +1094,27 @@ function updateSessionsTable(sessions) {
     loadBtn.onclick = () => loadSessionData(session.id);
     actionsCell.appendChild(loadBtn);
 
-    // --- ADD OVERWRITE BUTTON ---
+    // Overwrite button (using 'Save' icon as before)
     const overwriteBtn = document.createElement("button");
-    overwriteBtn.className = "btn btn-warning btn-sm"; // Use warning color
-    overwriteBtn.innerHTML = '<i class="fas fa-save"></i> Save'; // Save icon
+    overwriteBtn.className = "btn btn-warning btn-sm";
+    overwriteBtn.innerHTML = '<i class="fas fa-save"></i> Save'; // Still using Save icon for Overwrite
     overwriteBtn.title = "Overwrite this session with current transaction data";
     overwriteBtn.style.marginLeft = "5px";
-    overwriteBtn.onclick = () => overwriteSessionData(session.id, session.name); // New handler function
+    overwriteBtn.onclick = () => overwriteSessionData(session.id, session.name);
     actionsCell.appendChild(overwriteBtn);
-    // --- END ADD OVERWRITE BUTTON ---
 
-    // Delete button (no change)
+    // --- ADD PDF EXPORT BUTTON for this session ---
+    const exportBtn = document.createElement("button");
+    exportBtn.className = "btn btn-info btn-sm"; // Use info color
+    exportBtn.innerHTML = '<i class="fas fa-file-pdf"></i> Export';
+    exportBtn.title = `Export session '${session.name}' as PDF`;
+    exportBtn.style.marginLeft = "5px";
+    // Call the export function from export.js (we'll add it next)
+    exportBtn.onclick = () => handleExportSessionPdf(session.id, session.name);
+    actionsCell.appendChild(exportBtn);
+    // --- END ADD PDF EXPORT BUTTON ---
+
+    // Delete button
     const deleteBtn = document.createElement("button");
     deleteBtn.className = "btn btn-danger btn-sm";
     deleteBtn.innerHTML = '<i class="fas fa-trash"></i> Delete';

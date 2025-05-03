@@ -3,13 +3,13 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>Expense Report</title>
-    <!-- Link directly to the CSS file that WeasyPrint will use -->
+    <title>Expense Report - {{ session_name }}</title> <!-- Optional: Add to browser title -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/pdf_styles.css', _external=True) }}">
 </head>
 
 <body>
-    <h1>Expense Split Report</h1>
+    <!-- Include session name in the main title -->
+    <h1>Expense Split Report: {{ session_name }}</h1>
 
     <h2>Transactions</h2>
     <table id="transactions-table">
@@ -43,7 +43,7 @@
             </tr>
             {% else %}
             <tr>
-                <td colspan="5" style="text-align: center;">No transactions found.</td>
+                <td colspan="5" style="text-align: center;">No transactions found in this session.</td>
             </tr>
             {% endfor %}
         </tbody>
@@ -67,7 +67,7 @@
             </tr>
             {% else %}
             <tr>
-                <td colspan="3" style="text-align: center;">No summary data available.</td>
+                <td colspan="3" style="text-align: center;">No summary data available for this session.</td>
             </tr>
             {% endfor %}
         </tbody>
@@ -80,8 +80,9 @@
         </tfoot>
     </table>
 
+    <!-- Update footer text -->
     <div class="footer">
-        Generated on {{ generation_time }}
+        Exported on {{ generation_time }}
     </div>
 </body>
 

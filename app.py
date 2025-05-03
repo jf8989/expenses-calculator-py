@@ -602,8 +602,8 @@ def update_transaction_amount(transaction_id):
         app.logger.error(f"Error updating amount for transaction {transaction_id}: {str(e)}")
         return jsonify({"error": f"Server error: {str(e)}"}), 500
     
-@app.route('/api/export/pdf')
-def export_pdf():
+@app.route('/api/export/session/<int:session_id>/pdf')
+def export_session_pdf(session_id):
     if 'user_id' not in session:
         return jsonify({"error": "No has iniciado sesión"}), 401
 
@@ -611,41 +611,48 @@ def export_pdf():
     db = get_db()
 
     try:
-        app.logger.info(f"User {user_id} requested PDF export.")
-        # 1. Fetch necessary data
+        # 1. Fetch session details (including name)
+        session_record = db.execute(
+            'SELECT id, name FROM sessions WHERE id = ? AND user_id = ?',
+            (session_id, user_id)
+        ).fetchone()
+
+        if not session_record:
+            return jsonify({"error": "Session not found or access denied"}), 404
+
+        session_name = session_record['name']
+        app.logger.info(f"User {user_id} requested PDF export for session ID {session_id} ('{session_name}')")
+
+        # 2. Fetch transactions *from the specific session*
         transactions_raw = db.execute(
-            'SELECT id, date, description, amount, currency, assigned_to FROM transactions WHERE user_id = ?',
-            (user_id,)
+            'SELECT date, description, amount, currency, assigned_to FROM session_transactions WHERE session_id = ?',
+            (session_id,)
         ).fetchall()
 
+        # 3. Fetch participants (needed for summary calculation)
         participants = db.execute(
             'SELECT name FROM participants WHERE user_id = ?',
             (user_id,)
         ).fetchall()
         participant_names = [p['name'] for p in participants]
 
-        # TODO: Replace this with actual logic to get user's selected currencies
-        # This might involve fetching from localStorage via a request parameter,
-        # or loading saved user preferences from the database.
-        # For now, using placeholders:
-        main_currency = "PEN"
-        secondary_currency = "USD"
-        # --- End Placeholder ---
+        # Assume default currencies (replace with actual logic if stored per session/user)
+        main_currency = "PEN" # TODO: Fetch actual main currency if stored
+        secondary_currency = "USD" # TODO: Fetch actual secondary currency if stored
 
-        # 2. Process data for the template
+        # 4. Process data for the template
         transactions_processed = []
         summary = {name: {main_currency: 0.0, secondary_currency: 0.0} for name in participant_names}
         grand_total = {main_currency: 0.0, secondary_currency: 0.0}
 
         for t in transactions_raw:
-            transaction = dict(t) # Convert Row object to dict
+            transaction = dict(t)
             assigned_str = transaction.get('assigned_to') or ''
             assigned_list = [p.strip() for p in assigned_str.split(',') if p.strip()]
-            transaction['assigned_to_list'] = assigned_list # Add list for template
-
+            transaction['assigned_to_list'] = assigned_list
             transactions_processed.append(transaction)
 
-            # Calculate summary (replicating frontend logic)
+            # Calculate summary based on session data
             if assigned_list:
                 amount = float(transaction['amount'])
                 share = amount / len(assigned_list)
@@ -657,24 +664,23 @@ def export_pdf():
                             summary[participant][main_currency] += share
                         elif txn_currency == secondary_currency:
                             summary[participant][secondary_currency] += share
-                        else: # Handle unexpected currency, add to main?
-                             summary[participant][main_currency] += share
+                        else:
+                            summary[participant][main_currency] += share
                     else:
-                         app.logger.warning(f"Participant '{participant}' from transaction {transaction['id']} not found in participants list for user {user_id}.")
+                         app.logger.warning(f"Participant '{participant}' from session transaction (Session ID: {session_id}) not found in current participants list for user {user_id}.")
 
 
-        # --- CORRECTED GRAND TOTAL CALCULATION ---
+        # Calculate grand totals
         for participant in summary:
-            grand_total[main_currency] += summary[participant][main_currency] # Use underscore
-            grand_total[secondary_currency] += summary[participant][secondary_currency] # Use underscore
-        # --- END CORRECTION ---
+            grand_total[main_currency] += summary[participant][main_currency]
+            grand_total[secondary_currency] += summary[participant][secondary_currency]
 
-        # 3. Render HTML template
+        # 5. Render HTML template
         generation_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        # Ensure _external=True for WeasyPrint to find the CSS file via URL
         css_url = url_for('static', filename='css/pdf_styles.css', _external=True)
         rendered_html = render_template(
             'pdf_template.html',
+            session_name=session_name, # Pass session name to template
             transactions=transactions_processed,
             summary=summary,
             grand_total=grand_total,
@@ -682,24 +688,27 @@ def export_pdf():
             secondary_currency=secondary_currency,
             generation_time=generation_time
         )
+        app.logger.info(f"Rendered HTML for PDF export for session '{session_name}' (ID: {session_id})")
 
-        app.logger.info(f"Rendered HTML for PDF export for user {user_id}.")
-
-        # 4. Generate PDF using WeasyPrint
+        # 6. Generate PDF
         html = HTML(string=rendered_html, base_url=request.url_root)
         pdf_bytes = html.write_pdf(stylesheets=[CSS(css_url)])
+        app.logger.info(f"Generated PDF ({len(pdf_bytes)} bytes) for session '{session_name}'")
 
-        app.logger.info(f"Generated PDF ({len(pdf_bytes)} bytes) for user {user_id}.")
+        # 7. Sanitize filename and create response
+        # Remove characters invalid for filenames and replace spaces
+        safe_session_name = re.sub(r'[\\/*?:"<>|]', "", session_name) # Remove invalid chars
+        safe_session_name = re.sub(r'\s+', '_', safe_session_name) # Replace spaces with underscores
+        pdf_filename = f"Expense_Report_{safe_session_name}.pdf"
 
-        # 5. Create response
         response = make_response(pdf_bytes)
         response.headers['Content-Type'] = 'application/pdf'
-        response.headers['Content-Disposition'] = 'attachment; filename=expense_report.pdf'
+        response.headers['Content-Disposition'] = f'attachment; filename="{pdf_filename}"' # Use sanitized name
         return response
 
     except Exception as e:
-        app.logger.error(f"Error generating PDF for user {user_id}: {str(e)}", exc_info=True)
-        return jsonify({"error": f"Failed to generate PDF report: {str(e)}"}), 500
+        app.logger.error(f"Error generating PDF for session {session_id}: {str(e)}", exc_info=True)
+        return jsonify({"error": f"Failed to generate PDF report for session: {str(e)}"}), 500
 
 if __name__ == '__main__':
     init_db(app)

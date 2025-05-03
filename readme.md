@@ -1,257 +1,176 @@
-# Gestor de Gastos Compartidos
 
-## Descripción
+# 📊 ExpenseSplit Pro: Shared Expense Manager
 
-Esta aplicación web permite a los usuarios gestionar y dividir gastos compartidos entre múltiples participantes. Facilita el ingreso de transacciones, la asignación de gastos a diferentes personas y el cálculo automático de los totales por participante.
+[![Python Version](https://img.shields.io/badge/python-3.9%2B-blue.svg)](https://www.python.org/downloads/)
+[![Flask Version](https://img.shields.io/badge/flask-2.x%2B-green.svg)](https://flask.palletsprojects.com/)
+[![License](https://img.shields.io/badge/license-MIT-lightgrey.svg)](LICENSE) <!-- Replace MIT with your actual license -->
 
-## Características
+An intuitive web application designed to simplify the tracking, management, and splitting of shared expenses among multiple participants. Built with Python/Flask and SQLite.
 
-- Registro e inicio de sesión de usuarios
-- Gestión dinámica de participantes
-- Ingreso y análisis de transacciones
-- Asignación flexible de gastos a múltiples participantes
-- Cálculo automático de totales por participante
-- Interfaz de usuario intuitiva y responsive
-- Soporte para múltiples divisas
-- Búsqueda y filtrado de transacciones
-- Asignación automática de participantes basada en transacciones similares
+---
 
-## Tecnologías Utilizadas
+<!-- 📸 Add a screenshot or GIF of the application interface here! -->
+<!-- Example: <p align="center"><img src="path/to/screenshot.png" alt="App Screenshot" width="700"></p> -->
 
-- Backend: Python con Flask
-- Frontend: HTML, CSS, JavaScript
-- Base de datos: SQLite
-- Autenticación: Flask-Session
+---
 
-## Configuración del Proyecto
+## ✨ Key Features
 
-1. Clona el repositorio:
+*   **👤 User Authentication:** Secure registration and login system.
+*   **👥 Dynamic Participant Management:** Easily add or remove participants involved in expense sharing.
+*   **💸 Transaction Input & Parsing:** Paste transactions in a simple text format (`DD/MM/YYYY: Description - Amount`) for quick entry.
+*   **📊 Detailed Transaction Analysis:**
+    *   View all transactions in a sortable, filterable table.
+    *   Assign/unassign expenses to one or multiple participants using checkboxes.
+    *   **✏️ In-Place Amount Editing:** Edit transaction amounts directly within the table via a hover-activated button.
+    *   **🖱️ Currency Toggling:** Single-click on amount text to switch between primary and secondary display currencies.
+*   **🤖 Smart Assignment:** Automatically suggests participant assignments based on historical transaction descriptions.
+*   **💲 Multi-Currency Support:** Define primary and secondary currencies for clear display and summary.
+*   **📈 Real-time Expense Summary:** Automatically calculates and displays the total amount owed per participant in both selected currencies.
+*   **💾 Session Management:**
+    *   **Save:** Save the current state (transactions, assignments) under a specific name.
+    *   **Load:** Restore a previously saved session, replacing current data.
+    *   **Overwrite:** Update an existing saved session with the current transaction data.
+*   **📄 PDF Export:**
+    *   Generate a detailed PDF report for any **saved session**.
+    *   PDF includes session name, transaction list (with assignments), expense summary, and export timestamp.
+*   **📱 Responsive Design:** Functional interface across different screen sizes.
+
+---
+
+## 💻 Tech Stack
+
+*   **Backend:** Python 3, Flask
+*   **Database:** SQLite
+*   **Frontend:** HTML5, CSS3, JavaScript (Vanilla)
+*   **PDF Generation:** WeasyPrint
+*   **Authentication:** Flask-Session
+*   **Other Libraries:** Werkzeug (Security)
+
+---
+
+## ⚙️ Setup and Installation
+
+Follow these steps to get the project running locally.
+
+**1. Prerequisites:**
+    *   **Python 3.9+:** Verify installation (`python --version`). Install from [python.org](https://www.python.org/downloads/) if needed. Ensure `pip` is included.
+    *   **Git:** Verify installation (`git --version`). Install from [git-scm.com](https://git-scm.com/downloads) if needed.
+    *   **WeasyPrint System Dependencies (Crucial!):** WeasyPrint requires GTK+ libraries (Pango, Cairo, GObject, etc.).
+        *   **Windows:** Follow the **MSYS2 installation method** detailed in the [official WeasyPrint Windows installation guide](https://doc.courtbouillon.org/weasyprint/stable/first_steps.html#windows). **Remember to add the MSYS2 `mingw64/bin` directory to your system PATH environment variable** after installing Pango via `pacman`.
+        *   **macOS:** Use Homebrew: `brew install pango gdk-pixbuf libffi`
+        *   **Linux (Debian/Ubuntu):** `sudo apt-get update && sudo apt-get install python3-dev python3-pip python3-setuptools python3-wheel python3-cffi libcairo2 libpango-1.0-0 libpangocairo-1.0-0 libgdk-pixbuf2.0-0 libffi-dev shared-mime-info`
+        *   **Linux (Fedora):** `sudo dnf install python3-devel python3-pip python3-setuptools python3-wheel python3-cffi cairo pango gdk-pixbuf2 libffi-devel`
+
+**2. Clone the Repository:**
+   ```bash
+   git clone <your-repository-url>
+   cd <repository-folder-name> # e.g., cd expenses-calculator
    ```
-   git clone [URL del repositorio]
+
+**3. Create and Activate Virtual Environment:**
+   ```bash
+   # Create the environment (using .venv is common)
+   python -m venv .venv
+
+   # Activate it
+   # Windows (PowerShell):
+   .\.venv\Scripts\Activate.ps1
+   # Windows (Command Prompt):
+   .\.venv\Scripts\activate.bat
+   # macOS/Linux:
+   source .venv/bin/activate
    ```
-2. Navega al directorio del proyecto:
-   ```
-   cd gestor-gastos-compartidos
-   ```
-3. Crea un entorno virtual:
-   ```
-   python -m venv venv
-   ```
-4. Activa el entorno virtual:
-   - En Windows: `venv\Scripts\activate`
-   - En macOS y Linux: `source venv/bin/activate`
-5. Instala las dependencias:
-   ```
+   *(You should see `(.venv)` at the start of your terminal prompt)*
+
+**4. Install Python Dependencies:**
+   ```bash
    pip install -r requirements.txt
+   # Ensure WeasyPrint is included, or install explicitly:
+   pip install Flask Flask-Session WeasyPrint Werkzeug
    ```
-6. Inicializa la base de datos:
-   ```
-   flask init-db
-   ```
+   *(Update `requirements.txt` if necessary: `pip freeze > requirements.txt`)*
 
-## Ejecución de la Aplicación
-
-1. Asegúrate de que el entorno virtual esté activado.
-2. Ejecuta la aplicación Flask:
-   ```
-   flask run
-   ```
-3. Abre un navegador y ve a `http://localhost:5000`
-
-## Uso
-
-1. Regístrate o inicia sesión en la aplicación.
-2. Añade participantes en la sección "Gestión de Participantes".
-3. Selecciona las divisas principal y secundaria.
-4. Ingresa las transacciones en el formato especificado en la sección "Ingreso de Transacciones".
-5. Haz clic en "Añadir Transacciones" para procesar las entradas.
-6. Revisa y ajusta las asignaciones de participantes en la tabla de transacciones.
-7. Utiliza la barra de búsqueda para filtrar transacciones específicas.
-8. Consulta el resumen de gastos actualizado automáticamente.
-
-## Estructura del Proyecto
-
-- `app.py`: Archivo principal de la aplicación Flask
-- `schema.sql`: Esquema de la base de datos
-- `static/`: Directorio para archivos estáticos (CSS, JavaScript)
-- `templates/`: Directorio para plantillas HTML
-- `requirements.txt`: Lista de dependencias del proyecto
-
-## Contribuciones
-
-Las contribuciones son bienvenidas. Por favor, abre un issue para discutir cambios mayores antes de crear un pull request.
-
-## Licencia
-
-[Incluir información de licencia aquí]
-
-## Installation Guide
-```markdown
-# 🚀 Python Project Setup Guide
-
-## 📌 For Cloning & Setting Up a Python Project
-
-This guide walks you through setting up a Python project after cloning it from a repository.
+**5. Database Initialization:**
+    *   The database (`expense_sharing.db`) and its schema (`schema.sql`) are initialized automatically the first time you run `app.py` if the database file doesn't exist, thanks to the `init_db(app)` call within the `if __name__ == '__main__':` block. No separate command is needed.
 
 ---
 
-## 📌 1. Check for Required Software
-Before setting up the project, ensure you have the necessary tools installed.
+## ▶️ Running the Application
 
-### ✅ Check if Python is Installed
-Run the following command:
-```sh
-python --version
-```
-or
-```sh
-python3 --version
-```
-If Python is **not installed**, download and install it from:
-🔗 [Python Official Website](https://www.python.org/downloads/)
-
-⚠️ Ensure that `pip` is installed and available. Run:
-```sh
-pip --version
-```
-If `pip` is missing, install it using:
-```sh
-python -m ensurepip --default-pip
-```
-
-### ✅ Check if Git is Installed
-Run:
-```sh
-git --version
-```
-If not installed, download it from:
-🔗 [Git Official Website](https://git-scm.com/downloads)
+1.  Make sure your virtual environment is activated (`(.venv)` should be visible).
+2.  Run the Flask development server:
+    ```bash
+    python app.py
+    ```
+3.  Open your web browser and navigate to: `http://127.0.0.1:5000` (or the address provided in the terminal).
 
 ---
 
-## 📌 2. Clone the Repository
-Navigate to the folder where you want to clone the project:
-```sh
-cd /path/to/your/projects
+## 🚀 Usage Guide
+
+1.  **Register/Login:** Create an account or log in.
+2.  **Add Participants:** Go to "Participants Management" and add the names of people sharing expenses.
+3.  **Set Currencies:** Select your primary and secondary currencies under "Currency Selection".
+4.  **Input Transactions:** Paste transaction data (format: `DD/MM/YYYY: Description - Amount`) into the "Transaction Input" text area.
+5.  **Add Transactions:** Click "Add Transactions". The app will parse them and attempt auto-assignment based on history.
+6.  **Assign Participants:** In the "Transaction Analysis" table, check/uncheck boxes to assign each transaction to the correct participants.
+7.  **Toggle Currency:** Click directly on the amount text (e.g., "PEN 50.00") in the table to toggle its display between primary and secondary currencies.
+8.  **Edit Amount:** Hover over the amount cell; a pencil icon (✎) will appear. Click the pencil to open an input field, change the value, and press Enter or click away to save.
+9.  **Filter:** Use the search bar above the transaction table to filter by date, description, or amount.
+10. **Save State:** Go to "Session Management", optionally enter a name, and click "Save Current State".
+11. **Manage Sessions:** In the "Saved Sessions" table:
+    *   Click **Load** to restore a previous state.
+    *   Click **Save** (Overwrite) to update that saved session with the *current* transaction data.
+    *   Click **Export** to download a PDF report for *that specific saved session*.
+    *   Click **Delete** to remove the saved session.
+12. **View Summary:** Check the "Expenses Summary" table for the calculated totals owed per participant.
+
+---
+
+## 📁 Project Structure
+
 ```
-Clone the repository:
-```sh
-git clone https://github.com/your-repo-name.git
-```
-Move into the project folder:
-```sh
-cd your-repo-name
+.
+├── .venv/                  # Virtual environment files (usually gitignored)
+├── static/
+│   ├── css/
+│   │   ├── styles.css      # Main application styles
+│   │   └── pdf_styles.css  # Styles specifically for PDF export
+│   └── js/
+│       ├── main.js         # Core frontend logic
+│       └── export.js       # PDF export trigger logic
+├── templates/
+│   ├── index.html          # Main application page template
+│   └── pdf_template.html   # Template for PDF report generation
+├── .gitignore              # Specifies intentionally untracked files
+├── app.log                 # Application log file
+├── app.py                  # Main Flask application logic, routes
+├── auth.py                 # Blueprint for authentication routes
+├── database.py             # Database connection and initialization logic
+├── expense_sharing.db      # SQLite database file
+├── readme.md               # This file
+├── requirements.txt        # Python dependencies
+└── schema.sql              # Database table definitions
 ```
 
 ---
 
-## 📌 3. Create and Activate a Virtual Environment
-It’s recommended to use a **virtual environment** to keep dependencies isolated.
+## 🤝 Contributing
 
-### ✅ Create a Virtual Environment
-Run:
-```sh
-python -m venv venv
-```
-This creates a folder `venv` inside your project.
-
-### ✅ Activate the Virtual Environment
-#### **Windows (PowerShell)**
-```sh
-venv\Scripts\Activate
-```
-#### **Mac/Linux**
-```sh
-source venv/bin/activate
-```
-After activation, you should see `(venv)` at the beginning of your terminal prompt.
+Contributions, issues, and feature requests are welcome! Please feel free to open an issue to discuss major changes before submitting a pull request.
 
 ---
 
-## 📌 4. Install Dependencies
-Once the virtual environment is active, install the required dependencies.
-```sh
-pip install -r requirements.txt
-```
-This installs everything listed in `requirements.txt`.
+## 📜 License
 
-💡 **If the `requirements.txt` file is missing**, you might need to manually install dependencies:
-```sh
-pip install flask requests numpy  # Example packages
-```
-Then save them to a new `requirements.txt`:
-```sh
-pip freeze > requirements.txt
-```
+Distributed under the [Your License Name Here] License. See `LICENSE` file for more information (or specify license directly).
 
 ---
 
-## 📌 5. Verify Installation
-Check if all dependencies were installed correctly:
-```sh
-pip list
-```
-or check a specific package:
-```sh
-pip show flask
-```
+## 📧 Contact
 
----
-
-## 📌 6. Run the Project
-Most Python projects can be started with:
-```sh
-python app.py
-```
-Or if using Flask:
-```sh
-flask run
-```
-If the project has a `README.md`, check for specific run instructions.
-
----
-
-## 📌 7. Deactivate the Virtual Environment (Optional)
-When you're done, exit the virtual environment:
-```sh
-deactivate
-```
-You can reactivate it later using `venv\Scripts\Activate` (Windows) or `source venv/bin/activate` (Mac/Linux).
-
----
-
-## 📌 8. Keeping Dependencies Up to Date
-Whenever new dependencies are added to the project, update `requirements.txt`:
-```sh
-pip freeze > requirements.txt
-```
-When pulling updates from the repository, always run:
-```sh
-pip install -r requirements.txt
-```
-to ensure you have the latest dependencies.
-
----
-
-## 🎯 Summary of Commands
-| Task                                         | Command                                          |
-| -------------------------------------------- | ------------------------------------------------ |
-| **Check Python version**                     | `python --version`                               |
-| **Check Git version**                        | `git --version`                                  |
-| **Clone the repo**                           | `git clone <repo-url>`                           |
-| **Navigate to the project**                  | `cd <project-folder>`                            |
-| **Create virtual environment**               | `python -m venv venv`                            |
-| **Activate virtual environment (Windows)**   | `venv\Scripts\Activate`                          |
-| **Activate virtual environment (Mac/Linux)** | `source venv/bin/activate`                       |
-| **Install dependencies**                     | `pip install -r requirements.txt`                |
-| **Check installed packages**                 | `pip list`                                       |
-| **Run the project**                          | `python app.py` (or follow project instructions) |
-| **Deactivate virtual environment**           | `deactivate`                                     |
-| **Update dependencies file**                 | `pip freeze > requirements.txt`                  |
-
----
-
-## 🚀 You're Ready to Go!
-Now you have a fully working Python project. Let me know if you run into any issues! 🔥
-```
-
+Author: JF8989
+Email: juanfrajf.contacto@gmail.com
+LinkedIn: [linkedin.com/in/jfmarcenaroa/](https://www.linkedin.com/in/jfmarcenaroa/)
+GitHub: [github.com/jf8989](https://github.com/jf8989?tab=repositories)

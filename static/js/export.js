@@ -28,6 +28,7 @@ async function handleExportSessionPdf(sessionId, sessionName) {
     try {
         // --- 1. Fetch Data ---
         const [transactions, participants] = await Promise.all([
+            // Fetched transactions now have assigned_to as an array
             fetch(`/api/sessions/${sessionId}/transactions`).then(res => res.ok ? res.json() : Promise.reject(new Error(`Failed to fetch transactions: ${res.statusText}`))),
             fetch('/api/participants').then(res => res.ok ? res.json() : Promise.reject(new Error(`Failed to fetch participants: ${res.statusText}`)))
         ]);
@@ -37,12 +38,14 @@ async function handleExportSessionPdf(sessionId, sessionName) {
         const secondaryCurrency = document.getElementById("secondary-currency")?.value || "USD";
 
         // --- 3. Calculate Summary ---
-        // (Calculation logic remains the same as before)
         const summary = {};
         participants.forEach(p => { summary[p] = { [mainCurrency]: 0.0, [secondaryCurrency]: 0.0 }; });
         const grandTotal = { [mainCurrency]: 0.0, [secondaryCurrency]: 0.0 };
         transactions.forEach(t => {
-            const assignedList = (t.assigned_to || '').split(',').map(p => p.trim()).filter(p => p);
+            // --- FIX 1 Applied: Use the array directly ---
+            const assignedList = Array.isArray(t.assigned_to) ? t.assigned_to.filter(p => p && p.trim()) : [];
+            // --- End FIX 1 ---
+
             if (assignedList.length > 0) {
                 const amount = parseFloat(t.amount);
                 if (isNaN(amount)) return;
@@ -95,16 +98,15 @@ async function handleExportSessionPdf(sessionId, sessionName) {
         doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]); // Blue
         doc.text("Transactions", margin, currentY);
         currentY += 5; // Space after text
-        // Optional thin line below H2
-        // doc.setLineWidth(0.2);
-        // doc.setDrawColor(204, 204, 204); // Light gray line
-        // doc.line(margin, currentY, pageWidth - margin, currentY);
-        // currentY += 3; // Space after line
 
         // --- Transactions Table ---
         const transactionHeaders = [["#", "Date", "Description", "Amount", "Assigned To"]];
         const transactionBody = transactions.map((t, index) => {
-            const assignedDisplay = (t.assigned_to || '').split(',').map(p => p.trim()).filter(p => p).join(', ') || 'None';
+            // --- FIX 2 Applied: Join the array instead of splitting ---
+            const assignedDisplay = Array.isArray(t.assigned_to) && t.assigned_to.length > 0
+                ? t.assigned_to.join(', ')
+                : 'None';
+            // --- End FIX 2 ---
             const displayAmount = `${t.currency || mainCurrency} ${Number(t.amount).toFixed(2)}`;
             return [index + 1, t.date, t.description, displayAmount, assignedDisplay];
         });
@@ -164,8 +166,6 @@ async function handleExportSessionPdf(sessionId, sessionName) {
             startY: currentY,
             head: summaryHeaders,
             body: summaryBody,
-            // Add the total row using the 'foot' option or simply as last body row
-            // Using foot might be semantically better if styling differs significantly
             foot: [grandTotalRow], // Add total row as footer
             theme: 'grid',
             headStyles: {

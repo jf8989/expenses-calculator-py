@@ -180,18 +180,33 @@ function addTransactions() {
   const transactionsText = document.getElementById("transactions-text").value;
   const newTransactions = parseTransactions(transactionsText);
 
+  if (newTransactions.length === 0) {
+    console.log("No valid transactions parsed.");
+    return; // Don't proceed if nothing was parsed
+  }
+
   console.log(`Parsed ${newTransactions.length} transactions`);
 
   // Get assignment history
   fetch("/api/assignment-history")
-    .then((response) => response.json())
-    .then((history) => {
+    .then((response) => {
+      if (!response.ok) {
+        // Handle potential errors fetching history gracefully
+        console.error(`Error fetching assignment history: ${response.statusText}`);
+        return {}; // Return empty history object on error
+      }
+      return response.json();
+    })
+    .then((history) => { // history is now an object like { "description": ["p1", "p2"], ... }
       // Auto-assign based on history
       newTransactions.forEach((transaction) => {
-        const similarTransaction = findSimilarTransaction(transaction, history);
-        if (similarTransaction) {
-          transaction.assigned_to = similarTransaction.assigned_to;
+        // --- FIX 3 Applied: Use the modified findSimilarTransaction ---
+        const assignedParticipants = findSimilarTransaction(transaction.description, history); // Pass description directly
+        if (assignedParticipants) {
+          transaction.assigned_to = assignedParticipants; // Assign the array of participants
+          console.log(`Auto-assigned [${assignedParticipants.join(', ')}] to "${transaction.description}" based on history.`);
         }
+        // --- End FIX 3 ---
       });
 
       // Send transactions with auto-assignments
@@ -205,7 +220,8 @@ function addTransactions() {
     })
     .then((response) => {
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        // Try to parse error from backend
+        return response.json().then(err => { throw new Error(err.error || `Server error: ${response.status}`) });
       }
       return response.json();
     })
@@ -221,19 +237,39 @@ function addTransactions() {
 }
 
 // Function to find a similar transaction in history
-function findSimilarTransaction(newTransaction, history) {
-  return history.find(
-    (historyTransaction) => {
-      if (!historyTransaction.description || !newTransaction.description) return false;
+function findSimilarTransaction(description, historyObject) {
+  // historyObject is now like { "description1": ["p1", "p2"], ... }
+  if (!description || typeof description !== 'string' || !historyObject) {
+    return null;
+  }
 
-      return historyTransaction.description
-        .toLowerCase()
-        .includes(newTransaction.description.toLowerCase()) ||
-        newTransaction.description
-          .toLowerCase()
-          .includes(historyTransaction.description.toLowerCase());
+  const lowerCaseDescription = description.toLowerCase().trim();
+
+  // 1. Direct Match (case-insensitive)
+  for (const key in historyObject) {
+    // Use hasOwnProperty for safer iteration
+    if (Object.prototype.hasOwnProperty.call(historyObject, key) && key.toLowerCase().trim() === lowerCaseDescription) {
+      // Return a copy of the array to prevent accidental modification
+      return [...historyObject[key]];
     }
-  );
+  }
+
+  // 2. Optional: Simple Substring Check (if direct match fails)
+  // Be careful, this might lead to incorrect assignments if descriptions are too similar
+  /*
+  for (const key in historyObject) {
+    if (Object.prototype.hasOwnProperty.call(historyObject, key)) {
+      const lowerCaseKey = key.toLowerCase().trim();
+      if (lowerCaseKey.includes(lowerCaseDescription) || lowerCaseDescription.includes(lowerCaseKey)) {
+        console.log(`Fuzzy match found: "${description}" similar to history key "${key}"`);
+        return [...historyObject[key]];
+      }
+    }
+  }
+  */
+
+  // 3. No match found
+  return null;
 }
 
 // Function to parse transactions
@@ -744,17 +780,14 @@ function createCheckboxContainer(cell, transaction) {
         checkbox.type = "checkbox";
         checkbox.value = participant;
 
-        // Ensure transaction.assigned_to is always an array
-        const assignedTo = Array.isArray(transaction.assigned_to)
-          ? transaction.assigned_to
-          : transaction.assigned_to
-            ? transaction.assigned_to.split(",").map((p) => p.trim())
-            : [];
+        // --- FIX 5 Applied: Simplify assigned_to check (API now guarantees array or null/undefined) ---
+        const assignedTo = Array.isArray(transaction.assigned_to) ? transaction.assigned_to : [];
+        // --- End FIX 5 ---
 
         checkbox.checked = assignedTo.includes(participant);
 
         checkbox.addEventListener("change", () =>
-          updateTransactionAssignment(transaction, checkboxContainer)
+          updateTransactionAssignment(transaction, checkboxContainer) // Pass full transaction object
         );
         checkboxLabel.appendChild(checkbox);
         checkboxLabel.appendChild(document.createTextNode(participant));

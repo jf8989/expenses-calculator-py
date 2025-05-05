@@ -9,7 +9,7 @@ const { jsPDF } = window.jspdf;
  * @param {number} sessionId - The ID of the session to export.
  * @param {string} sessionName - The name of the session (for logging and filename).
  */
-async function handleExportSessionPdf(sessionId, sessionName) {
+export async function handleExportSessionPdf(sessionId, sessionName) {
     if (!sessionId) {
         console.error("Export Session PDF called without a session ID.");
         alert("Cannot export: Session ID is missing.");

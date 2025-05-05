@@ -263,9 +263,13 @@
   <!-- jsPDF Libraries -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
+
   <!-- Your Custom JS Files -->
-  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
-  <script src="{{ url_for('static', filename='js/export.js') }}"></script> <!-- Ensure this is included -->
+  <!-- Load export.js as a module because ui.js imports from it -->
+  <script type="module" src="{{ url_for('static', filename='js/export.js') }}"></script>
+  <!-- Load main.js as a module, it will handle importing other modules -->
+  <script type="module" src="{{ url_for('static', filename='js/main.js') }}"></script>
+
 </body>
 
 </html>

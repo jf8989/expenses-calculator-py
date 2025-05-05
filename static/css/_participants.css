@@ -1,0 +1,54 @@
+/* Participants Management */
+#participants-management .form-group {
+    display: flex;
+    /* Align input and button */
+    gap: 10px;
+}
+
+#participants-management .form-control {
+    flex-grow: 1;
+    /* Allow input to take available space */
+}
+
+/* Participants grid */
+.participants-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 1.5rem;
+    padding: 0;
+    list-style-type: none;
+    margin-top: 1.5rem;
+    /* Add space above grid */
+}
+
+/* Individual participant list item styling (replacing card concept) */
+#participants-list li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 15px 20px;
+    background-color: var(--card-bg);
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    transition: var(--transition);
+}
+
+#participants-list li:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+}
+
+#participants-list li button {
+    margin-left: 15px;
+    /* Space before delete button */
+    padding: 5px 10px;
+    /* Smaller button */
+    font-size: 0.8rem;
+    border-radius: 5px;
+    background-color: var(--danger-color);
+    color: white;
+}
+
+#participants-list li button:hover {
+    filter: brightness(110%);
+}

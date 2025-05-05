@@ -1,0 +1,62 @@
+/* Section styles */
+.section {
+    background-color: var(--card-bg);
+    border-radius: 12px;
+    padding: 30px;
+    margin-bottom: 30px;
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.05);
+    transition: var(--transition);
+    animation: fadeIn 0.5s ease-out;
+    /* Apply fade-in */
+}
+
+.section:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+}
+
+.section h2 {
+    color: var(--primary-color);
+    margin-top: 0;
+    /* Remove default top margin */
+    margin-bottom: 1.5rem;
+    font-weight: 300;
+    font-size: 2rem;
+    border-bottom: 2px solid var(--primary-color);
+    padding-bottom: 10px;
+}
+
+/* Instructions / Disclaimer */
+.instructions,
+.disclaimer {
+    background-color: #f8f9fa;
+    border-left: 4px solid var(--primary-color);
+    padding: 15px;
+    margin-bottom: 20px;
+    border-radius: 0 8px 8px 0;
+    font-style: italic;
+    color: #555;
+}
+
+.disclaimer {
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.disclaimer h3 {
+    color: var(--primary-color);
+    margin-top: 0;
+    font-size: 1.2rem;
+}
+
+.disclaimer ul {
+    padding-left: 20px;
+    margin-bottom: 10px;
+}
+
+.disclaimer li {
+    margin-bottom: 5px;
+}
+
+.disclaimer p {
+    margin-bottom: 0;
+}

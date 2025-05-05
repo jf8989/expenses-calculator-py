@@ -1,0 +1,39 @@
+/* Base styles */
+body {
+    font-family: "Roboto", sans-serif;
+    line-height: 1.6;
+    margin: 0;
+    padding: 0;
+    background: linear-gradient(135deg, #ecf0f1 0%, #bdc3c7 100%);
+    color: var(--text-color);
+    transition: var(--transition);
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    /* Ensures body takes at least full viewport height */
+}
+
+/* Styles to fix footer to bottom */
+html,
+body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+.site-content {
+    /* Add this class to the main content wrapper div if needed */
+    flex: 1 0 auto;
+    /* Allows content to grow but not shrink */
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+/* Add smooth scrolling */
+html {
+    scroll-behavior: smooth;
+}

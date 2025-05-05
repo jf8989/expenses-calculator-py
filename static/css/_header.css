@@ -1,0 +1,32 @@
+/* Header styles */
+header {
+    background-color: var(--header-bg);
+    color: white;
+    padding: 1rem 0;
+    /* Adjust padding */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    flex-shrink: 0;
+    /* Prevent header from shrinking */
+}
+
+.header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    /* Inherit container padding/max-width */
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+header h1 {
+    margin: 0;
+    font-size: 2rem;
+    font-weight: 300;
+    letter-spacing: 1px;
+}
+
+header h1 i {
+    /* Style icon within H1 */
+    margin-right: 10px;
+}

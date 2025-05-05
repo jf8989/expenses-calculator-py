@@ -1,0 +1,105 @@
+/* Responsive design adjustments */
+@media (max-width: 768px) {
+    .container {
+        padding: 10px;
+        width: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
+    }
+
+    .header-content {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    header h1 {
+        font-size: 1.5rem;
+        margin-bottom: 10px;
+    }
+
+    #auth-section .btn-group,
+    .btn {
+        /* Make buttons full width on small screens */
+        width: 100%;
+        margin-bottom: 10px;
+        box-sizing: border-box;
+        /* Ensure padding doesn't overflow */
+    }
+
+    #auth-section .btn-group .btn {
+        /* Reset width within flex group */
+        width: auto;
+        flex: 1;
+    }
+
+
+    .section {
+        padding: 15px;
+    }
+
+    .footer-content {
+        flex-direction: column;
+        text-align: center;
+        /* Center footer content */
+    }
+
+    .footer-section {
+        width: 100%;
+        padding: 0 10px;
+        box-sizing: border-box;
+    }
+
+    .footer-section.social .social-icon {
+        margin: 0 10px;
+        /* Adjust spacing */
+    }
+}
+
+@media (max-width: 600px) {
+    .disclaimer {
+        padding: 10px;
+    }
+
+    .disclaimer h3 {
+        font-size: 1rem;
+    }
+
+    .disclaimer ul {
+        padding-left: 15px;
+    }
+
+    /* Enable horizontal scrolling for tables */
+    .table-responsive {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        /* Smooth scrolling on iOS */
+    }
+
+    /* Prevent text wrapping in table cells */
+    .table th,
+    .table td {
+        white-space: nowrap;
+    }
+
+    #participants-management .form-group {
+        flex-direction: column;
+        /* Stack input and button */
+    }
+
+    #session-management .row {
+        flex-direction: column;
+        align-items: stretch;
+        /* Stretch items */
+    }
+
+    #session-management .row .col {
+        width: 100%;
+        /* Make columns full width */
+    }
+
+    #session-management .row .btn {
+        width: 100%;
+        /* Make button full width */
+        margin-top: 10px;
+    }
+}

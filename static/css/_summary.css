@@ -1,0 +1,17 @@
+/* Expenses Summary */
+#expenses-summary .table tbody tr:last-child {
+    /* Style the TOTAL row */
+    font-weight: bold;
+    border-top: 2px solid #e0e0e0;
+    background-color: #f8f9fa;
+}
+
+/* Expense chart placeholder */
+#expense-chart {
+    max-width: 600px;
+    margin: 30px auto;
+    background-color: white;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.05);
+}

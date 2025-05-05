@@ -1,0 +1,14 @@
+/* Root variables for consistent theming */
+:root {
+    --primary-color: #3498db;
+    --secondary-color: #2ecc71;
+    --danger-color: #e74c3c;
+    --warning-color: #f39c12;
+    --text-color: #2c3e50;
+    --bg-color: #ecf0f1;
+    --card-bg: #ffffff;
+    --header-bg: #34495e;
+    --footer-bg: #2c3e50;
+    --footer-text: #ecf0f1;
+    --transition: all 0.3s ease;
+}

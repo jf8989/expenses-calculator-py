@@ -1,0 +1,57 @@
+/* Session Management */
+#session-management .row {
+    /* Style the input/button row */
+    display: flex;
+    gap: 10px;
+    align-items: flex-end;
+    margin-bottom: 20px;
+}
+
+/* Removed empty ruleset for #session-management .row .col */
+
+#session-management .row .col:first-child {
+    flex-grow: 1;
+    /* Input takes more space */
+}
+
+#session-management .row .form-group {
+    margin-bottom: 0;
+    /* Remove default margin */
+}
+
+#session-management .row label {
+    display: block;
+    margin-bottom: 5px;
+}
+
+.saved-sessions-container {
+    margin-top: 30px;
+    /* Space above saved sessions */
+}
+
+.saved-sessions-container h3 {
+    margin-bottom: 15px;
+    font-weight: 500;
+    color: var(--text-color);
+}
+
+/* Session table action buttons */
+#sessions-table .btn {
+    padding: 5px 8px;
+    /* Slightly smaller */
+    font-size: 0.8rem;
+    border-radius: 5px;
+    margin-left: 5px;
+    /* Spacing between buttons */
+    vertical-align: middle;
+    /* Align icons and text */
+}
+
+#sessions-table .btn:first-child {
+    margin-left: 0;
+}
+
+#sessions-table .btn i {
+    margin-right: 4px;
+    /* Space between icon and text */
+}

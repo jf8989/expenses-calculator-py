@@ -17,14 +17,26 @@
 </head>
 
 <body>
-  <header>
-    <div class="header-content container">
-      <h1><i class="fas fa-money-bill-wave"></i> ExpenseSplit Pro</h1>
-      <button id="logout-btn" class="btn btn-danger">
-        <i class="fas fa-sign-out-alt"></i> Sign Out
-      </button>
-    </div>
-  </header>
+    <header>
+      <div class="header-content container">
+        <h1><i class="fas fa-money-bill-wave"></i> ExpenseSplit Pro</h1>
+        <!-- Dark Mode Toggle START -->
+        <div class="theme-switch-wrapper">
+          <label class="theme-switch" for="theme-checkbox">
+            <input type="checkbox" id="theme-checkbox" />
+            <div class="slider round">
+              <span class="icon sun"><i class="fas fa-sun"></i></span>
+              <span class="icon moon"><i class="fas fa-moon"></i></span>
+            </div>
+          </label>
+          <span class="theme-label">Dark Mode</span>
+        </div>
+        <!-- Dark Mode Toggle END -->
+        <button id="logout-btn" class="btn btn-danger">
+          <i class="fas fa-sign-out-alt"></i> Sign Out
+        </button>
+      </div>
+    </header>
 
   <!-- Authentication Section -->
   <div id="auth-section" class="container section">

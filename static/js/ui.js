@@ -286,6 +286,11 @@ export function removeParticipantFromTransactionCheckboxes(participant) {
 // --- Summary UI ---
 export function updateSummaryTableUI(transactions, participants, mainCurrency, secondaryCurrency) {
     const totals = {};
+    // Ensure participants is an array before proceeding
+    if (!Array.isArray(participants)) {
+        console.error("updateSummaryTableUI called without a valid participants array.");
+        participants = []; // Default to empty to avoid errors
+    }
     participants.forEach(p => { totals[p] = { [mainCurrency]: 0, [secondaryCurrency]: 0 }; });
 
     transactions.forEach((transaction) => {
@@ -312,8 +317,11 @@ export function updateSummaryTableUI(transactions, participants, mainCurrency, s
     });
 
     const summaryTable = document.getElementById("summary-table");
+    if (!summaryTable) return; // Exit if table not found
     const tbody = summaryTable.querySelector("tbody");
-    tbody.innerHTML = "";
+    if (!tbody) return; // Exit if tbody not found
+    tbody.innerHTML = ""; // Clear existing rows
+
     let grandTotal = { [mainCurrency]: 0, [secondaryCurrency]: 0 };
 
     // Use the participants list to ensure order and inclusion
@@ -328,11 +336,14 @@ export function updateSummaryTableUI(transactions, participants, mainCurrency, s
     });
 
 
-    // Add total row
+    // Add total row - REMOVE INLINE STYLES, LET CSS HANDLE IT
     const totalRow = tbody.insertRow();
-    totalRow.style.fontWeight = "bold";
-    totalRow.style.borderTop = "2px solid #e0e0e0";
-    totalRow.style.backgroundColor = "#f8f9fa";
+    // totalRow.style.fontWeight = "bold"; // Let CSS handle font-weight
+    // totalRow.style.borderTop = "2px solid #e0e0e0"; // REMOVED - Let CSS handle border
+    // totalRow.style.backgroundColor = "#f8f9fa"; // REMOVED - Let CSS handle background
+    // Add a class instead if specific styling beyond last-child is needed
+    totalRow.classList.add("summary-total-row"); // Add class for potential CSS targeting
+
     totalRow.insertCell().textContent = "TOTAL";
     totalRow.insertCell().textContent = `${mainCurrency} ${grandTotal[mainCurrency].toFixed(2)}`;
     totalRow.insertCell().textContent = `${secondaryCurrency} ${grandTotal[secondaryCurrency].toFixed(2)}`;

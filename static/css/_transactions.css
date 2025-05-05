@@ -1,3 +1,5 @@
+/* static/css/_transactions.css */
+
 /* Transaction Analysis Specifics */
 #transactions-analysis .btn-group {
     margin-bottom: 15px;
@@ -8,34 +10,36 @@
     display: flex;
     flex-wrap: wrap;
     gap: 5px 15px;
-    /* Vertical and horizontal gap */
     align-items: center;
 }
 
 .checkbox-container label {
     display: inline-flex;
-    /* Align checkbox and text */
     align-items: center;
     cursor: pointer;
     margin-right: 10px;
-    /* Spacing between labels */
     font-size: 0.9rem;
+    color: var(--text-color);
+    /* Use variable */
 }
 
 .checkbox-container input[type="checkbox"] {
     margin-right: 5px;
     cursor: pointer;
+    /* Consider accent-color for modern browsers */
+    accent-color: var(--primary-color);
 }
 
 /* Amount cell editing styles */
 .amount-cell .amount-display {
     cursor: pointer;
     display: inline-block;
+    color: var(--text-color);
+    /* Ensure text color */
 }
 
 .edit-amount-btn {
     display: none;
-    /* Hide by default */
     position: absolute;
     right: 5px;
     top: 50%;
@@ -46,26 +50,35 @@
     cursor: pointer;
     margin-left: 5px;
     background: none;
-    border: 1px solid #ccc;
+    /* border: 1px solid #ccc; */
+    /* Old */
+    border: 1px solid var(--input-border);
+    /* Use variable */
     border-radius: 3px;
-    color: #555;
+    /* color: #555; */
+    /* Old */
+    color: var(--text-color-muted);
+    /* Use variable */
 }
+
+.edit-amount-btn:hover {
+    background-color: var(--table-row-hover-bg);
+    /* Add subtle hover */
+}
+
 
 .amount-cell:hover .edit-amount-btn {
     display: inline-block;
-    /* Show on hover */
 }
 
 .amount-cell input[type="number"].form-control {
-    /* Style the input when editing */
     width: 80px;
     padding: 3px 6px;
     font-size: 0.9em;
     height: auto;
-    /* Override default form-control height if needed */
     display: inline-block;
-    /* Ensure it fits well */
     vertical-align: middle;
+    /* Inherits form-control styles which now use variables */
 }
 
 /* Transaction table action buttons */
@@ -73,4 +86,5 @@
     padding: 5px 10px;
     font-size: 0.8rem;
     border-radius: 5px;
+    /* Colors handled by specific btn classes */
 }

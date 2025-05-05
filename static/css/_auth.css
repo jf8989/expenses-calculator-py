@@ -1,7 +1,11 @@
+/* static/css/_auth.css */
+
 /* Authentication Section */
 #auth-section h2 {
     /* Style specific headers if needed */
     text-align: center;
+    color: var(--text-color);
+    /* Ensure heading color adapts */
 }
 
 #auth-section .form-group {

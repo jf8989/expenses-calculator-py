@@ -3,6 +3,12 @@ import * as api from './api.js';
 import * as ui from './ui.js';
 import { parseTransactions, findSimilarTransaction } from './transactions.js'; // We'll create transactions.js
 import { getTransactionDataFromDOM, getParticipantsFromDOM } from './state.js'; // We'll create state.js
+import { toggleTheme } from './theme.js';
+
+// --- Theme Handler ---
+export function themeToggleHandler() {
+    toggleTheme();
+}
 
 // --- Auth Handlers ---
 export async function registerHandler() {

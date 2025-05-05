@@ -1,36 +1,39 @@
+/* static/css/_tables.css */
+
 /* Table styles */
 .table-responsive {
     overflow-x: auto;
     border-radius: 8px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 4px 6px var(--shadow-color);
+    /* Use variable */
 }
 
 .table {
     width: 100%;
     border-collapse: separate;
-    /* Use separate for border-spacing */
     border-spacing: 0;
     margin-bottom: 1rem;
-    /* Add some default spacing */
+    background-color: var(--card-bg);
+    /* Set base background for table */
 }
 
 .table th,
 .table td {
     padding: 15px;
     text-align: left;
-    border-bottom: 1px solid #e0e0e0;
+    border-bottom: 1px solid var(--border-color);
+    /* Use variable */
     vertical-align: middle;
-    /* Align content vertically */
 }
 
 .table th {
     background-color: var(--primary-color);
     color: white;
+    /* White text on primary color is usually fine */
     font-weight: 500;
     text-transform: uppercase;
     letter-spacing: 1px;
     white-space: nowrap;
-    /* Prevent header text wrapping */
 }
 
 /* Apply border radius to corners */
@@ -42,12 +45,10 @@
     border-top-right-radius: 8px;
 }
 
-/* No bottom border on last row cells */
 .table tr:last-child td {
     border-bottom: none;
 }
 
-/* Apply border radius to corners of last row */
 .table tr:last-child td:first-child {
     border-bottom-left-radius: 8px;
 }
@@ -58,35 +59,34 @@
 
 
 .table tr:nth-child(even) {
-    background-color: #f8f9fa;
-    /* Zebra striping */
+    background-color: var(--table-row-even-bg);
+    /* Use variable */
 }
 
 .table tr:hover {
-    background-color: #e9ecef;
+    background-color: var(--table-row-hover-bg);
+    /* Use variable */
     transition: var(--transition);
+    /* Already uses variable */
 }
 
 /* Specific table cell styling */
 #transactions-table .amount-cell {
     position: relative;
     padding-right: 35px;
-    /* Make space for the button */
 }
 
 /* === Mobile Table Stacking (Transactions Table) === */
 @media (max-width: 768px) {
 
-    /* Target only the main transactions table for stacking */
     #transactions-table {
         border: none;
-        /* Remove table border */
         box-shadow: none;
-        /* Remove shadow from table itself */
+        background-color: transparent;
+        /* Reset background, handled by TR */
     }
 
     #transactions-table thead {
-        /* Hide table headers */
         border: none;
         clip: rect(0 0 0 0);
         height: 1px;
@@ -99,65 +99,53 @@
 
     #transactions-table tr {
         display: block;
-        /* Make rows behave like blocks/cards */
         margin-bottom: 1.5rem;
-        /* Space between cards */
         border-radius: 8px;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 4px 8px var(--shadow-color);
+        /* Use variable */
         background-color: var(--card-bg);
-        border: 1px solid #e0e0e0;
+        /* Use variable */
+        border: 1px solid var(--border-color);
+        /* Use variable */
         padding: 10px;
-        /* Add padding inside the card */
     }
 
-    /* Remove zebra striping for card view */
     #transactions-table tr:nth-child(even) {
         background-color: var(--card-bg);
+        /* Override zebra striping */
     }
 
 
     #transactions-table td {
         display: block;
-        /* Stack cells vertically */
         text-align: right;
-        /* Default align cell content to the right */
         padding: 8px 10px;
-        /* Adjust padding */
-        border-bottom: 1px dotted #eee;
-        /* Dotted separator between "fields" */
+        border-bottom: 1px dotted var(--border-color);
+        /* Use variable */
         position: relative;
-        /* For label positioning */
         white-space: normal;
-        /* <<< Ensure text can wrap */
+        color: var(--text-color);
+        /* Ensure text color adapts */
     }
 
     #transactions-table td:last-child {
         border-bottom: none;
-        /* No border for the last cell (Actions) */
     }
 
-    /* Add labels using ::before pseudo-element */
     #transactions-table td::before {
         content: attr(data-label);
-        /* Use data-label attribute */
         position: absolute;
         left: 10px;
-        /* Position label to the left */
         width: calc(40% - 15px);
-        /* <<< Give the label a width (adjust %) */
         font-weight: bold;
         text-transform: uppercase;
         font-size: 0.8em;
         color: var(--primary-color);
+        /* Keep label color distinct */
         text-align: left;
-        /* Align label text left */
         padding-right: 10px;
-        /* Space between label and value */
         white-space: nowrap;
-        /* <<< Keep the label itself from wrapping */
     }
-
-    /* --- Specific adjustments for certain cells --- */
 
     /* Row number */
     #transactions-table td:nth-child(1) {
@@ -167,91 +155,73 @@
     }
 
     #transactions-table td:nth-child(1)::before {
-        /* Hide label for row number */
         content: "";
     }
 
     /* Description cell */
     #transactions-table td:nth-child(3) {
         padding-left: 40%;
-        /* <<< Add left padding (match label width %) */
         text-align: left;
-        /* <<< Align the description value text left */
     }
-
-    /* Removed empty ruleset for #transactions-table td:nth-child(3)::before */
 
     /* Amount cell */
     #transactions-table td:nth-child(4) {
         font-weight: bold;
         font-size: 1.1em;
         padding-right: 10px;
-        /* Reset padding */
         padding-left: 40%;
-        /* <<< Add padding for label consistency */
         text-align: left;
-        /* <<< Align amount left */
         display: flex;
-        /* Use flex to align amount and button */
         justify-content: space-between;
-        /* Space between amount and button */
         align-items: center;
     }
 
     #transactions-table td:nth-child(4)::before {
-        /* Amount label */
         font-weight: bold;
     }
 
-    /* Ensure edit button is visible and positioned okay */
     #transactions-table .edit-amount-btn {
         position: static;
-        /* Reset absolute positioning */
         transform: none;
         display: inline-block;
-        /* Make it always visible on mobile card */
         margin-left: 10px;
         flex-shrink: 0;
-        /* Prevent button from shrinking */
+        border: 1px solid var(--input-border);
+        color: var(--text-color-muted);
+        background: none;
     }
 
+    /* Style edit button */
     #transactions-table .amount-cell {
-        /* The TD itself */
         padding-right: 10px;
-        /* Reset padding */
     }
 
     #transactions-table .amount-cell input[type="number"].form-control {
         width: auto;
-        /* Allow input to size naturally */
         max-width: 100px;
-        /* Prevent excessive width */
         margin-left: 40%;
-        /* Align input with value */
+        background-color: var(--input-bg);
+        color: var(--text-color);
+        border-color: var(--input-border);
     }
+
+    /* Style input */
 
     /* Assigned To cell */
     #transactions-table td:nth-child(5) {
         text-align: left;
-        /* Align checkboxes left */
         padding-top: 10px;
         padding-bottom: 10px;
         padding-left: 10px;
-        /* Reset padding */
     }
 
     #transactions-table td:nth-child(5)::before {
-        /* Assigned To label */
         position: static;
-        /* Normal flow */
         display: block;
-        /* Label on its own line */
         margin-bottom: 8px;
         padding-right: 0;
         width: auto;
-        /* Reset width */
         font-weight: bold;
-        /* Keep label bold */
         color: var(--primary-color);
         text-transform: uppercase;
         font-size: 0.8em;
@@ -259,11 +229,16 @@
 
     #transactions-table .checkbox-container {
         justify-content: flex-start;
-        /* Align checkboxes left */
         gap: 8px 10px;
         padding-left: 0;
-        /* Ensure checkboxes start left */
     }
+
+    #transactions-table .checkbox-container label {
+        color: var(--text-color);
+    }
+
+    /* Ensure label text color adapts */
+
 
     /* Actions cell */
     #transactions-table td:nth-child(6) {
@@ -273,14 +248,11 @@
     }
 
     #transactions-table td:nth-child(6)::before {
-        /* Hide label for actions */
         content: "";
     }
 
-    /* Ensure action buttons stack or wrap if needed */
     #transactions-table td:nth-child(6) .btn {
         margin: 5px;
-        /* Add spacing around buttons */
     }
 
 }

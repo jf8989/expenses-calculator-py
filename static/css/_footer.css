@@ -1,12 +1,12 @@
+/* static/css/_footer.css */
+
 /* Footer styles */
 .site-footer {
     background-color: var(--footer-bg);
     color: var(--footer-text);
     padding: 50px 0 0;
     flex-shrink: 0;
-    /* Prevent footer from shrinking */
     margin-top: auto;
-    /* Push footer to bottom */
 }
 
 .footer-content {
@@ -23,11 +23,11 @@
     margin-bottom: 30px;
     min-width: 250px;
     padding: 0 20px;
-    /* Spacing between sections */
 }
 
 .footer-section h3 {
     color: var(--primary-color);
+    /* Keep primary for heading */
     font-size: 1.4rem;
     margin-bottom: 20px;
     font-weight: 300;
@@ -38,28 +38,36 @@
 .footer-section p {
     line-height: 1.8;
     font-weight: 300;
+    color: var(--footer-text);
+    /* Ensure paragraph text uses variable */
 }
 
 .footer-section.contact i {
     margin-right: 10px;
     color: var(--primary-color);
+    /* Keep primary for icon */
 }
 
 .footer-section.social .social-icon {
     display: inline-block;
     margin-right: 20px;
     color: var(--footer-text);
+    /* Use variable */
     font-size: 1.8rem;
     transition: var(--transition);
 }
 
 .footer-section.social .social-icon:hover {
     color: var(--primary-color);
+    /* Keep primary for hover */
     transform: translateY(-3px);
 }
 
 .footer-bottom {
-    background-color: rgba(0, 0, 0, 0.2);
+    /* background-color: rgba(0, 0, 0, 0.2); */
+    /* Old */
+    background-color: var(--shadow-color);
+    /* Use shadow variable for subtle contrast */
     padding: 20px 0;
     text-align: center;
     margin-top: 30px;
@@ -67,7 +75,10 @@
 
 .copyright {
     font-size: 0.9rem;
-    color: #bdc3c7;
+    /* color: #bdc3c7; */
+    /* Old */
+    color: var(--text-color-muted);
+    /* Use muted text variable */
     max-width: 900px;
     margin: 0 auto;
     padding: 0 20px;

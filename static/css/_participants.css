@@ -1,3 +1,5 @@
+/* static/css/_participants.css */
+
 /* Participants Management */
 #participants-management .form-group {
     display: flex;
@@ -28,25 +30,37 @@
     justify-content: space-between;
     padding: 15px 20px;
     background-color: var(--card-bg);
+    /* Uses variable */
+    color: var(--text-color);
+    /* Ensure text color adapts */
     border-radius: 8px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    /* box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05); */
+    /* Old */
+    box-shadow: 0 4px 6px var(--shadow-color);
+    /* Use variable */
     transition: var(--transition);
 }
 
 #participants-list li:hover {
     transform: translateY(-3px);
-    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+    /* box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1); */
+    /* Old */
+    box-shadow: 0 6px 12px var(--shadow-color);
+    /* Use variable */
 }
 
 #participants-list li button {
     margin-left: 15px;
-    /* Space before delete button */
     padding: 5px 10px;
-    /* Smaller button */
     font-size: 0.8rem;
     border-radius: 5px;
     background-color: var(--danger-color);
+    /* Uses variable */
     color: white;
+    /* Uses variable */
+    border: none;
+    /* Ensure no default border */
+    cursor: pointer;
 }
 
 #participants-list li button:hover {

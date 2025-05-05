@@ -1,3 +1,5 @@
+/* static/css/_buttons.css */
+
 /* Button styles */
 .btn {
     padding: 12px 20px;
@@ -9,12 +11,16 @@
     text-transform: uppercase;
     letter-spacing: 1px;
     transition: var(--transition);
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 6px var(--shadow-color);
+    /* Use variable */
+    color: white;
+    /* Default text color for solid buttons */
 }
 
 .btn:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+    /* Slightly adjust hover shadow based on theme shadow */
+    box-shadow: 0 6px 8px var(--shadow-color), 0 2px 4px var(--shadow-color);
     filter: brightness(110%);
 }
 
@@ -40,7 +46,9 @@
 
 /* Specific button positioning if needed */
 .btn-group {
-    /* Add styles if needed, e.g., display: flex, gap: 10px */
+    display: flex;
+    /* Add flex for better group control */
+    gap: 10px;
+    /* Add gap between buttons */
     margin-bottom: 15px;
-    /* Example from transaction analysis */
 }

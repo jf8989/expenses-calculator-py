@@ -6,7 +6,7 @@
         max-width: 960px;
     }
 
-    /* Removed empty ruleset for .footer-content */
+    /* No theme-specific changes needed here */
 }
 
 
@@ -14,99 +14,86 @@
 @media (max-width: 768px) {
     .container {
         padding: 15px;
-        /* Slightly more padding than mobile */
         width: 100%;
-        /* Ensure container doesn't exceed viewport */
         max-width: 100%;
         box-sizing: border-box;
     }
 
     .header-content {
-        /* Keep flex row but allow wrapping if needed */
         flex-wrap: wrap;
         justify-content: center;
-        /* Center items when wrapped */
         gap: 10px;
     }
 
     header h1 {
         font-size: 1.7rem;
-        /* Slightly smaller */
         text-align: center;
         width: 100%;
-        /* Take full width if wrapped */
     }
 
+    /* Use danger variable for logout button */
     #logout-btn {
         padding: 10px 20px;
-        background-color: #f44336;
+        /* background-color: #f44336; */
+        /* Old */
+        background-color: var(--danger-color);
+        /* Use variable */
         color: white;
+        /* Keep white text */
         border: none;
         border-radius: 5px;
+        /* Consider using a variable or consistent radius */
         cursor: pointer;
+        /* Inherits .btn styles, this overrides background */
     }
 
 
     .section {
         padding: 20px;
-        /* Adjust padding */
         margin-bottom: 20px;
     }
 
     .section h2 {
         font-size: 1.6rem;
-        /* Adjust heading size */
     }
 
-    /* Make form groups stack elements generally */
     .form-group {
         display: flex;
         flex-direction: column;
         gap: 8px;
     }
 
-    /* Ensure labels are visible */
     .form-group label {
         margin-bottom: 0;
-        /* Remove default margin if any */
         font-weight: 500;
-        /* Make labels slightly bolder */
+        color: var(--text-color);
+        /* Ensure label color adapts */
     }
 
-    /* Adjust specific form layouts that should remain row */
     #participants-management .form-group {
         flex-direction: row;
-        /* Keep participant add side-by-side if space */
         align-items: center;
     }
 
     #session-management .row {
-        /* Keep session save side-by-side */
         flex-direction: row;
         align-items: flex-end;
     }
 
 
-    /* Ensure button groups wrap */
     .btn-group {
         display: flex;
-        /* Ensure flex is applied */
         flex-wrap: wrap;
         justify-content: center;
-        /* Center buttons */
         gap: 10px;
     }
 
     .btn-group .btn {
         flex-grow: 1;
-        /* Allow buttons to grow */
         min-width: 120px;
-        /* Prevent excessive shrinking */
         margin-bottom: 0;
-        /* Reset margin if applied globally */
     }
 
-    /* Footer adjustments */
     .footer-content {
         flex-direction: column;
         text-align: center;
@@ -125,33 +112,34 @@
 
     .copyright {
         font-size: 0.85rem;
+        /* Color handled in _footer.css using variable */
     }
 
-    /* Table adjustments (for non-stacked tables) */
     .table-responsive {
-        /* Ensure scrolling is obvious */
-        border: 1px solid #ddd;
+        /* border: 1px solid #ddd; */
+        /* Old */
+        border: 1px solid var(--border-color);
+        /* Use variable */
     }
 
-    /* Reduce padding slightly in non-stacked tables */
     #summary-table td,
     #summary-table th,
     #sessions-table td,
     #sessions-table th {
         padding: 10px 8px;
         font-size: 0.9rem;
+        /* Colors handled by _tables.css using variables */
     }
 
     #sessions-table td:last-child {
-        /* Ensure action buttons fit */
         white-space: nowrap;
     }
 
-           /* Center Date Saved (2nd) and Transactions (3rd) columns */
-           #sessions-table td:nth-child(2),
-           #sessions-table td:nth-child(3) {
-               text-align: center;
-           }
+    /* Center Date Saved (2nd) and Transactions (3rd) columns */
+    #sessions-table td:nth-child(2),
+    #sessions-table td:nth-child(3) {
+        text-align: center;
+    }
 
 }
 
@@ -162,7 +150,6 @@
 @media (max-width: 600px) {
     .container {
         padding: 10px;
-        /* Reduce padding further */
     }
 
     header h1 {
@@ -178,11 +165,9 @@
         font-size: 1.4rem;
     }
 
-    /* Stack participant add input/button */
     #participants-management .form-group {
         flex-direction: column;
         align-items: stretch;
-        /* Make button full width */
     }
 
     #participants-management .form-group .btn {
@@ -190,7 +175,6 @@
         box-sizing: border-box;
     }
 
-    /* Stack session save input/button */
     #session-management .row {
         flex-direction: column;
         align-items: stretch;
@@ -206,7 +190,6 @@
         box-sizing: border-box;
     }
 
-    /* Further reduce table padding for non-stacked */
     #summary-table td,
     #summary-table th,
     #sessions-table td,
@@ -215,9 +198,9 @@
         font-size: 0.85rem;
     }
 
-    /* Disclaimer adjustments */
     .disclaimer {
         padding: 10px;
+        /* Colors handled in _sections.css */
     }
 
     .disclaimer h3 {
@@ -228,7 +211,6 @@
         padding-left: 15px;
     }
 
-    /* Ensure auth buttons stack cleanly */
     #auth-section .btn-group {
         flex-direction: column;
     }

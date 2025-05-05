@@ -1,3 +1,5 @@
+/* static/css/_utilities.css */
+
 /* Animations */
 @keyframes fadeIn {
     from {
@@ -17,18 +19,24 @@
 }
 
 ::-webkit-scrollbar-track {
-    background: #f1f1f1;
+    /* background: #f1f1f1; */
+    /* Old */
+    background: var(--scrollbar-track);
+    /* Use variable */
     border-radius: 5px;
 }
 
 ::-webkit-scrollbar-thumb {
-    background: var(--primary-color);
+    background: var(--scrollbar-thumb);
+    /* Use variable */
     border-radius: 5px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: #2980b9;
-    /* Darker shade of primary */
+    /* background: #2980b9; */
+    /* Old */
+    background: var(--scrollbar-thumb-hover);
+    /* Use variable */
 }
 
 /* Loading indicator */
@@ -38,25 +46,43 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.7);
+    /* background-color: rgba(0, 0, 0, 0.7); */
+    /* Old */
+    background-color: rgba(0, 0, 0, 0.6);
+    /* Slightly less opaque */
     display: flex;
-    /* Use flex for centering */
     justify-content: center;
     align-items: center;
     z-index: 9999;
-    /* display: none; /* Initially hidden - controlled by JS */
 }
+
+/* Add dark mode overlay */
+:root[data-theme="dark"] #loading-indicator {
+    background-color: rgba(255, 255, 255, 0.2);
+    /* Light overlay on dark */
+}
+
 
 .spinner {
     width: 60px;
     height: 60px;
-    border: 4px solid #f3f3f3;
-    /* Light grey */
+    /* border: 4px solid #f3f3f3; */
+    /* Old */
+    border: 4px solid var(--card-bg);
+    /* Use card bg for base */
     border-top: 4px solid var(--primary-color);
-    /* Blue */
+    /* Use variable */
     border-radius: 50%;
     animation: spin 1s linear infinite;
 }
+
+/* Adjust spinner border for dark mode if needed */
+:root[data-theme="dark"] .spinner {
+    border: 4px solid var(--input-bg);
+    /* Darker base */
+    border-top: 4px solid var(--primary-color);
+}
+
 
 @keyframes spin {
     0% {
@@ -76,11 +102,14 @@
     padding: 15px 25px;
     border-radius: 8px;
     color: white;
+    /* Text color usually white for solid backgrounds */
     font-weight: 500;
     z-index: 9999;
     opacity: 0;
     transform: translateY(20px);
     animation: fadeInUp 0.3s ease forwards;
+    box-shadow: 0 5px 15px var(--shadow-color);
+    /* Add shadow */
 }
 
 @keyframes fadeInUp {
@@ -109,21 +138,36 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.5);
+    /* background-color: rgba(0, 0, 0, 0.5); */
+    /* Old */
+    background-color: rgba(0, 0, 0, 0.6);
+    /* Use consistent overlay */
     display: flex;
-    /* Use flex for centering */
     justify-content: center;
     align-items: center;
     z-index: 9999;
-    /* display: none; /* Initially hidden - controlled by JS */
 }
 
+:root[data-theme="dark"] .confirm-dialog {
+    background-color: rgba(255, 255, 255, 0.2);
+    /* Light overlay on dark */
+}
+
+
 .confirm-dialog-content {
-    background-color: white;
+    /* background-color: white; */
+    /* Old */
+    background-color: var(--card-bg);
+    /* Use variable */
+    color: var(--text-color);
+    /* Use variable */
     padding: 30px;
     border-radius: 12px;
     text-align: center;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    /* box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2); */
+    /* Old */
+    box-shadow: 0 10px 30px var(--shadow-color);
+    /* Use variable */
     max-width: 400px;
     width: 90%;
 }
@@ -131,12 +175,16 @@
 .confirm-dialog-content h3 {
     margin-top: 0;
     color: var(--primary-color);
+    /* Uses variable */
 }
 
 .confirm-dialog-content p {
     margin-bottom: 20px;
+    color: var(--text-color);
+    /* Ensure text color */
 }
 
 .confirm-dialog-content button {
     margin: 0 10px;
+    /* Button styles inherited */
 }

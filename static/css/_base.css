@@ -1,11 +1,13 @@
+/* static/css/_base.css */
+
 /* Base styles */
 body {
     font-family: "Roboto", sans-serif;
     line-height: 1.6;
     margin: 0;
     padding: 0;
-    background: linear-gradient(135deg, #ecf0f1 0%, #bdc3c7 100%);
-    color: var(--text-color);
+    /* background is handled by the html, body rule below */
+    /* color is handled by the html, body rule below */
     transition: var(--transition);
     display: flex;
     flex-direction: column;
@@ -19,6 +21,9 @@ body {
     height: 100%;
     margin: 0;
     padding: 0;
+    /* This rule correctly uses variables that will change with the theme */
+    background: linear-gradient(135deg, var(--bg-gradient-start) 0%, var(--bg-gradient-end) 100%);
+    color: var(--text-color);
 }
 
 .site-content {

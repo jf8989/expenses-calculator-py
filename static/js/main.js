@@ -1,6 +1,14 @@
 // static/js/main.js
-import { initializeCurrencySelection } from './currency.js';
-import { checkLoginStatusHandler, loginHandler, logoutHandler, registerHandler, currencyChangeHandler, addParticipantHandler, addTransactionsHandler, deleteAllTransactionsHandler, unassignAllParticipantsHandler, saveSessionHandler, filterTransactionsHandler, calculateAndUpdateSummary } from './handlers.js';
+import { initializeCurrencySelection } from "./currency.js";
+import { loadInitialTheme } from './theme.js';
+// Import handlers including the new theme handler
+import {
+  checkLoginStatusHandler, loginHandler, logoutHandler, registerHandler,
+  currencyChangeHandler, addParticipantHandler, addTransactionsHandler,
+  deleteAllTransactionsHandler, unassignAllParticipantsHandler,
+  saveSessionHandler, filterTransactionsHandler, calculateAndUpdateSummary,
+  themeToggleHandler // <<< IMPORT themeToggleHandler
+} from './handlers.js';
 
 document.addEventListener("DOMContentLoaded", function () {
   console.log("DOM fully loaded and parsed. Initializing app...");
@@ -10,11 +18,18 @@ document.addEventListener("DOMContentLoaded", function () {
   const registerBtn = document.getElementById("register-btn");
   const loginBtn = document.getElementById("login-btn");
   const logoutBtn = document.getElementById("logout-btn");
+  const themeCheckbox = document.getElementById("theme-checkbox"); // <<< GET TOGGLE CHECKBOX
   // Transactions
   const addTransactionsBtn = document.getElementById("add-transactions-btn");
-  const deleteAllTransactionsBtn = document.getElementById("delete-all-transactions-btn");
-  const unassignAllParticipantsBtn = document.getElementById("unassign-all-participants-btn");
-  const transactionSearchInput = document.getElementById("transaction-search-input");
+  const deleteAllTransactionsBtn = document.getElementById(
+    "delete-all-transactions-btn"
+  );
+  const unassignAllParticipantsBtn = document.getElementById(
+    "unassign-all-participants-btn"
+  );
+  const transactionSearchInput = document.getElementById(
+    "transaction-search-input"
+  );
   // Participants
   const addParticipantBtn = document.getElementById("add-participant-btn");
   // Currency
@@ -29,21 +44,38 @@ document.addEventListener("DOMContentLoaded", function () {
   if (loginBtn) loginBtn.addEventListener("click", loginHandler);
   if (logoutBtn) logoutBtn.addEventListener("click", logoutHandler);
   // Transactions
-  if (addTransactionsBtn) addTransactionsBtn.addEventListener("click", addTransactionsHandler);
-  if (deleteAllTransactionsBtn) deleteAllTransactionsBtn.addEventListener("click", deleteAllTransactionsHandler);
-  if (unassignAllParticipantsBtn) unassignAllParticipantsBtn.addEventListener("click", unassignAllParticipantsHandler);
-  if (transactionSearchInput) transactionSearchInput.addEventListener("input", filterTransactionsHandler);
+  if (addTransactionsBtn)
+    addTransactionsBtn.addEventListener("click", addTransactionsHandler);
+  if (deleteAllTransactionsBtn)
+    deleteAllTransactionsBtn.addEventListener(
+      "click",
+      deleteAllTransactionsHandler
+    );
+  if (unassignAllParticipantsBtn)
+    unassignAllParticipantsBtn.addEventListener(
+      "click",
+      unassignAllParticipantsHandler
+    );
+  if (transactionSearchInput)
+    transactionSearchInput.addEventListener("input", filterTransactionsHandler);
   // Participants
-  if (addParticipantBtn) addParticipantBtn.addEventListener("click", addParticipantHandler);
+  if (addParticipantBtn)
+    addParticipantBtn.addEventListener("click", addParticipantHandler);
   // Currency
-  if (mainCurrencySelect) mainCurrencySelect.addEventListener("change", currencyChangeHandler);
-  if (secondaryCurrencySelect) secondaryCurrencySelect.addEventListener("change", currencyChangeHandler);
+  if (mainCurrencySelect)
+    mainCurrencySelect.addEventListener("change", currencyChangeHandler);
+  if (secondaryCurrencySelect)
+    secondaryCurrencySelect.addEventListener("change", currencyChangeHandler);
   // Sessions
-  if (saveSessionBtn) saveSessionBtn.addEventListener("click", saveSessionHandler);
+  if (saveSessionBtn)
+    saveSessionBtn.addEventListener("click", saveSessionHandler);
+  // Theme
+  if (themeCheckbox) themeCheckbox.addEventListener("change", themeToggleHandler);
 
   // --- Initial Load ---
-  initializeCurrencySelection(); // Load currency dropdowns first
-  checkLoginStatusHandler(); // Check login and load data if logged in
+  loadInitialTheme(); // <<< LOAD THEME FIRST
+  initializeCurrencySelection();
+  checkLoginStatusHandler();
 
   // Initial summary calculation (might be redundant if checkLoginStatus loads data)
   // calculateAndUpdateSummary(); // Calculate based on initial (likely empty) DOM state
@@ -52,12 +84,12 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 // Global error handling (optional)
-window.addEventListener('unhandledrejection', function (event) {
-  console.error('Unhandled Promise Rejection:', event.reason);
+window.addEventListener("unhandledrejection", function (event) {
+  console.error("Unhandled Promise Rejection:", event.reason);
   // alert("An unexpected error occurred. Please check the console.");
 });
 
-window.addEventListener('error', function (event) {
-  console.error('Uncaught Error:', event.message, event.filename, event.lineno);
+window.addEventListener("error", function (event) {
+  console.error("Uncaught Error:", event.message, event.filename, event.lineno);
   // alert("An unexpected script error occurred. Please check the console.");
 });

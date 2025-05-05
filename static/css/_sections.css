@@ -1,49 +1,71 @@
+/* static/css/_sections.css */
+
 /* Section styles */
 .section {
     background-color: var(--card-bg);
+    /* Uses variable */
+    color: var(--text-color);
+    /* Ensure text color */
     border-radius: 12px;
     padding: 30px;
     margin-bottom: 30px;
-    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.05);
+    /* box-shadow: 0 10px 20px rgba(0, 0, 0, 0.05); */
+    /* Old */
+    box-shadow: 0 10px 20px var(--shadow-color);
+    /* Use variable */
     transition: var(--transition);
     animation: fadeIn 0.5s ease-out;
-    /* Apply fade-in */
 }
 
 .section:hover {
     transform: translateY(-5px);
-    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+    /* box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1); */
+    /* Old */
+    box-shadow: 0 15px 30px var(--shadow-color);
+    /* Use variable */
 }
 
 .section h2 {
     color: var(--primary-color);
+    /* Uses variable */
     margin-top: 0;
-    /* Remove default top margin */
     margin-bottom: 1.5rem;
     font-weight: 300;
     font-size: 2rem;
     border-bottom: 2px solid var(--primary-color);
+    /* Uses variable */
     padding-bottom: 10px;
 }
 
 /* Instructions / Disclaimer */
 .instructions,
 .disclaimer {
-    background-color: #f8f9fa;
+    /* background-color: #f8f9fa; */
+    /* Old */
+    background-color: var(--table-row-even-bg);
+    /* Use variable (similar light grey) */
     border-left: 4px solid var(--primary-color);
+    /* Uses variable */
     padding: 15px;
     margin-bottom: 20px;
     border-radius: 0 8px 8px 0;
     font-style: italic;
-    color: #555;
+    /* color: #555; */
+    /* Old */
+    color: var(--text-color-muted);
+    /* Use variable */
 }
 
 .disclaimer {
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    /* box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); */
+    /* Old */
+    box-shadow: 0 2px 4px var(--shadow-color);
+    /* Use variable */
 }
 
 .disclaimer h3 {
     color: var(--primary-color);
+    /* Uses variable */
     margin-top: 0;
     font-size: 1.2rem;
 }
@@ -55,8 +77,12 @@
 
 .disclaimer li {
     margin-bottom: 5px;
+    color: var(--text-color-muted);
+    /* Ensure list item color adapts */
 }
 
 .disclaimer p {
     margin-bottom: 0;
+    color: var(--text-color-muted);
+    /* Ensure paragraph color adapts */
 }

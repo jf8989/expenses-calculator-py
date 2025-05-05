@@ -1,14 +1,75 @@
-/* Root variables for consistent theming */
+/* static/css/_variables.css */
 :root {
-    --primary-color: #3498db;
-    --secondary-color: #2ecc71;
-    --danger-color: #e74c3c;
-    --warning-color: #f39c12;
-    --text-color: #2c3e50;
-    --bg-color: #ecf0f1;
-    --card-bg: #ffffff;
-    --header-bg: #34495e;
-    --footer-bg: #2c3e50;
-    --footer-text: #ecf0f1;
-    --transition: all 0.3s ease;
+  /* Light Mode (Default) */
+  --primary-color: #3498db;
+  --secondary-color: #2ecc71;
+  --danger-color: #e74c3c;
+  --warning-color: #f39c12;
+  --text-color: #2c3e50;
+  /* Dark text on light bg */
+  --text-color-muted: #7f8c8d;
+  /* Lighter text */
+  --bg-color: #ecf0f1;
+  /* Light background */
+  --bg-gradient-start: #ecf0f1;
+  --bg-gradient-end: #bdc3c7;
+  --card-bg: #ffffff;
+  /* White cards */
+  --header-bg: #34495e;
+  --footer-bg: #2c3e50;
+  --footer-text: #ecf0f1;
+  --border-color: #e0e0e0;
+  /* Light border */
+  --table-row-even-bg: #f8f9fa;
+  --table-row-hover-bg: #e9ecef;
+  --input-bg: #ffffff;
+  --input-border: #ddd;
+  --input-focus-border: var(--primary-color);
+  --input-focus-shadow: rgba(52, 152, 219, 0.2);
+  --shadow-color: rgba(0, 0, 0, 0.1);
+  --scrollbar-track: #f1f1f1;
+  --scrollbar-thumb: var(--primary-color);
+  --scrollbar-thumb-hover: #2980b9;
+
+  --transition: all 0.3s ease;
+}
+
+/* Dark Mode Variables */
+:root[data-theme="dark"] {
+  --primary-color: #3498db;
+  /* Keep primary vibrant */
+  --secondary-color: #2ecc71;
+  --danger-color: #e74c3c;
+  --warning-color: #f39c12;
+  --text-color: #ecf0f1;
+  /* Light text on dark bg */
+  --text-color-muted: #95a5a6;
+  /* Darker muted text */
+  --bg-color: #2c3e50;
+  /* Dark background */
+  --bg-gradient-start: #2c3e50;
+  --bg-gradient-end: #34495e;
+  --card-bg: #34495e;
+  /* Darker cards */
+  --header-bg: #1a252f;
+  /* Even darker header */
+  --footer-bg: #1a252f;
+  /* Even darker footer */
+  --footer-text: #bdc3c7;
+  /* Lighter footer text */
+  --border-color: #4a627a;
+  /* Darker border */
+  --table-row-even-bg: #2f4254;
+  /* Darker even row */
+  --table-row-hover-bg: #3e5770;
+  /* Darker hover row */
+  --input-bg: #4a627a;
+  --input-border: #5e7a94;
+  --input-focus-border: var(--primary-color);
+  --input-focus-shadow: rgba(52, 152, 219, 0.3);
+  --shadow-color: rgba(0, 0, 0, 0.3);
+  /* Darker shadow */
+  --scrollbar-track: #4a627a;
+  --scrollbar-thumb: #bdc3c7;
+  --scrollbar-thumb-hover: #ecf0f1;
 }

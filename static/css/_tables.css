@@ -120,7 +120,7 @@
         display: block;
         /* Stack cells vertically */
         text-align: right;
-        /* Align cell content to the right */
+        /* Default align cell content to the right */
         padding: 8px 10px;
         /* Adjust padding */
         border-bottom: 1px dotted #eee;
@@ -128,7 +128,7 @@
         position: relative;
         /* For label positioning */
         white-space: normal;
-        /* Allow text wrapping */
+        /* <<< Ensure text can wrap */
     }
 
     #transactions-table td:last-child {
@@ -143,6 +143,8 @@
         position: absolute;
         left: 10px;
         /* Position label to the left */
+        width: calc(40% - 15px);
+        /* <<< Give the label a width (adjust %) */
         font-weight: bold;
         text-transform: uppercase;
         font-size: 0.8em;
@@ -151,43 +153,54 @@
         /* Align label text left */
         padding-right: 10px;
         /* Space between label and value */
+        white-space: nowrap;
+        /* <<< Keep the label itself from wrapping */
     }
 
-    /* Specific adjustments for certain cells */
-    #transactions-table td:nth-child(1),
-    /* Row number */
-    #transactions-table td:nth-child(6)
+    /* --- Specific adjustments for certain cells --- */
 
-    /* Actions */
-        {
+    /* Row number */
+    #transactions-table td:nth-child(1) {
         text-align: center;
-        /* Center row number and actions */
         padding-top: 15px;
         padding-bottom: 10px;
     }
 
-    #transactions-table td:nth-child(1)::before,
-    /* Hide label for row number */
-    #transactions-table td:nth-child(6)::before
-
-    /* Hide label for actions */
-        {
+    #transactions-table td:nth-child(1)::before {
+        /* Hide label for row number */
         content: "";
-        /* Hide label */
     }
 
+    /* Description cell */
+    #transactions-table td:nth-child(3) {
+        padding-left: 40%;
+        /* <<< Add left padding (match label width %) */
+        text-align: left;
+        /* <<< Align the description value text left */
+    }
+
+    /* Removed empty ruleset for #transactions-table td:nth-child(3)::before */
+
+    /* Amount cell */
     #transactions-table td:nth-child(4) {
-        /* Amount cell */
         font-weight: bold;
         font-size: 1.1em;
         padding-right: 10px;
         /* Reset padding */
+        padding-left: 40%;
+        /* <<< Add padding for label consistency */
+        text-align: left;
+        /* <<< Align amount left */
+        display: flex;
+        /* Use flex to align amount and button */
+        justify-content: space-between;
+        /* Space between amount and button */
+        align-items: center;
     }
 
     #transactions-table td:nth-child(4)::before {
         /* Amount label */
         font-weight: bold;
-        /* Keep label bold */
     }
 
     /* Ensure edit button is visible and positioned okay */
@@ -198,9 +211,12 @@
         display: inline-block;
         /* Make it always visible on mobile card */
         margin-left: 10px;
+        flex-shrink: 0;
+        /* Prevent button from shrinking */
     }
 
     #transactions-table .amount-cell {
+        /* The TD itself */
         padding-right: 10px;
         /* Reset padding */
     }
@@ -210,15 +226,18 @@
         /* Allow input to size naturally */
         max-width: 100px;
         /* Prevent excessive width */
+        margin-left: 40%;
+        /* Align input with value */
     }
 
-
+    /* Assigned To cell */
     #transactions-table td:nth-child(5) {
-        /* Assigned To cell */
         text-align: left;
         /* Align checkboxes left */
         padding-top: 10px;
         padding-bottom: 10px;
+        padding-left: 10px;
+        /* Reset padding */
     }
 
     #transactions-table td:nth-child(5)::before {
@@ -229,12 +248,33 @@
         /* Label on its own line */
         margin-bottom: 8px;
         padding-right: 0;
+        width: auto;
+        /* Reset width */
+        font-weight: bold;
+        /* Keep label bold */
+        color: var(--primary-color);
+        text-transform: uppercase;
+        font-size: 0.8em;
     }
 
     #transactions-table .checkbox-container {
         justify-content: flex-start;
         /* Align checkboxes left */
         gap: 8px 10px;
+        padding-left: 0;
+        /* Ensure checkboxes start left */
+    }
+
+    /* Actions cell */
+    #transactions-table td:nth-child(6) {
+        text-align: center;
+        padding-top: 15px;
+        padding-bottom: 10px;
+    }
+
+    #transactions-table td:nth-child(6)::before {
+        /* Hide label for actions */
+        content: "";
     }
 
     /* Ensure action buttons stack or wrap if needed */

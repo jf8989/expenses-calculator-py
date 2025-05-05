@@ -6,9 +6,7 @@
         max-width: 960px;
     }
 
-    .footer-content {
-        /* Adjust footer layout if needed */
-    }
+    /* Removed empty ruleset for .footer-content */
 }
 
 
@@ -40,7 +38,12 @@
     }
 
     #logout-btn {
-        /* Adjust size or position if needed */
+        padding: 10px 20px;
+        background-color: #f44336;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
     }
 
 
@@ -143,6 +146,12 @@
         /* Ensure action buttons fit */
         white-space: nowrap;
     }
+
+           /* Center Date Saved (2nd) and Transactions (3rd) columns */
+           #sessions-table td:nth-child(2),
+           #sessions-table td:nth-child(3) {
+               text-align: center;
+           }
 
 }
 

@@ -71,31 +71,40 @@ export function updateTransactionsTableUI(transactions, participants, mainCurren
     const tbody = table.querySelector("tbody");
     tbody.innerHTML = ""; // Clear existing rows
 
+    // Get headers text for data-label (important for mobile view)
+    const headers = Array.from(table.querySelectorAll("thead th")).map(th => th.textContent.trim());
+
     transactions.forEach((transaction, index) => {
         const row = tbody.insertRow();
         row.dataset.transactionId = transaction.id; // Store transaction ID
 
-        // Row Number, Date, Description
-        row.insertCell().textContent = index + 1;
+        // --- Add data-label attributes ---
+        row.insertCell().textContent = index + 1; // No label needed for #
         row.insertCell().textContent = transaction.date;
+        row.cells[1].setAttribute('data-label', headers[1] || 'Date'); // Use header text or default
         row.insertCell().textContent = transaction.description;
+        row.cells[2].setAttribute('data-label', headers[2] || 'Description');
 
         // Amount Cell (with edit functionality)
         const amountCell = row.insertCell();
         amountCell.classList.add("amount-cell");
+        amountCell.setAttribute('data-label', headers[3] || 'Amount');
         renderAmountCellContent(amountCell, transaction, mainCurrency, secondaryCurrency);
 
         // Participant Assignment Cell
         const assignedCell = row.insertCell();
+        assignedCell.setAttribute('data-label', headers[4] || 'Assigned To');
         renderCheckboxContainer(assignedCell, transaction, participants);
 
         // Actions Cell (Delete button)
         const actionsCell = row.insertCell();
+        actionsCell.setAttribute('data-label', headers[5] || 'Actions'); // Although label is hidden via CSS
         const deleteBtn = document.createElement("button");
         deleteBtn.textContent = "Delete";
-        // Use the handler function from handlers.js
+        deleteBtn.className = "btn btn-danger btn-sm"; // Add classes for consistency
         deleteBtn.onclick = () => deleteTransactionHandler(transaction);
         actionsCell.appendChild(deleteBtn);
+        // --- End data-label additions ---
     });
     updateRowNumbersUI(); // Update numbering after rendering
 }

@@ -565,5 +565,4 @@ export function renderInitialUI() {
     updateParticipantsListUI();
     refreshTransactionsTableUI(); // Render active transactions
     updateSessionsTableUI(); // Render saved sessions
-    calculateAndUpdateSummary(); // Calculate summary based on active transactions
 }

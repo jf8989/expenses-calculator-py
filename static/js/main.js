@@ -61,14 +61,16 @@ document.addEventListener("DOMContentLoaded", async function () {
   // This is the core driver for handling login/logout and initial data load
   if (window.firebaseAuth) {
     log("Main:AuthListener", "Setting up Firebase Auth listener...");
+    // Add async here
     window.firebaseAuth.onAuthStateChanged(async (user) => {
       log("Main:onAuthStateChanged", `Auth state changed. User: ${user ? user.email : 'null'}`);
       if (user) {
         // --- User is signed in ---
         ui.showLoading(true, "Loading user data...");
+        // Rename catch variable here
         try {
-          // 1. Update auth state (loads DB state if first time)
-          await state.setAuthState(true, user.uid);
+          // 1. Update auth state (NOW AWAITED)
+          await state.setAuthState(true, user.uid); // <<< AWAIT HERE
 
           // 2. Check for data updates from server
           const lastKnownTs = state.getLastSyncedTimestamp();
@@ -82,22 +84,25 @@ document.addEventListener("DOMContentLoaded", async function () {
           } else if (serverData && serverData.status === 'current') {
             log("Main:onAuthStateChanged", "Local state is current according to server.");
             // Ensure state is marked as initialized even if no new data fetched
-            state.appState.isInitialized = true; // Directly modify flag (or add a setter)
+            // state.appState.isInitialized = true; // <<< REMOVE THIS LINE
+            state.setInitialized(true);
           } else {
             warn("Main:onAuthStateChanged", "Received unexpected data status from server:", serverData);
             // Assume state loaded from DB is the best we have for now
-            state.appState.isInitialized = true;
+            // state.appState.isInitialized = true; // <<< REMOVE THIS LINE
+            state.setInitialized(true);
           }
 
           // 4. Update UI
           ui.showLoggedInState(user.email); // Show user email, hide auth section
           ui.renderInitialUI(); // Render all components based on state
-          log("Main:onAuthStateChanged", "User logged in, initial UI rendered.");
+          handlers.calculateAndUpdateSummary();
+          log("Main:onAuthStateChanged", "User logged in, initial UI rendered and summary calculated.");
 
-        } catch (error) {
-          error("Main:onAuthStateChanged", "Error during logged-in state processing:", error);
-          // Handle specific errors like token issues if needed
-          if (error.code === 'TOKEN_EXPIRED' || error.code === 'TOKEN_INVALID') {
+        } catch (err) { // <<< RENAMED error to err
+          // Use the imported logger function 'error'
+          error("Main:onAuthStateChanged", "Error during logged-in state processing:", err); // <<< Use imported error logger and err variable
+          if (err.code === 'TOKEN_EXPIRED' || err.code === 'TOKEN_INVALID') { // <<< Use err variable
             alert("Your session has expired or is invalid. Please sign out and sign back in.");
             await handlers.logoutHandler(); // Force logout
           } else {
@@ -116,7 +121,7 @@ document.addEventListener("DOMContentLoaded", async function () {
         ui.showLoggedOutState(); // Hide app content, show auth section
         ui.clearAllDataUI(); // Clear any lingering UI data
       }
-    });
+    }); // End onAuthStateChanged
   } else {
     error("Main:DOMContentLoaded", "Firebase Auth instance (window.firebaseAuth) not found. Firebase might not have initialized correctly in index.html.");
     alert("Error initializing application authentication. Please check the console and refresh.");

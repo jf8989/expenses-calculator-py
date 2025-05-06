@@ -78,16 +78,6 @@ export function initDB() {
  */
 export async function loadStateFromDB() {
     log('State:loadStateFromDB', 'Attempting to load state from IndexedDB...');
-    if (!db) {
-        warn('State:loadStateFromDB', 'DB not initialized. Call initDB first.');
-        // Attempt to initialize now? Or rely on calling order? Let's try init.
-        try {
-            await initDB();
-        } catch (err) {
-            error('State:loadStateFromDB', 'Failed to initialize DB during load.', err);
-            return getDefaultState(); // Return default if DB fails
-        }
-    }
 
     return new Promise((resolve, reject) => {
         const transaction = db.transaction(STORE_NAME, 'readonly');
@@ -101,20 +91,29 @@ export async function loadStateFromDB() {
 
         request.onsuccess = (event) => {
             const loadedData = event.target.result;
+            // Store current auth state before potentially resetting
+            const currentAuthStatus = appState.isAuthenticated;
+            const currentUserId = appState.userId;
+
             if (loadedData) {
                 log('State:loadStateFromDB', 'State loaded successfully from DB:', loadedData);
-                // Merge loaded data into appState (careful with object references)
                 appState = {
-                    ...appState, // Keep defaults like isInitialized
-                    ...loadedData, // Overwrite with loaded participants, sessions, timestamp
-                    // Ensure activeSessionData is reset or loaded appropriately if needed
-                    activeSessionData: loadedData.activeSessionData || getDefaultState().activeSessionData
+                    ...getDefaultState(), // Start with defaults
+                    ...loadedData,      // Overwrite with loaded data
+                    isInitialized: appState.isInitialized, // Preserve previous init flag if any
+                    isAuthenticated: currentAuthStatus, // <<< PRESERVE AUTH STATUS
+                    userId: currentUserId           // <<< PRESERVE USER ID
                 };
                 resolve(appState);
             } else {
                 log('State:loadStateFromDB', 'No state found in DB for key:', DATA_KEY);
-                appState = { ...appState, ...getDefaultState() }; // Reset to default if nothing loaded
-                resolve(appState); // Resolve with default state
+                // Reset to default BUT preserve current auth status
+                appState = {
+                    ...getDefaultState(),
+                    isAuthenticated: currentAuthStatus, // <<< PRESERVE AUTH STATUS
+                    userId: currentUserId           // <<< PRESERVE USER ID
+                };
+                resolve(appState); // Resolve with the corrected default state
             }
         };
     });
@@ -256,22 +255,30 @@ export function getActiveCurrencies() { return { ...appState.activeSessionData.c
 export function isInitialized() { return appState.isInitialized; }
 export function isAuthenticated() { return appState.isAuthenticated; }
 export function getUserId() { return appState.userId; }
+export function getActiveParticipants() { return [...appState.activeSessionData.participants]; } // Return copy
 
 // --- Setters / Updaters (Modify in-memory state AND trigger save to DB) ---
 
-export async function setAuthState(isAuthenticated, userId) {
+export async function setAuthState(isAuthenticated, userId) { // Add async
     log('State:setAuthState', `Setting auth state: ${isAuthenticated}, User ID: ${userId}`);
     const changed = appState.isAuthenticated !== isAuthenticated || appState.userId !== userId;
     appState.isAuthenticated = isAuthenticated;
     appState.userId = userId;
     if (!isAuthenticated) {
         // Clear DB state on logout
-        await clearDBState();
+        await clearDBState(); // Already awaited, good.
     } else if (changed) {
-        // If logging in, try loading state. Don't save yet.
-        await loadStateFromDB();
+        // If logging in, try loading state. Await this!
+        try {
+            await loadStateFromDB(); // <<< AWAIT HERE
+        } catch (err) {
+            error('State:setAuthState', 'Error loading state from DB during auth change:', err);
+            // Reset to default if load fails
+            appState = { ...appState, ...getDefaultState(), isAuthenticated: true, userId: userId };
+            await saveStateToDB(); // Save the reset state
+        }
     }
-    // Save happens implicitly when other setters are called after login/load
+    // No immediate save needed here, subsequent actions will save.
 }
 
 export async function setParticipants(participantsList) {
@@ -433,4 +440,10 @@ export async function setActiveCurrencies(mainCurrency, secondaryCurrency) {
     appState.activeSessionData.currencies = { main: mainCurrency, secondary: secondaryCurrency };
     // Do we need to save this immediately? Yes, persist preference.
     await saveStateToDB();
+}
+
+export function setInitialized(value) {
+    log('State:setInitialized', `Setting initialized status to: ${value}`);
+    appState.isInitialized = !!value; // Ensure boolean value
+    // No need to save state to DB just for this flag, it's transient session info
 }

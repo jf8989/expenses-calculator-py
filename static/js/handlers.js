@@ -330,25 +330,25 @@ export async function saveSessionHandler() {
 export async function loadSessionHandler(sessionId) {
     log('Handlers:loadSessionHandler', `Attempting to load session ${sessionId} into active state.`);
     if (confirm("Loading this session will replace your current unsaved transactions. Continue?")) {
+        // Rename catch variable here
         try {
-            // 1. Get session data from local state
             const sessionToLoad = state.getSessionById(sessionId);
             if (!sessionToLoad) {
                 throw new Error("Session not found in local state.");
             }
 
-            // 2. Load it into the active state (triggers save to IndexedDB)
             await state.loadSessionIntoActiveState(sessionToLoad);
             log('Handlers:loadSessionHandler', 'Session loaded into active state.');
 
-            // 3. Update UI to reflect the newly active data
             ui.refreshTransactionsTableUI();
             calculateAndUpdateSummary();
             alert(`Session "${sessionToLoad.name}" loaded.`);
 
-        } catch (error) {
-            error('Handlers:loadSessionHandler', 'Error loading session:', error);
-            alert(`Error loading session: ${error.message}`);
+            // Rename catch variable here
+        } catch (err) { // <<< RENAME error to err (or similar)
+            // Use the imported logger function 'error'
+            error('Handlers:loadSessionHandler', 'Error loading session:', err); // <<< Use imported error logger
+            alert(`Error loading session: ${err.message}`);
         }
     }
 }

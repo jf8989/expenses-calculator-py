@@ -1,95 +1,140 @@
 // static/js/main.js
 import { initializeCurrencySelection } from "./currency.js";
 import { loadInitialTheme } from './theme.js';
-// Import handlers including the new theme handler
-import {
-  checkLoginStatusHandler, loginHandler, logoutHandler, registerHandler,
-  currencyChangeHandler, addParticipantHandler, addTransactionsHandler,
-  deleteAllTransactionsHandler, unassignAllParticipantsHandler,
-  saveSessionHandler, filterTransactionsHandler, calculateAndUpdateSummary,
-  themeToggleHandler // <<< IMPORT themeToggleHandler
-} from './handlers.js';
+import * as handlers from './handlers.js'; // Import all handlers
+import * as state from './state.js'; // Import state functions
+import * as api from './api.js'; // Import API functions
+import * as ui from './ui.js'; // Import UI functions
+import { log, warn, error } from './logger.js'; // Assuming logger utility
 
-document.addEventListener("DOMContentLoaded", function () {
-  console.log("DOM fully loaded and parsed. Initializing app...");
+document.addEventListener("DOMContentLoaded", async function () {
+  log("Main:DOMContentLoaded", "DOM fully loaded and parsed. Initializing app...");
 
-  // --- Get DOM Elements ---
-  // Auth
-  const registerBtn = document.getElementById("register-btn");
-  const loginBtn = document.getElementById("login-btn");
+  // --- Initial Setup ---
+  loadInitialTheme(); // Load theme first
+  initializeCurrencySelection(); // Setup currency dropdowns
+
+  try {
+    await state.initDB(); // Initialize IndexedDB connection early
+    log("Main:DOMContentLoaded", "IndexedDB initialized.");
+  } catch (err) {
+    error("Main:DOMContentLoaded", "FATAL: Failed to initialize IndexedDB. App may not function correctly.", err);
+    alert("Error initializing local database. Please refresh the page or contact support.");
+    // Maybe disable parts of the UI?
+    return; // Stop further initialization if DB fails
+  }
+
+  // --- Get DOM Elements (Auth related mostly) ---
+  const googleSignInBtn = document.getElementById("google-signin-btn");
   const logoutBtn = document.getElementById("logout-btn");
-  const themeCheckbox = document.getElementById("theme-checkbox"); // <<< GET TOGGLE CHECKBOX
-  // Transactions
+  const themeCheckbox = document.getElementById("theme-checkbox");
+  // Other elements needed for listeners
   const addTransactionsBtn = document.getElementById("add-transactions-btn");
-  const deleteAllTransactionsBtn = document.getElementById(
-    "delete-all-transactions-btn"
-  );
-  const unassignAllParticipantsBtn = document.getElementById(
-    "unassign-all-participants-btn"
-  );
-  const transactionSearchInput = document.getElementById(
-    "transaction-search-input"
-  );
-  // Participants
+  const deleteAllTransactionsBtn = document.getElementById("delete-all-transactions-btn");
+  const unassignAllParticipantsBtn = document.getElementById("unassign-all-participants-btn");
+  const transactionSearchInput = document.getElementById("transaction-search-input");
   const addParticipantBtn = document.getElementById("add-participant-btn");
-  // Currency
   const mainCurrencySelect = document.getElementById("main-currency");
   const secondaryCurrencySelect = document.getElementById("secondary-currency");
-  // Sessions
   const saveSessionBtn = document.getElementById("save-session-btn");
 
   // --- Add Event Listeners ---
   // Auth
-  if (registerBtn) registerBtn.addEventListener("click", registerHandler);
-  if (loginBtn) loginBtn.addEventListener("click", loginHandler);
-  if (logoutBtn) logoutBtn.addEventListener("click", logoutHandler);
-  // Transactions
-  if (addTransactionsBtn)
-    addTransactionsBtn.addEventListener("click", addTransactionsHandler);
-  if (deleteAllTransactionsBtn)
-    deleteAllTransactionsBtn.addEventListener(
-      "click",
-      deleteAllTransactionsHandler
-    );
-  if (unassignAllParticipantsBtn)
-    unassignAllParticipantsBtn.addEventListener(
-      "click",
-      unassignAllParticipantsHandler
-    );
-  if (transactionSearchInput)
-    transactionSearchInput.addEventListener("input", filterTransactionsHandler);
-  // Participants
-  if (addParticipantBtn)
-    addParticipantBtn.addEventListener("click", addParticipantHandler);
-  // Currency
-  if (mainCurrencySelect)
-    mainCurrencySelect.addEventListener("change", currencyChangeHandler);
-  if (secondaryCurrencySelect)
-    secondaryCurrencySelect.addEventListener("change", currencyChangeHandler);
-  // Sessions
-  if (saveSessionBtn)
-    saveSessionBtn.addEventListener("click", saveSessionHandler);
+  if (googleSignInBtn) googleSignInBtn.addEventListener("click", handlers.googleSignInHandler);
+  if (logoutBtn) logoutBtn.addEventListener("click", handlers.logoutHandler);
   // Theme
-  if (themeCheckbox) themeCheckbox.addEventListener("change", themeToggleHandler);
+  if (themeCheckbox) themeCheckbox.addEventListener("change", handlers.themeToggleHandler);
+  // Transactions (Active Session)
+  if (addTransactionsBtn) addTransactionsBtn.addEventListener("click", handlers.addTransactionsHandler);
+  if (deleteAllTransactionsBtn) deleteAllTransactionsBtn.addEventListener("click", handlers.deleteAllTransactionsHandler);
+  if (unassignAllParticipantsBtn) unassignAllParticipantsBtn.addEventListener("click", handlers.unassignAllParticipantsHandler);
+  if (transactionSearchInput) transactionSearchInput.addEventListener("input", handlers.filterTransactionsHandler);
+  // Participants
+  if (addParticipantBtn) addParticipantBtn.addEventListener("click", handlers.addParticipantHandler);
+  // Currency
+  if (mainCurrencySelect) mainCurrencySelect.addEventListener("change", handlers.currencyChangeHandler);
+  if (secondaryCurrencySelect) secondaryCurrencySelect.addEventListener("change", handlers.currencyChangeHandler);
+  // Sessions
+  if (saveSessionBtn) saveSessionBtn.addEventListener("click", handlers.saveSessionHandler);
 
-  // --- Initial Load ---
-  loadInitialTheme(); // <<< LOAD THEME FIRST
-  initializeCurrencySelection();
-  checkLoginStatusHandler();
+  // --- Firebase Auth State Listener ---
+  // This is the core driver for handling login/logout and initial data load
+  if (window.firebaseAuth) {
+    log("Main:AuthListener", "Setting up Firebase Auth listener...");
+    window.firebaseAuth.onAuthStateChanged(async (user) => {
+      log("Main:onAuthStateChanged", `Auth state changed. User: ${user ? user.email : 'null'}`);
+      if (user) {
+        // --- User is signed in ---
+        ui.showLoading(true, "Loading user data...");
+        try {
+          // 1. Update auth state (loads DB state if first time)
+          await state.setAuthState(true, user.uid);
 
-  // Initial summary calculation (might be redundant if checkLoginStatus loads data)
-  // calculateAndUpdateSummary(); // Calculate based on initial (likely empty) DOM state
+          // 2. Check for data updates from server
+          const lastKnownTs = state.getLastSyncedTimestamp();
+          log("Main:onAuthStateChanged", `Fetching user data from server. Last known TS: ${lastKnownTs}`);
+          const serverData = await api.fetchUserData(lastKnownTs);
 
-  console.log("App initialization complete.");
+          // 3. Update local state if server sent new data
+          if (serverData && serverData.status === 'updated') {
+            log("Main:onAuthStateChanged", "Server returned updated data. Updating local state.");
+            await state.updateStateFromServer(serverData);
+          } else if (serverData && serverData.status === 'current') {
+            log("Main:onAuthStateChanged", "Local state is current according to server.");
+            // Ensure state is marked as initialized even if no new data fetched
+            state.appState.isInitialized = true; // Directly modify flag (or add a setter)
+          } else {
+            warn("Main:onAuthStateChanged", "Received unexpected data status from server:", serverData);
+            // Assume state loaded from DB is the best we have for now
+            state.appState.isInitialized = true;
+          }
+
+          // 4. Update UI
+          ui.showLoggedInState(user.email); // Show user email, hide auth section
+          ui.renderInitialUI(); // Render all components based on state
+          log("Main:onAuthStateChanged", "User logged in, initial UI rendered.");
+
+        } catch (error) {
+          error("Main:onAuthStateChanged", "Error during logged-in state processing:", error);
+          // Handle specific errors like token issues if needed
+          if (error.code === 'TOKEN_EXPIRED' || error.code === 'TOKEN_INVALID') {
+            alert("Your session has expired or is invalid. Please sign out and sign back in.");
+            await handlers.logoutHandler(); // Force logout
+          } else {
+            alert("An error occurred while loading your data. Please try refreshing the page.");
+            // Show logged-out state as a fallback?
+            ui.showLoggedOutState();
+            ui.clearAllDataUI();
+          }
+        } finally {
+          ui.showLoading(false);
+        }
+      } else {
+        // --- User is signed out ---
+        log("Main:onAuthStateChanged", "User is signed out.");
+        await state.setAuthState(false, null); // Clears state & DB
+        ui.showLoggedOutState(); // Hide app content, show auth section
+        ui.clearAllDataUI(); // Clear any lingering UI data
+      }
+    });
+  } else {
+    error("Main:DOMContentLoaded", "Firebase Auth instance (window.firebaseAuth) not found. Firebase might not have initialized correctly in index.html.");
+    alert("Error initializing application authentication. Please check the console and refresh.");
+  }
+
+  // REMOVED: Initial checkLoginStatusHandler() call
+  // REMOVED: Initial calculateAndUpdateSummary() call
+
+  log("Main:DOMContentLoaded", "App initialization sequence complete.");
 });
 
-// Global error handling (optional)
+// Global error handling (optional but good practice)
 window.addEventListener("unhandledrejection", function (event) {
-  console.error("Unhandled Promise Rejection:", event.reason);
-  // alert("An unexpected error occurred. Please check the console.");
+  error("Global:UnhandledRejection", "Unhandled Promise Rejection:", event.reason);
+  // Avoid alerting for every minor issue, but log it.
+  // Consider a more robust error reporting mechanism for production.
 });
 
 window.addEventListener("error", function (event) {
-  console.error("Uncaught Error:", event.message, event.filename, event.lineno);
-  // alert("An unexpected script error occurred. Please check the console.");
+  error("Global:Error", "Uncaught Error:", event.message, event.filename, event.lineno, event.error);
 });

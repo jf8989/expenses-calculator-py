@@ -1,45 +1,39 @@
 // static/js/theme.js
+import { log, warn } from './logger.js'; // Import logger
 
-// Function to apply the theme
 function setTheme(themeName) {
+    log('Theme:setTheme', `Applying theme: ${themeName}`); // Use logger
     localStorage.setItem('theme', themeName);
-    document.body.dataset.theme = themeName; // Use data attribute
+    document.body.dataset.theme = themeName;
 
-    // Select the label INSIDE the function
     const themeLabel = document.querySelector('.theme-label');
-    // Update label text based on theme
     if (themeLabel) {
         themeLabel.textContent = themeName === 'dark' ? 'Light Mode' : 'Dark Mode';
     } else {
-        console.warn("Theme label element not found during setTheme.");
+        warn("Theme:setTheme", "Theme label element not found."); // Use logger
     }
 }
 
-// Function to toggle between light and dark themes
 export function toggleTheme() {
-    // Select the toggle INSIDE the function
     const themeToggle = document.getElementById('theme-checkbox');
     const currentTheme = localStorage.getItem('theme') || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
     const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
 
-    console.log(`Toggling theme from ${currentTheme} to ${newTheme}`); // Debug log
+    log('Theme:toggleTheme', `Toggling theme from ${currentTheme} to ${newTheme}`); // Use logger
     setTheme(newTheme);
 
-    // Update checkbox state AFTER setting theme
     if (themeToggle) {
         themeToggle.checked = (newTheme === 'dark');
     } else {
-        console.warn("Theme toggle checkbox not found during toggleTheme.");
+        warn("Theme:toggleTheme", "Theme toggle checkbox not found."); // Use logger
     }
 }
 
-// Function to load the initial theme
 export function loadInitialTheme() {
-    // Select the toggle INSIDE the function
     const themeToggle = document.getElementById('theme-checkbox');
     const savedTheme = localStorage.getItem('theme');
     const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-    let initialTheme = 'light'; // Default to light
+    let initialTheme = 'light';
 
     if (savedTheme) {
         initialTheme = savedTheme;
@@ -47,13 +41,12 @@ export function loadInitialTheme() {
         initialTheme = 'dark';
     }
 
-    console.log(`Loading initial theme: ${initialTheme}`); // Debug log
+    log('Theme:loadInitialTheme', `Loading initial theme: ${initialTheme}`); // Use logger
     setTheme(initialTheme);
 
-    // Set initial checkbox state
     if (themeToggle) {
         themeToggle.checked = (initialTheme === 'dark');
     } else {
-        console.warn("Theme toggle checkbox not found during loadInitialTheme.");
+        warn("Theme:loadInitialTheme", "Theme toggle checkbox not found."); // Use logger
     }
 }

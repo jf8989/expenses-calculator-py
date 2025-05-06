@@ -1,45 +1,38 @@
 // static/js/transactions.js
+import { log, warn } from './logger.js'; // Import logger
 
 // Function to parse transactions from text input
 export function parseTransactions(text) {
+    log('Transactions:parse', `Parsing transaction text: ${text.substring(0, 50)}...`); // Log added
     const lines = text.split("\n");
-    return lines
-        .map((line) => {
+    const parsed = lines
+        .map((line, index) => {
             const match = line.match(
                 /(\d{2}\/\d{2}\/\d{4})\s*:\s*(.+?)\s*-\s*([-\d.,]+)(?:\s*\(?.*\)?)?$/
             );
             if (match) {
                 const [, date, description, amountStr] = match;
-                // Robust amount parsing (handle commas, ensure float)
-                const amount = parseFloat(amountStr.replace(/,/g, '')); // Remove commas before parsing
+                const amount = parseFloat(amountStr.replace(/,/g, ''));
                 if (isNaN(amount)) {
-                    console.warn(`Could not parse amount: "${amountStr}" from line: "${line}"`);
-                    return null; // Skip if amount is invalid
+                    warn('Transactions:parse', `Skipped line ${index + 1} due to invalid amount: "${amountStr}" from line: "${line}"`); // Use logger
+                    return null;
                 }
-                console.log(`Parsed transaction - Date: ${date}, Description: ${description.trim()}, Amount: ${amount}`);
+                // log('Transactions:parse', `Parsed line ${index + 1}: Date=${date}, Desc=${description.trim()}, Amt=${amount}`); // Optional: Log every successful parse
                 return {
                     date,
                     description: description.trim(),
                     amount,
                     assigned_to: [], // Default assignment
+                    currency: '', // Default currency (maybe get from state later?)
                 };
+            } else if (line.trim()) { // Log lines that aren't empty but didn't match
+                warn('Transactions:parse', `Skipped line ${index + 1} due to format mismatch: "${line}"`);
             }
             return null;
         })
         .filter((t) => t !== null);
+    log('Transactions:parse', `Successfully parsed ${parsed.length} transactions.`); // Log added
+    return parsed;
 }
 
-
-// Function to find assignment history based on description key
-export function findSimilarTransaction(description, historyObject) {
-    if (!description || typeof description !== 'string' || !historyObject) {
-        return null;
-    }
-    const lowerCaseDescription = description.toLowerCase().trim();
-    for (const key in historyObject) {
-        if (Object.prototype.hasOwnProperty.call(historyObject, key) && key.toLowerCase().trim() === lowerCaseDescription) {
-            return [...historyObject[key]]; // Return copy
-        }
-    }
-    return null; // No direct match found
-}
+// REMOVED findSimilarTransaction - History logic removed for now

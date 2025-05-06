@@ -22,25 +22,30 @@ logging.basicConfig(
 logger = logging.getLogger(__name__) # Get logger for app level
 
 # --- Firebase Initialization ---
-try:
-    # Get the service account key file path from environment variable
-    cred_path = os.environ.get('FIREBASE_SERVICE_ACCOUNT_KEY')
-    if not cred_path:
-        logger.error("FATAL: FIREBASE_SERVICE_ACCOUNT_KEY environment variable not set.")
-        raise ValueError("Firebase service account key path not configured.")
-    if not os.path.exists(cred_path):
-         logger.error(f"FATAL: Firebase service account key file not found at: {cred_path}")
-         raise FileNotFoundError(f"Service account key file not found at specified path: {cred_path}")
+firestore_db = None # Ensure firestore_db is defined in this scope
+# Check if the default app already exists before initializing
+if not firebase_admin._apps:
+    try:
+        # Get the service account key file path from environment variable
+        cred_path = os.environ.get('FIREBASE_SERVICE_ACCOUNT_KEY')
+        if not cred_path:
+            logger.error("FATAL: FIREBASE_SERVICE_ACCOUNT_KEY environment variable not set.")
+            raise ValueError("Firebase service account key path not configured.")
+        if not os.path.exists(cred_path):
+             logger.error(f"FATAL: Firebase service account key file not found at: {cred_path}")
+             raise FileNotFoundError(f"Service account key file not found at specified path: {cred_path}")
 
-    cred = credentials.Certificate(cred_path)
-    firebase_admin.initialize_app(cred)
-    firestore_db = firestore.client() # Initialize Firestore client globally
-    logger.info("Firebase Admin SDK initialized successfully.")
-except Exception as e:
-    logger.exception("FATAL: Failed to initialize Firebase Admin SDK.")
-    # Depending on deployment, might want to exit or raise the exception
-    # For now, we log the error; Flask might fail later if db isn't available.
-    firestore_db = None # Ensure it's None if init fails
+        cred = credentials.Certificate(cred_path)
+        firebase_admin.initialize_app(cred)
+        firestore_db = firestore.client() # Initialize Firestore client globally
+        logger.info("Firebase Admin SDK initialized successfully.")
+    except Exception as e:
+        logger.exception("FATAL: Failed to initialize Firebase Admin SDK.")
+        firestore_db = None # Ensure it's None if init fails
+else:
+    logger.warning("Firebase Admin SDK already initialized. Skipping initialization.")
+    # Get the client for the already initialized default app
+    firestore_db = firestore.client()
 
 # --- Flask App Initialization ---
 app = Flask(__name__)

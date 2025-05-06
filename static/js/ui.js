@@ -1,61 +1,108 @@
 // static/js/ui.js
-import { handleExportSessionPdf } from './export.js'; // Assuming export.js is also a module
-import {
-    toggleCurrencyHandler,
-    updateTransactionAssignmentHandler,
-    deleteTransactionHandler,
-    addParticipantHandler,
-    deleteParticipantHandler,
-    saveSessionHandler,
-    loadSessionHandler,
-    overwriteSessionHandler,
-    deleteSessionHandler
-} from './handlers.js'; // We'll create this file next
+import { handleExportSessionPdf } from './export.js'; // Keep export handler import
+import * as handlers from './handlers.js'; // Import handlers
+import * as state from './state.js'; // Import state module
+import { log, warn, error } from './logger.js'; // Assuming logger utility
 
 // --- Auth UI ---
-export function showLoggedInState() {
+export function showLoggedInState(userEmail) {
+    log('UI:showLoggedInState', `Displaying logged-in state for ${userEmail}`);
+    const userStatusDiv = document.getElementById("user-status");
+    const userEmailSpan = document.getElementById("user-email-display");
+    if (userEmailSpan) userEmailSpan.textContent = userEmail || 'User';
+    if (userStatusDiv) userStatusDiv.style.display = "flex"; // Use flex as defined in CSS
+
     document.getElementById("auth-section").style.display = "none";
-    document.getElementById("logout-btn").style.display = "inline";
     document.getElementById("app-content").style.display = "block";
 }
 
 export function showLoggedOutState() {
-    document.getElementById("auth-section").style.display = "block";
-    document.getElementById("logout-btn").style.display = "none";
+    log('UI:showLoggedOutState', 'Displaying logged-out state.');
+    const userStatusDiv = document.getElementById("user-status");
+    if (userStatusDiv) userStatusDiv.style.display = "none";
+
+    document.getElementById("auth-section").style.display = "block"; // Or 'flex' depending on CSS
     document.getElementById("app-content").style.display = "none";
-    // Clear sensitive data on logout
-    clearParticipantsList();
-    clearTransactionsTable();
-    clearSessionsTable();
-    clearSummaryTable();
+    clearAuthError(); // Clear any previous auth errors
 }
 
+export function showAuthError(message) {
+    const errorDiv = document.getElementById("auth-error");
+    if (errorDiv) {
+        errorDiv.textContent = message;
+        errorDiv.style.display = "block";
+    }
+}
+
+export function clearAuthError() {
+    const errorDiv = document.getElementById("auth-error");
+    if (errorDiv) {
+        errorDiv.textContent = '';
+        errorDiv.style.display = "none";
+    }
+}
+
+// --- Loading Indicator ---
+export function showLoading(isLoading, message = 'Loading...') {
+    const indicator = document.getElementById("loading-indicator");
+    if (!indicator) return;
+
+    if (isLoading) {
+        log('UI:showLoading', `Showing loading: ${message}`);
+        const messageElement = indicator.querySelector('p');
+        if (messageElement) messageElement.textContent = message;
+        indicator.style.display = 'flex'; // Or 'block' depending on styling
+    } else {
+        log('UI:showLoading', 'Hiding loading indicator.');
+        indicator.style.display = 'none';
+    }
+}
+
+
 // --- Currency UI ---
+// Keep populateCurrencyOptions and applyCurrencyPreferences as they operate on DOM elements directly
 export function populateCurrencyOptions(currencies, mainSelect, secondarySelect) {
+    // Clear existing options first
+    mainSelect.innerHTML = '';
+    secondarySelect.innerHTML = '';
     currencies.forEach((currency) => {
         const option = new Option(`${currency.name} (${currency.symbol})`, currency.code);
         mainSelect.add(option.cloneNode(true));
         secondarySelect.add(option);
     });
+    log('UI:populateCurrencyOptions', 'Populated currency dropdowns.');
 }
 
 export function applyCurrencyPreferences(mainPref, secondaryPref, mainSelect, secondarySelect) {
     if (mainPref) mainSelect.value = mainPref;
     if (secondaryPref) secondarySelect.value = secondaryPref;
+    log('UI:applyCurrencyPreferences', `Applied currency prefs: Main=${mainSelect.value}, Secondary=${secondarySelect.value}`);
 }
 
 // --- Participants UI ---
-export function updateParticipantsListUI(participants) {
+export function updateParticipantsListUI() {
+    const participants = state.getParticipants(); // Get data from state
+    log('UI:updateParticipantsListUI', 'Updating participants list UI with state data:', participants);
     const participantsList = document.getElementById("participants-list");
     participantsList.innerHTML = ""; // Clear existing
     participants.forEach((participant) => {
         const li = document.createElement("li");
-        li.textContent = participant;
+
+        // Participant Name Span
+        const nameSpan = document.createElement("span");
+        nameSpan.textContent = participant;
+        nameSpan.classList.add("participant-name"); // Add class for styling
+        li.appendChild(nameSpan);
+
+        // Delete Button
         const deleteBtn = document.createElement("button");
-        deleteBtn.textContent = "Delete";
+        deleteBtn.innerHTML = '<i class="fas fa-trash-alt"></i>'; // Use icon
+        deleteBtn.title = `Delete ${participant}`;
+        deleteBtn.classList.add("btn", "btn-danger", "btn-sm", "participant-delete-btn"); // Add classes
         // Use the handler function from handlers.js
-        deleteBtn.onclick = () => deleteParticipantHandler(participant);
+        deleteBtn.onclick = () => handlers.deleteParticipantHandler(participant);
         li.appendChild(deleteBtn);
+
         participantsList.appendChild(li);
     });
 }
@@ -63,25 +110,37 @@ export function updateParticipantsListUI(participants) {
 export function clearParticipantsList() {
     const participantsList = document.getElementById("participants-list");
     if (participantsList) participantsList.innerHTML = "";
+    log('UI:clearParticipantsList', 'Cleared participants list UI.');
 }
 
 // --- Transactions UI ---
-export function updateTransactionsTableUI(transactions, participants, mainCurrency, secondaryCurrency) {
+
+/**
+ * Re-renders the entire transactions table based on the current active transactions in state.
+ */
+export function refreshTransactionsTableUI() {
+    const transactions = state.getActiveTransactions(); // Get from state
+    const participants = state.getParticipants(); // Get from state
+    const currencies = state.getActiveCurrencies(); // Get from state
+    log('UI:refreshTransactionsTableUI', `Refreshing transactions table with ${transactions.length} transactions.`);
+
     const table = document.getElementById("transactions-table");
+    if (!table) return;
     const tbody = table.querySelector("tbody");
     tbody.innerHTML = ""; // Clear existing rows
 
-    // Get headers text for data-label (important for mobile view)
     const headers = Array.from(table.querySelectorAll("thead th")).map(th => th.textContent.trim());
 
-    transactions.forEach((transaction, index) => {
+    transactions.forEach((transaction, index) => { // Get index here
         const row = tbody.insertRow();
-        row.dataset.transactionId = transaction.id; // Store transaction ID
+        // Store index on the row for easy access by handlers within the row
+        row.dataset.transactionIndex = index;
 
         // --- Add data-label attributes ---
-        row.insertCell().textContent = index + 1; // No label needed for #
+        row.insertCell().textContent = index + 1; // # column
+        row.cells[0].setAttribute('data-label', headers[0] || '#');
         row.insertCell().textContent = transaction.date;
-        row.cells[1].setAttribute('data-label', headers[1] || 'Date'); // Use header text or default
+        row.cells[1].setAttribute('data-label', headers[1] || 'Date');
         row.insertCell().textContent = transaction.description;
         row.cells[2].setAttribute('data-label', headers[2] || 'Description');
 
@@ -89,34 +148,45 @@ export function updateTransactionsTableUI(transactions, participants, mainCurren
         const amountCell = row.insertCell();
         amountCell.classList.add("amount-cell");
         amountCell.setAttribute('data-label', headers[3] || 'Amount');
-        renderAmountCellContent(amountCell, transaction, mainCurrency, secondaryCurrency);
+        // Pass index instead of transaction object
+        renderAmountCellContent(amountCell, index, currencies.main, currencies.secondary);
 
         // Participant Assignment Cell
         const assignedCell = row.insertCell();
         assignedCell.setAttribute('data-label', headers[4] || 'Assigned To');
-        renderCheckboxContainer(assignedCell, transaction, participants);
+        // Pass index and participants list
+        renderCheckboxContainer(assignedCell, index, participants);
 
         // Actions Cell (Delete button)
         const actionsCell = row.insertCell();
-        actionsCell.setAttribute('data-label', headers[5] || 'Actions'); // Although label is hidden via CSS
+        actionsCell.setAttribute('data-label', headers[5] || 'Actions');
         const deleteBtn = document.createElement("button");
         deleteBtn.textContent = "Delete";
-        deleteBtn.className = "btn btn-danger btn-sm"; // Add classes for consistency
-        deleteBtn.onclick = () => deleteTransactionHandler(transaction);
+        deleteBtn.className = "btn btn-danger btn-sm";
+        // Pass index to the handler
+        deleteBtn.onclick = () => {
+            if (confirm(`Delete transaction: ${transaction.date} - ${transaction.description}?`)) {
+                handlers.deleteTransactionHandler(index);
+            }
+        };
         actionsCell.appendChild(deleteBtn);
-        // --- End data-label additions ---
     });
     updateRowNumbersUI(); // Update numbering after rendering
+    filterTransactionsUI(); // Re-apply existing filter
 }
+
 
 export function clearTransactionsTable() {
     const tbody = document.querySelector("#transactions-table tbody");
     if (tbody) tbody.innerHTML = "";
+    log('UI:clearTransactionsTable', 'Cleared transactions table UI.');
 }
 
-
-function renderAmountCellContent(amountCell, transaction, mainCurrency, secondaryCurrency) {
+// Modified to accept index
+function renderAmountCellContent(amountCell, transactionIndex, mainCurrency, secondaryCurrency) {
     amountCell.innerHTML = ''; // Clear the cell first
+    const transaction = state.getActiveTransactions()[transactionIndex]; // Get transaction from state using index
+    if (!transaction) return; // Safety check
 
     const amount = Number(transaction.amount);
     const displayCurrency = transaction.currency || mainCurrency;
@@ -129,8 +199,11 @@ function renderAmountCellContent(amountCell, transaction, mainCurrency, secondar
     amountSpan.title = "Click to toggle currency";
     amountSpan.addEventListener("click", (event) => {
         event.stopPropagation();
-        // Use the handler function from handlers.js
-        toggleCurrencyHandler(amountSpan, transaction, mainCurrency, secondaryCurrency);
+        const newCurrency = (displayCurrency === mainCurrency) ? secondaryCurrency : mainCurrency;
+        // Call handler with index and new currency
+        handlers.toggleCurrencyHandler(transactionIndex, newCurrency);
+        // Update UI immediately (optimistic) - state change will persist it
+        amountSpan.textContent = `${newCurrency} ${amount.toFixed(2)}`;
     });
 
     // Edit Button
@@ -140,14 +213,18 @@ function renderAmountCellContent(amountCell, transaction, mainCurrency, secondar
     editBtn.title = "Edit amount";
     editBtn.addEventListener("click", (event) => {
         event.stopPropagation();
-        switchToEditInput(amountCell, transaction, mainCurrency, secondaryCurrency);
+        // Pass index
+        switchToEditInput(amountCell, transactionIndex, mainCurrency, secondaryCurrency);
     });
 
     amountCell.appendChild(amountSpan);
     amountCell.appendChild(editBtn);
 }
 
-function switchToEditInput(amountCell, transaction, mainCurrency, secondaryCurrency) {
+// Modified to accept index
+function switchToEditInput(amountCell, transactionIndex, mainCurrency, secondaryCurrency) {
+    const transaction = state.getActiveTransactions()[transactionIndex]; // Get from state
+    if (!transaction) return;
     const originalAmount = Number(transaction.amount);
     amountCell.innerHTML = ''; // Clear span and button
 
@@ -161,41 +238,37 @@ function switchToEditInput(amountCell, transaction, mainCurrency, secondaryCurre
     input.focus();
     input.select();
 
-    const finishEditing = (saveChanges) => {
+    const finishEditing = async (saveChanges) => {
         if (saveChanges) {
             const newAmountStr = input.value;
             const newAmount = parseFloat(newAmountStr);
 
             if (isNaN(newAmount)) {
                 alert("Invalid amount entered.");
-                renderAmountCellContent(amountCell, transaction, mainCurrency, secondaryCurrency); // Revert
+                renderAmountCellContent(amountCell, transactionIndex, mainCurrency, secondaryCurrency); // Revert UI
                 return;
             }
 
             if (newAmount.toFixed(2) !== originalAmount.toFixed(2)) {
-                // Call handler (which calls API) - handler needs to be imported/available
-                // For simplicity here, assume updateTransactionAmountHandler exists in handlers.js
-                import('./handlers.js').then(({ updateTransactionAmountHandler }) => {
-                    updateTransactionAmountHandler(transaction.id, newAmount)
-                        .then(updatedTransaction => {
-                            // Update the transaction object reference if needed (tricky without state management)
-                            transaction.amount = updatedTransaction.new_amount;
-                            renderAmountCellContent(amountCell, transaction, mainCurrency, secondaryCurrency);
-                        })
-                        .catch(error => {
-                            console.error("Error updating amount:", error);
-                            alert(`Error updating amount: ${error.message}`);
-                            renderAmountCellContent(amountCell, transaction, mainCurrency, secondaryCurrency); // Revert on error
-                        });
-                });
+                try {
+                    // Call handler with index and new amount
+                    await handlers.handleTransactionAmountUpdate(transactionIndex, newAmount);
+                    // State change is saved, now re-render the cell content
+                    renderAmountCellContent(amountCell, transactionIndex, mainCurrency, secondaryCurrency);
+                } catch (error) {
+                    error('UI:switchToEditInput', "Error updating amount via handler:", error);
+                    alert(`Error updating amount: ${error.message}`);
+                    renderAmountCellContent(amountCell, transactionIndex, mainCurrency, secondaryCurrency); // Revert UI on error
+                }
             } else {
-                renderAmountCellContent(amountCell, transaction, mainCurrency, secondaryCurrency); // No change
+                renderAmountCellContent(amountCell, transactionIndex, mainCurrency, secondaryCurrency); // No change
             }
         } else {
-            renderAmountCellContent(amountCell, transaction, mainCurrency, secondaryCurrency); // Revert (Escape)
+            renderAmountCellContent(amountCell, transactionIndex, mainCurrency, secondaryCurrency); // Revert (Escape)
         }
     };
 
+    // Use setTimeout for blur to allow click event on potential save button (if added later)
     input.addEventListener("blur", () => setTimeout(() => finishEditing(true), 150));
     input.addEventListener("keydown", (event) => {
         if (event.key === "Enter") { event.preventDefault(); finishEditing(true); }
@@ -203,8 +276,11 @@ function switchToEditInput(amountCell, transaction, mainCurrency, secondaryCurre
     });
 }
 
+// Modified to accept index
+function renderCheckboxContainer(cell, transactionIndex, participants) {
+    const transaction = state.getActiveTransactions()[transactionIndex]; // Get from state
+    if (!transaction) return;
 
-function renderCheckboxContainer(cell, transaction, participants) {
     const checkboxContainer = document.createElement("div");
     checkboxContainer.className = "checkbox-container";
     const assignedTo = Array.isArray(transaction.assigned_to) ? transaction.assigned_to : [];
@@ -216,8 +292,12 @@ function renderCheckboxContainer(cell, transaction, participants) {
         checkbox.value = participant;
         checkbox.checked = assignedTo.includes(participant);
         checkbox.addEventListener("change", () => {
-            // Use the handler function from handlers.js
-            updateTransactionAssignmentHandler(transaction, checkboxContainer);
+            // Get current assignments from the container's checkboxes
+            const currentAssignments = Array.from(
+                checkboxContainer.querySelectorAll("input:checked")
+            ).map((cb) => cb.value);
+            // Call handler with index and new assignment list
+            handlers.updateTransactionAssignmentHandler(transactionIndex, currentAssignments);
         });
         checkboxLabel.appendChild(checkbox);
         checkboxLabel.appendChild(document.createTextNode(participant));
@@ -226,12 +306,13 @@ function renderCheckboxContainer(cell, transaction, participants) {
     cell.appendChild(checkboxContainer);
 }
 
+// Keep filterTransactionsUI and updateRowNumbersUI as they operate on DOM
 export function filterTransactionsUI(searchTerm) {
     const tableRows = document.querySelectorAll("#transactions-table tbody tr");
     tableRows.forEach((row) => {
-        const date = row.cells[1].textContent.toLowerCase();
-        const description = row.cells[2].textContent.toLowerCase();
-        const amount = row.cells[3].textContent.toLowerCase();
+        const date = row.cells[1]?.textContent.toLowerCase() || '';
+        const description = row.cells[2]?.textContent.toLowerCase() || '';
+        const amount = row.cells[3]?.textContent.toLowerCase() || '';
         const transactionInfo = `${date} ${description} ${amount}`;
         row.style.display = transactionInfo.includes(searchTerm) ? "" : "none";
     });
@@ -241,29 +322,32 @@ export function filterTransactionsUI(searchTerm) {
 function updateRowNumbersUI() {
     const visibleRows = document.querySelectorAll("#transactions-table tbody tr:not([style*='display: none'])");
     visibleRows.forEach((row, index) => {
-        row.cells[0].textContent = index + 1;
+        if (row.cells[0]) {
+            row.cells[0].textContent = index + 1;
+        }
     });
 }
 
+// Keep add/remove participant checkbox functions as they modify existing DOM rows
 export function addParticipantToTransactionCheckboxes(newParticipant) {
     const checkboxContainers = document.querySelectorAll(".checkbox-container");
     checkboxContainers.forEach((container) => {
+        // Check if participant checkbox already exists
         if (!container.querySelector(`input[value="${newParticipant}"]`)) {
             const checkboxLabel = document.createElement("label");
             const checkbox = document.createElement("input");
             checkbox.type = "checkbox";
             checkbox.value = newParticipant;
-            // Need the transaction object associated with this container to call the handler correctly
-            // This highlights complexity - might need to refetch transaction data or store it better
-            // For now, let's assume the handler can get the ID from the row
             checkbox.addEventListener("change", () => {
                 const row = container.closest('tr');
-                if (row && row.dataset.transactionId) {
-                    // We need the full transaction object ideally, or reconstruct minimally
-                    const minimalTransaction = { id: parseInt(row.dataset.transactionId, 10) };
-                    updateTransactionAssignmentHandler(minimalTransaction, container);
+                const transactionIndex = parseInt(row?.dataset.transactionIndex, 10);
+                if (!isNaN(transactionIndex)) {
+                    const currentAssignments = Array.from(
+                        container.querySelectorAll("input:checked")
+                    ).map((cb) => cb.value);
+                    handlers.updateTransactionAssignmentHandler(transactionIndex, currentAssignments);
                 } else {
-                    console.error("Could not find transaction ID for checkbox update");
+                    warn("UI:addParticipantToTransactionCheckboxes", "Could not find transaction index for new checkbox.");
                 }
             });
             checkboxLabel.appendChild(checkbox);
@@ -278,18 +362,26 @@ export function removeParticipantFromTransactionCheckboxes(participant) {
     checkboxContainers.forEach((container) => {
         const checkboxToRemove = container.querySelector(`input[value="${participant}"]`);
         if (checkboxToRemove) {
-            checkboxToRemove.parentElement.remove();
+            checkboxToRemove.parentElement.remove(); // Remove the label containing the checkbox
         }
     });
 }
 
 // --- Summary UI ---
-export function updateSummaryTableUI(transactions, participants, mainCurrency, secondaryCurrency) {
+// Modified to get data from state
+export function updateSummaryTableUI() {
+    const transactions = state.getActiveTransactions(); // Get from state
+    const participants = state.getActiveParticipants(); // Get from state (ensure getter exists)
+    const currencies = state.getActiveCurrencies(); // Get from state
+    const mainCurrency = currencies.main;
+    const secondaryCurrency = currencies.secondary;
+
+    log('UI:updateSummaryTableUI', 'Updating summary table UI with state data.');
+
     const totals = {};
-    // Ensure participants is an array before proceeding
     if (!Array.isArray(participants)) {
-        console.error("updateSummaryTableUI called without a valid participants array.");
-        participants = []; // Default to empty to avoid errors
+        error("UI:updateSummaryTableUI", "Participants data is not a valid array.");
+        participants = [];
     }
     participants.forEach(p => { totals[p] = { [mainCurrency]: 0, [secondaryCurrency]: 0 }; });
 
@@ -300,33 +392,34 @@ export function updateSummaryTableUI(transactions, participants, mainCurrency, s
             const share = transaction.amount / assignedTo.length;
             const transactionCurrency = transaction.currency || mainCurrency;
             assignedTo.forEach((participant) => {
-                if (totals[participant]) { // Check participant exists in totals
+                if (totals[participant]) {
                     if (transactionCurrency === mainCurrency) {
                         totals[participant][mainCurrency] += share;
                     } else if (transactionCurrency === secondaryCurrency) {
                         totals[participant][secondaryCurrency] += share;
                     } else {
-                        console.warn(`Unrecognized currency: ${transactionCurrency}, using main currency.`);
+                        // Handle transactions in currencies other than main/secondary if needed
+                        // For now, add to main currency as fallback
+                        warn(`UI:updateSummaryTableUI`, `Transaction currency ${transactionCurrency} not main/secondary. Adding to main.`);
                         totals[participant][mainCurrency] += share;
                     }
                 } else {
-                    console.warn(`Participant "${participant}" from transaction not found in participant list for summary.`);
+                    warn(`UI:updateSummaryTableUI`, `Participant "${participant}" from transaction not found in participant list for summary.`);
                 }
             });
         }
     });
 
     const summaryTable = document.getElementById("summary-table");
-    if (!summaryTable) return; // Exit if table not found
+    if (!summaryTable) return;
     const tbody = summaryTable.querySelector("tbody");
-    if (!tbody) return; // Exit if tbody not found
+    if (!tbody) return;
     tbody.innerHTML = ""; // Clear existing rows
 
     let grandTotal = { [mainCurrency]: 0, [secondaryCurrency]: 0 };
 
-    // Use the participants list to ensure order and inclusion
     participants.forEach(participant => {
-        const amounts = totals[participant] || { [mainCurrency]: 0, [secondaryCurrency]: 0 }; // Default if participant had no expenses
+        const amounts = totals[participant] || { [mainCurrency]: 0, [secondaryCurrency]: 0 };
         const row = tbody.insertRow();
         row.insertCell().textContent = participant;
         row.insertCell().textContent = `${mainCurrency} ${amounts[mainCurrency].toFixed(2)}`;
@@ -335,15 +428,9 @@ export function updateSummaryTableUI(transactions, participants, mainCurrency, s
         grandTotal[secondaryCurrency] += amounts[secondaryCurrency];
     });
 
-
-    // Add total row - REMOVE INLINE STYLES, LET CSS HANDLE IT
+    // Add total row
     const totalRow = tbody.insertRow();
-    // totalRow.style.fontWeight = "bold"; // Let CSS handle font-weight
-    // totalRow.style.borderTop = "2px solid #e0e0e0"; // REMOVED - Let CSS handle border
-    // totalRow.style.backgroundColor = "#f8f9fa"; // REMOVED - Let CSS handle background
-    // Add a class instead if specific styling beyond last-child is needed
-    totalRow.classList.add("summary-total-row"); // Add class for potential CSS targeting
-
+    totalRow.classList.add("summary-total-row");
     totalRow.insertCell().textContent = "TOTAL";
     totalRow.insertCell().textContent = `${mainCurrency} ${grandTotal[mainCurrency].toFixed(2)}`;
     totalRow.insertCell().textContent = `${secondaryCurrency} ${grandTotal[secondaryCurrency].toFixed(2)}`;
@@ -352,12 +439,18 @@ export function updateSummaryTableUI(transactions, participants, mainCurrency, s
 export function clearSummaryTable() {
     const tbody = document.querySelector("#summary-table tbody");
     if (tbody) tbody.innerHTML = "";
+    log('UI:clearSummaryTable', 'Cleared summary table UI.');
 }
 
 
 // --- Sessions UI ---
-export function updateSessionsTableUI(sessions) {
+// Modified to get data from state
+export function updateSessionsTableUI() {
+    const sessions = state.getSessions(); // Get from state
+    log('UI:updateSessionsTableUI', 'Updating sessions table UI with state data:', sessions);
+
     const table = document.getElementById("sessions-table");
+    if (!table) return;
     const tbody = table.querySelector("tbody");
     tbody.innerHTML = "";
 
@@ -365,36 +458,50 @@ export function updateSessionsTableUI(sessions) {
         const row = tbody.insertRow();
         const cell = row.insertCell();
         cell.colSpan = 4;
-        cell.textContent = "No saved sessions";
+        cell.textContent = "No saved sessions found";
         cell.style.textAlign = "center";
         cell.style.fontStyle = "italic";
         return;
     }
 
+    // Sort sessions by name or date? Let's sort by name for consistency
+    sessions.sort((a, b) => a.name.localeCompare(b.name));
+
     sessions.forEach(session => {
         const row = tbody.insertRow();
-        row.dataset.sessionId = session.id;
+        row.dataset.sessionId = session.id; // Use Firestore document ID
 
-        const date = new Date(session.created_at);
-        const formattedDate = date.toLocaleDateString(undefined, {
-            year: 'numeric', month: 'short', day: 'numeric',
-            hour: 'numeric', minute: '2-digit', hour12: true
-        });
+        // Format date (use lastUpdatedAt or createdAt?) Let's use lastUpdatedAt for relevance
+        let formattedDate = "N/A";
+        try {
+            // Timestamps from state should be ISO strings
+            const date = session.lastUpdatedAt ? new Date(session.lastUpdatedAt) : (session.createdAt ? new Date(session.createdAt) : null);
+            if (date && !isNaN(date)) {
+                formattedDate = date.toLocaleDateString(undefined, {
+                    year: 'numeric', month: 'short', day: 'numeric',
+                    hour: 'numeric', minute: '2-digit', hour12: true
+                });
+            }
+        } catch (e) {
+            warn('UI:updateSessionsTableUI', `Error formatting date for session ${session.id}`, e);
+        }
+
 
         row.insertCell().textContent = session.name;
-        row.insertCell().textContent = formattedDate;
+        row.insertCell().textContent = formattedDate; // Display formatted date
         const countCell = row.insertCell();
-        countCell.textContent = session.transaction_count;
-        countCell.id = `session-count-${session.id}`; // Keep ID for overwrite update
+        // Calculate count from transactions array length
+        countCell.textContent = Array.isArray(session.transactions) ? session.transactions.length : 0;
+        countCell.id = `session-count-${session.id}`; // Keep ID if needed? Maybe not.
 
         const actionsCell = row.insertCell();
         actionsCell.style.whiteSpace = "nowrap";
 
-        // Buttons (using handlers)
-        const loadBtn = createButton('<i class="fas fa-folder-open"></i> Load', 'btn-success', () => loadSessionHandler(session.id), "Load this session");
-        const overwriteBtn = createButton('<i class="fas fa-save"></i> Save', 'btn-warning', () => overwriteSessionHandler(session.id, session.name), "Overwrite this session");
+        // Buttons (using handlers) - Pass session ID
+        const loadBtn = createButton('<i class="fas fa-folder-open"></i> Load', 'btn-success', () => handlers.loadSessionHandler(session.id), "Load this session into active editor");
+        const overwriteBtn = createButton('<i class="fas fa-save"></i> Save', 'btn-warning', () => handlers.overwriteSessionHandler(session.id, session.name), "Overwrite this saved session with current editor content");
         const exportBtn = createButton('<i class="fas fa-file-pdf"></i> Export', 'btn-info', () => handleExportSessionPdf(session.id, session.name), `Export session '${session.name}' as PDF`);
-        const deleteBtn = createButton('<i class="fas fa-trash"></i> Delete', 'btn-danger', () => deleteSessionHandler(session.id, session.name), "Delete this session");
+        const deleteBtn = createButton('<i class="fas fa-trash"></i> Delete', 'btn-danger', () => handlers.deleteSessionHandler(session.id, session.name), "Delete this saved session");
 
         actionsCell.appendChild(loadBtn);
         actionsCell.appendChild(overwriteBtn);
@@ -403,12 +510,13 @@ export function updateSessionsTableUI(sessions) {
     });
 }
 
+// Keep createButton helper
 function createButton(html, btnClass, onClick, title) {
     const btn = document.createElement("button");
     btn.className = `btn ${btnClass} btn-sm`;
     btn.innerHTML = html;
     btn.title = title;
-    btn.style.marginLeft = "5px"; // Add spacing consistently
+    btn.style.marginLeft = "5px";
     btn.onclick = onClick;
     return btn;
 }
@@ -416,15 +524,12 @@ function createButton(html, btnClass, onClick, title) {
 export function clearSessionsTable() {
     const tbody = document.querySelector("#sessions-table tbody");
     if (tbody) tbody.innerHTML = "";
+    log('UI:clearSessionsTable', 'Cleared sessions table UI.');
 }
 
-export function updateSessionCountUI(sessionId, count) {
-    const countCell = document.getElementById(`session-count-${sessionId}`);
-    if (countCell && count !== undefined) {
-        countCell.textContent = count;
-    }
-}
+// REMOVED updateSessionCountUI - count derived from data length
 
+// Keep clear input functions
 export function clearSessionNameInput() {
     const input = document.getElementById("session-name");
     if (input) input.value = "";
@@ -433,4 +538,32 @@ export function clearSessionNameInput() {
 export function clearTransactionInput() {
     const input = document.getElementById("transactions-text");
     if (input) input.value = "";
+}
+
+
+// --- Combined Functions ---
+
+/**
+ * Clears all data-driven UI elements.
+ */
+export function clearAllDataUI() {
+    log('UI:clearAllDataUI', 'Clearing all data UI elements.');
+    clearParticipantsList();
+    clearTransactionsTable();
+    clearSessionsTable();
+    clearSummaryTable();
+    clearTransactionInput();
+    clearSessionNameInput();
+}
+
+/**
+ * Renders all main data sections based on current state.
+ * Called after successful login/sync.
+ */
+export function renderInitialUI() {
+    log('UI:renderInitialUI', 'Rendering initial UI from state.');
+    updateParticipantsListUI();
+    refreshTransactionsTableUI(); // Render active transactions
+    updateSessionsTableUI(); // Render saved sessions
+    calculateAndUpdateSummary(); // Calculate summary based on active transactions
 }

@@ -1,9 +1,14 @@
 // static/js/handlers.js
 import * as api from './api.js';
 import * as ui from './ui.js';
-import { parseTransactions, findSimilarTransaction } from './transactions.js'; // We'll create transactions.js
-import { getTransactionDataFromDOM, getParticipantsFromDOM } from './state.js'; // We'll create state.js
+import * as state from './state.js'; // Import state management functions
+import { parseTransactions } from './transactions.js'; // Keep transaction parsing
 import { toggleTheme } from './theme.js';
+import { log, warn, error } from './logger.js'; // Assuming logger utility
+
+// Firebase imports (needed for auth provider) - Ensure Firebase SDK is loaded first
+import { GoogleAuthProvider, signInWithPopup, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
 
 // --- Theme Handler ---
 export function themeToggleHandler() {
@@ -11,81 +16,58 @@ export function themeToggleHandler() {
 }
 
 // --- Auth Handlers ---
-export async function registerHandler() {
-    const emailInput = document.getElementById("email");
-    const passwordInput = document.getElementById("password");
-    const email = emailInput.value;
-    const password = passwordInput.value;
-    if (email && password) {
-        try {
-            const data = await api.registerUser(email, password);
-            console.log("Registration Success:", data);
-            alert("Registration successful. Please log in.");
-            emailInput.value = ''; // Clear fields after successful registration
-            passwordInput.value = '';
-        } catch (error) {
-            console.error("Registration Error:", error);
-            alert(`Registration error: ${error.message}`);
-        }
-    } else {
-        alert("Please enter both email and password.");
-    }
-}
 
-export async function loginHandler() {
-    const email = document.getElementById("email").value;
-    const password = document.getElementById("password").value;
-    if (email && password) {
-        try {
-            const data = await api.loginUser(email, password);
-            console.log("Login Success:", data);
-            await checkLoginStatusHandler(); // Refresh state after login
-        } catch (error) {
-            console.error("Login Error:", error);
-            alert(`Login error: ${error.message}`);
-        }
-    } else {
-        alert("Please enter both email and password.");
+export async function googleSignInHandler() {
+    log('Handlers:googleSignInHandler', 'Attempting Google Sign-In.');
+    ui.showLoading(true, "Signing in..."); // Show loading indicator
+    ui.clearAuthError(); // Clear previous errors
+    const provider = new GoogleAuthProvider();
+    try {
+        // Use window.firebaseAuth initialized in index.html
+        const result = await signInWithPopup(window.firebaseAuth, provider);
+        // The onAuthStateChanged listener in main.js will handle the successful login state change.
+        log('Handlers:googleSignInHandler', 'Sign-in successful via popup:', result.user.email);
+        // No need to call ui.showLoggedInState() here, main.js listener does it.
+    } catch (err) {
+        error('Handlers:googleSignInHandler', 'Google Sign-In error:', err);
+        ui.showAuthError(`Sign-in failed: ${err.message}`); // Display error to user
+        // Ensure logged out state is reflected if sign-in fails
+        await state.setAuthState(false, null); // Update state
+        ui.showLoggedOutState(); // Update UI
+    } finally {
+        ui.showLoading(false);
     }
 }
 
 export async function logoutHandler() {
+    log('Handlers:logoutHandler', 'Attempting Sign-Out.');
     try {
-        const data = await api.logoutUser();
-        console.log("Logout Success:", data);
-        ui.showLoggedOutState(); // Update UI immediately
-    } catch (error) {
-        console.error("Logout Error:", error);
-        // Optionally show an error message, but usually logout failures are less critical to notify
+        await signOut(window.firebaseAuth);
+        // The onAuthStateChanged listener in main.js will handle the state change.
+        log('Handlers:logoutHandler', 'Sign-out successful.');
+        // Clear state explicitly as listener might take time or fail in edge cases
+        await state.setAuthState(false, null);
+        ui.showLoggedOutState(); // Ensure UI updates immediately
+        ui.clearAllDataUI(); // Clear tables etc.
+    } catch (err) {
+        error('Handlers:logoutHandler', 'Sign-Out error:', err);
+        // Optionally show an error message to the user
+        alert(`Logout failed: ${err.message}`);
     }
 }
 
-export async function checkLoginStatusHandler() {
-    try {
-        const data = await api.checkUserStatus();
-        if (data.email) {
-            ui.showLoggedInState();
-            // Load initial data only when logged in
-            await loadParticipantsHandler(); // Load participants first
-            await loadTransactionsHandler(); // Then transactions (needs participants for checkboxes)
-            await loadSessionsHandler(); // Load sessions
-        } else {
-            ui.showLoggedOutState();
-        }
-    } catch (error) {
-        console.error("Error checking login status:", error);
-        ui.showLoggedOutState(); // Assume logged out on error
-    }
-}
+// REMOVED registerHandler, loginHandler, checkLoginStatusHandler
+
 
 // --- Currency Handlers ---
-export function currencyChangeHandler() {
+export async function currencyChangeHandler() {
     const mainCurrency = document.getElementById("main-currency").value;
     const secondaryCurrency = document.getElementById("secondary-currency").value;
-    localStorage.setItem("mainCurrency", mainCurrency);
-    localStorage.setItem("secondaryCurrency", secondaryCurrency);
-    // Reload transactions to reflect potential currency display changes
-    loadTransactionsHandler();
+    log('Handlers:currencyChangeHandler', `Currencies changed: Main=${mainCurrency}, Secondary=${secondaryCurrency}`);
+    await state.setActiveCurrencies(mainCurrency, secondaryCurrency);
+    // Re-render transactions and summary to reflect potential currency display changes
+    ui.refreshTransactionsTableUI(); // Assumes UI has a function to re-render based on state
+    calculateAndUpdateSummary();
 }
 
 // --- Participant Handlers ---
@@ -93,330 +75,334 @@ export async function addParticipantHandler() {
     const input = document.getElementById("new-participant");
     const newParticipantName = input.value.trim();
     if (newParticipantName) {
+        log('Handlers:addParticipantHandler', `Attempting to add participant: ${newParticipantName}`);
+        ui.showLoading(true, "Adding participant...");
         try {
-            const data = await api.addParticipantApi(newParticipantName);
-            console.log("Participant added:", data);
+            // 1. Call API (updates backend)
+            await api.addParticipantApi(newParticipantName);
+            log('Handlers:addParticipantHandler', 'API call successful.');
+
+            // 2. Update local state (triggers save to IndexedDB)
+            const added = await state.addParticipant(newParticipantName);
+            log('Handlers:addParticipantHandler', `State updated: ${added}`);
+
+            // 3. Update UI
             input.value = ""; // Clear input
-            await loadParticipantsHandler(); // Reload participant list
-            // Update existing transaction rows immediately
-            ui.addParticipantToTransactionCheckboxes(newParticipantName);
-            // Recalculate summary
-            calculateAndUpdateSummary();
+            ui.updateParticipantsListUI(state.getParticipants()); // Update list from state
+            ui.addParticipantToTransactionCheckboxes(newParticipantName); // Add checkbox to existing rows
+            calculateAndUpdateSummary(); // Recalculate summary
         } catch (error) {
-            console.error("Error adding participant:", error);
+            error('Handlers:addParticipantHandler', 'Error adding participant:', error);
             alert(`Error adding participant: ${error.message}`);
+        } finally {
+            ui.showLoading(false);
         }
     }
 }
 
 export async function deleteParticipantHandler(participantName) {
-    if (!confirm(`Are you sure you want to delete participant "${participantName}"? This will also remove them from any assignments.`)) {
+    log('Handlers:deleteParticipantHandler', `Attempting to delete participant: ${participantName}`);
+    if (!confirm(`Are you sure you want to delete participant "${participantName}"? This will also remove them from any current assignments.`)) {
         return;
     }
+    ui.showLoading(true, "Deleting participant...");
     try {
-        const data = await api.deleteParticipantApi(participantName);
-        console.log("Participant deleted:", data);
-        await loadParticipantsHandler(); // Reload list
-        // Remove from UI immediately
-        ui.removeParticipantFromTransactionCheckboxes(participantName);
-        // Recalculate summary
-        calculateAndUpdateSummary();
+        // 1. Call API (updates backend)
+        await api.deleteParticipantApi(participantName);
+        log('Handlers:deleteParticipantHandler', 'API call successful.');
+
+        // 2. Update local state (triggers save to IndexedDB)
+        const deleted = await state.deleteParticipant(participantName);
+        log('Handlers:deleteParticipantHandler', `State updated: ${deleted}`);
+
+        // 3. Update UI
+        ui.updateParticipantsListUI(state.getParticipants()); // Update list from state
+        ui.removeParticipantFromTransactionCheckboxes(participantName); // Remove checkbox from rows
+        calculateAndUpdateSummary(); // Recalculate summary
     } catch (error) {
-        console.error("Error deleting participant:", error);
+        error('Handlers:deleteParticipantHandler', 'Error deleting participant:', error);
         alert(`Error deleting participant: ${error.message}`);
+    } finally {
+        ui.showLoading(false);
     }
 }
 
-export async function loadParticipantsHandler() {
-    try {
-        const participants = await api.fetchParticipants();
-        ui.updateParticipantsListUI(participants);
-        // Store participants globally or pass them around (simpler for now: global)
-        window.currentParticipants = participants; // Make available for other functions
-        return participants; // Return for chaining if needed
-    } catch (error) {
-        console.error("Error loading participants:", error);
-        alert("Could not load participants.");
-        window.currentParticipants = []; // Ensure it's an empty array on error
-        return [];
-    }
-}
+// REMOVED loadParticipantsHandler
 
 
-// --- Transaction Handlers ---
+// --- Transaction Handlers (Operating on Active Session in State) ---
 export async function addTransactionsHandler() {
     const transactionsText = document.getElementById("transactions-text").value;
     const newTransactions = parseTransactions(transactionsText);
 
     if (newTransactions.length === 0) {
-        console.log("No valid transactions parsed.");
+        log('Handlers:addTransactionsHandler', 'No valid transactions parsed.');
         alert("No valid transactions found in the input text.");
         return;
     }
-    console.log(`Parsed ${newTransactions.length} transactions`);
+    log('Handlers:addTransactionsHandler', `Parsed ${newTransactions.length} transactions`);
+
+    // REMOVED: Auto-assignment based on history (can be re-implemented client-side using state.getSessions())
 
     try {
-        // Fetch history for auto-assignment
-        const history = await api.fetchAssignmentHistory();
+        // 1. Update local state (triggers save to IndexedDB)
+        await state.addMultipleActiveTransactions(newTransactions);
+        log('Handlers:addTransactionsHandler', 'Active transactions added to state.');
 
-        // Auto-assign based on history
-        newTransactions.forEach((transaction) => {
-            const assignedParticipants = findSimilarTransaction(transaction.description, history);
-            if (assignedParticipants) {
-                transaction.assigned_to = assignedParticipants;
-                console.log(`Auto-assigned [${assignedParticipants.join(', ')}] to "${transaction.description}" based on history.`);
-            }
-        });
-
-        // Add transactions via API
-        const data = await api.addTransactionsApi(newTransactions);
-        console.log("Transactions added successfully:", data);
+        // 2. Update UI
         ui.clearTransactionInput(); // Clear textarea
-        await loadTransactionsHandler(); // Reload the table
+        ui.refreshTransactionsTableUI(); // Re-render table from state
+        calculateAndUpdateSummary(); // Update summary
 
     } catch (error) {
-        console.error("Error adding transactions:", error);
+        error('Handlers:addTransactionsHandler', 'Error adding transactions to state:', error);
         alert(`Error adding transactions: ${error.message}`);
     }
 }
 
-export async function loadTransactionsHandler() {
+// REMOVED loadTransactionsHandler
+
+// Called by event listeners setup in ui.js
+export async function updateTransactionAssignmentHandler(transactionIndex, assigned_to) {
+    log('Handlers:updateTransactionAssignmentHandler', `Updating assignment for index ${transactionIndex} to:`, assigned_to);
     try {
-        const transactions = await api.fetchTransactions();
-        console.log("Transactions loaded:", transactions);
-
-        // Sort transactions (ensure date parsing is robust)
-        transactions.sort((a, b) => {
-            try {
-                const partsA = a.date.split('/');
-                const partsB = b.date.split('/');
-                const dateA = new Date(parseInt(partsA[2], 10), parseInt(partsA[1], 10) - 1, parseInt(partsA[0], 10));
-                const dateB = new Date(parseInt(partsB[2], 10), parseInt(partsB[1], 10) - 1, parseInt(partsB[0], 10));
-                if (isNaN(dateA.getTime()) || isNaN(dateB.getTime())) return a.date.localeCompare(b.date);
-                return dateA - dateB; // Chronological
-            } catch (e) { return a.date.localeCompare(b.date); }
-        });
-
-        // Store globally or pass around (global for simplicity here)
-        window.currentTransactions = transactions;
-
-        // Get required data for UI update
-        const participants = window.currentParticipants || await loadParticipantsHandler(); // Ensure participants are loaded
-        const mainCurrency = document.getElementById("main-currency").value;
-        const secondaryCurrency = document.getElementById("secondary-currency").value;
-
-        ui.updateTransactionsTableUI(transactions, participants, mainCurrency, secondaryCurrency);
-        filterTransactionsHandler(); // Apply filter
-        calculateAndUpdateSummary(); // Update summary
-
-    } catch (error) {
-        console.error("Error loading transactions:", error);
-        alert("Could not load transactions.");
-        window.currentTransactions = []; // Ensure empty array on error
-    }
-}
-
-
-export async function updateTransactionAssignmentHandler(transaction, checkboxContainer) {
-    const assigned_to = Array.from(
-        checkboxContainer.querySelectorAll("input:checked")
-    ).map((checkbox) => checkbox.value);
-
-    // Optimistic UI update handled by checkbox state change
-    console.log(`Updating assignment for transaction ID ${transaction.id} to:`, assigned_to);
-
-    try {
-        const data = await api.updateAssignmentApi(transaction.id, assigned_to);
-        console.log("Assignment update successful:", data);
-        // Update local transaction data if stored (e.g., in window.currentTransactions)
-        if (window.currentTransactions) {
-            const localTransaction = window.currentTransactions.find(t => t.id === transaction.id);
-            if (localTransaction) localTransaction.assigned_to = assigned_to;
-        }
+        await state.updateActiveTransactionAssignment(transactionIndex, assigned_to);
         calculateAndUpdateSummary(); // Recalculate summary
     } catch (error) {
-        console.error("Error updating assignment:", error);
-        alert(`Error updating assignment: ${error.message}`);
-        // Revert checkbox state (complex, requires knowing previous state) - skip for now
-        // Maybe reload transactions on error?
-        // loadTransactionsHandler();
+        error('Handlers:updateTransactionAssignmentHandler', 'Error updating assignment in state:', error);
+        // Optionally revert UI or show error
     }
 }
 
-export async function deleteTransactionHandler(transaction) {
-    if (!confirm(`Delete transaction: ${transaction.date} - ${transaction.description}?`)) {
-        return;
-    }
-    console.log("Attempting to delete transaction:", transaction);
+// Called by event listeners setup in ui.js
+export async function deleteTransactionHandler(transactionIndex) {
+    log('Handlers:deleteTransactionHandler', `Attempting to delete transaction at index: ${transactionIndex}`);
+    // Confirmation might be better placed in the UI event listener setup
+    // if (!confirm(`Delete transaction?`)) { return; }
     try {
-        const data = await api.deleteTransactionApi(transaction.id);
-        console.log("Transaction deleted successfully:", data);
-        await loadTransactionsHandler(); // Reload the table
+        await state.deleteActiveTransaction(transactionIndex);
+        ui.refreshTransactionsTableUI(); // Re-render table
+        calculateAndUpdateSummary(); // Update summary
     } catch (error) {
-        console.error("Error deleting transaction:", error);
-        alert(`Error deleting transaction: ${error.message}`);
+        error('Handlers:deleteTransactionHandler', 'Error deleting transaction from state:', error);
     }
 }
 
 export async function deleteAllTransactionsHandler() {
-    if (confirm("Are you sure you want to delete ALL current transactions?")) {
+    if (confirm("Are you sure you want to delete ALL current transactions in this active session?")) {
+        log('Handlers:deleteAllTransactionsHandler', 'Deleting all active transactions.');
         try {
-            const data = await api.deleteAllTransactionsApi();
-            console.log("All transactions deleted:", data);
-            await loadTransactionsHandler(); // Reload table (will be empty)
+            await state.deleteAllActiveTransactions();
+            ui.refreshTransactionsTableUI(); // Re-render table (will be empty)
+            calculateAndUpdateSummary(); // Update summary
         } catch (error) {
-            console.error("Error deleting all transactions:", error);
-            alert(`Error deleting all transactions: ${error.message}`);
+            error('Handlers:deleteAllTransactionsHandler', 'Error deleting all active transactions from state:', error);
         }
     }
 }
 
 export async function unassignAllParticipantsHandler() {
-    if (confirm("Are you sure you want to unassign all participants from ALL current transactions?")) {
+    if (confirm("Are you sure you want to unassign all participants from ALL current transactions in this active session?")) {
+        log('Handlers:unassignAllParticipantsHandler', 'Unassigning all active transactions.');
         try {
-            const data = await api.unassignAllParticipantsApi();
-            console.log("All participants unassigned:", data);
-            await loadTransactionsHandler(); // Reload table to reflect changes
+            await state.unassignAllActiveTransactions();
+            ui.refreshTransactionsTableUI(); // Re-render table
+            calculateAndUpdateSummary(); // Update summary
         } catch (error) {
-            console.error("Error unassigning all participants:", error);
-            alert(`Error unassigning all participants: ${error.message}`);
+            error('Handlers:unassignAllParticipantsHandler', 'Error unassigning all active transactions in state:', error);
         }
     }
 }
 
-export async function toggleCurrencyHandler(amountSpanElement, transaction, mainCurrency, secondaryCurrency) {
-    const currentText = amountSpanElement.textContent.trim();
-    const currentParts = currentText.split(/\s+/);
-    const currentCurrency = currentParts[0];
-    const newCurrency = (currentCurrency === mainCurrency) ? secondaryCurrency : mainCurrency;
-
-    console.log(`Toggling currency for ${transaction.id} from ${currentCurrency} to ${newCurrency}`);
-
+// Called by event listeners setup in ui.js
+export async function toggleCurrencyHandler(transactionIndex, newCurrency) {
+    log('Handlers:toggleCurrencyHandler', `Toggling currency for index ${transactionIndex} to ${newCurrency}`);
     try {
-        const data = await api.updateTransactionCurrencyApi(transaction.id, newCurrency);
-        console.log("Currency updated successfully via API:", data);
-
-        // Update UI Span
-        amountSpanElement.textContent = `${newCurrency} ${Number(transaction.amount).toFixed(2)}`;
-
-        // Update local transaction data if stored
-        if (window.currentTransactions) {
-            const localTransaction = window.currentTransactions.find(t => t.id === transaction.id);
-            if (localTransaction) localTransaction.currency = newCurrency;
-        }
-
+        await state.updateActiveTransactionCurrency(transactionIndex, newCurrency);
+        // UI span update should happen in ui.js after state update confirmation if needed
         calculateAndUpdateSummary(); // Recalculate summary
     } catch (error) {
-        console.error("Error updating currency:", error);
-        alert(`Error updating currency: ${error.message}`);
+        error('Handlers:toggleCurrencyHandler', 'Error updating currency in state:', error);
     }
 }
 
-export async function updateTransactionAmountHandler(transactionId, newAmount) {
-    // This function is called from within the UI module's edit handler
+// Called from within the UI module's edit handler (ui.js)
+// It should return true/false or throw error to signal success/failure to UI
+export async function handleTransactionAmountUpdate(transactionIndex, newAmount) {
+    log('Handlers:handleTransactionAmountUpdate', `Handling amount update for index ${transactionIndex} to ${newAmount}`);
     try {
-        const data = await api.updateTransactionAmountApi(transactionId, newAmount);
-        console.log("Amount update successful:", data);
-        // Update local transaction data if stored
-        if (window.currentTransactions) {
-            const localTransaction = window.currentTransactions.find(t => t.id === transactionId);
-            if (localTransaction) localTransaction.amount = data.new_amount;
-        }
+        await state.updateActiveTransactionAmount(transactionIndex, newAmount);
         calculateAndUpdateSummary(); // Recalculate summary
-        return data; // Return data for the UI handler to use
+        return true; // Signal success to UI
     } catch (error) {
-        // Error is caught and handled in the calling function (switchToEditInput)
-        // But we re-throw it so the catch block there executes
-        throw error;
+        error('Handlers:handleTransactionAmountUpdate', 'Error updating amount in state:', error);
+        // Re-throw or return false to signal failure to UI
+        throw error; // Re-throwing allows ui.js catch block to handle it
     }
 }
-
 
 export function filterTransactionsHandler() {
     const searchTerm = document.getElementById("transaction-search-input").value.toLowerCase();
-    ui.filterTransactionsUI(searchTerm);
+    log('Handlers:filterTransactionsHandler', `Filtering transactions with term: "${searchTerm}"`);
+    ui.filterTransactionsUI(searchTerm); // UI function handles filtering based on current DOM/state
 }
 
 // --- Summary Handler ---
 export function calculateAndUpdateSummary() {
-    // Get data directly from DOM tables as the original function did
-    const transactions = getTransactionDataFromDOM();
-    const participants = getParticipantsFromDOM(); // Assumes participants are loaded correctly
-    const mainCurrency = document.getElementById("main-currency").value;
-    const secondaryCurrency = document.getElementById("secondary-currency").value;
+    log('Handlers:calculateAndUpdateSummary', 'Calculating and updating summary.');
+    try {
+        // Get data directly from state
+        const transactions = state.getActiveTransactions();
+        const participants = state.getActiveParticipants(); // Need this getter in state.js
+        const currencies = state.getActiveCurrencies();
 
-    // Call the UI function to update the table
-    ui.updateSummaryTableUI(transactions, participants, mainCurrency, secondaryCurrency);
+        // Call the UI function to update the table
+        ui.updateSummaryTableUI(transactions, participants, currencies.main, currencies.secondary);
+    } catch (error) {
+        error('Handlers:calculateAndUpdateSummary', 'Error calculating summary:', error);
+    }
 }
-
 
 // --- Session Handlers ---
+
+// Helper function to refresh state and UI after session CUD operations
+async function refreshStateAndSessionsUI(operation) {
+    log('Handlers:refreshStateAndSessionsUI', `Refreshing state after ${operation}.`);
+    ui.showLoading(true, "Syncing data...");
+    try {
+        // Fetch latest data from backend (includes new/updated/deleted session list and timestamp)
+        const latestData = await api.fetchUserData(); // Fetch without timestamp to get latest
+        // Update local state and IndexedDB
+        await state.updateStateFromServer(latestData);
+        // Update the sessions table UI
+        ui.updateSessionsTableUI(state.getSessions());
+        log('Handlers:refreshStateAndSessionsUI', `State and UI refreshed successfully after ${operation}.`);
+    } catch (err) {
+        error('Handlers:refreshStateAndSessionsUI', `Failed to refresh state after ${operation}:`, err);
+        alert(`Failed to sync data after ${operation}. Please refresh the page.`);
+    } finally {
+        ui.showLoading(false);
+    }
+}
+
+
 export async function saveSessionHandler() {
     const sessionNameInput = document.getElementById("session-name");
-    const sessionName = sessionNameInput.value.trim();
-    // Description field not present in HTML, pass empty string
-    try {
-        const data = await api.saveSessionApi(sessionName, "");
-        console.log("Session saved:", data);
-        alert(`Session "${data.name}" saved with ${data.transaction_count} transactions`);
-        ui.clearSessionNameInput();
-        await loadSessionsHandler(); // Refresh list
-    } catch (error) {
-        console.error("Error saving session:", error);
-        alert(`Error saving session: ${error.message}`);
+    let sessionName = sessionNameInput.value.trim();
+    // Use default name if input is empty
+    if (!sessionName) {
+        sessionName = `Session ${new Date().toLocaleString()}`;
     }
+
+    log('Handlers:saveSessionHandler', `Attempting to save current state as session: "${sessionName}"`);
+    ui.showLoading(true, "Saving session...");
+
+    try {
+        // 1. Get current active state data
+        const activeData = state.getActiveSessionData();
+        const sessionDataPayload = {
+            name: sessionName,
+            description: "", // Add description field if needed
+            transactions: activeData.transactions,
+            participants: activeData.participants,
+            currencies: activeData.currencies
+        };
+
+        // 2. Call API to save
+        const savedSession = await api.saveSessionApi(sessionDataPayload);
+        log('Handlers:saveSessionHandler', 'Session saved via API:', savedSession);
+        alert(`Session "${savedSession.name}" saved successfully.`);
+
+        // 3. Refresh state from server & update UI
+        await refreshStateAndSessionsUI('save');
+        ui.clearSessionNameInput();
+
+    } catch (error) {
+        error('Handlers:saveSessionHandler', 'Error saving session:', error);
+        alert(`Error saving session: ${error.message}`);
+        ui.showLoading(false); // Ensure loading is hidden on error
+    }
+    // Loading is hidden by refreshStateAndSessionsUI on success
 }
 
-export async function loadSessionsHandler() {
-    try {
-        const sessions = await api.fetchSessions();
-        ui.updateSessionsTableUI(sessions);
-    } catch (error) {
-        console.error("Error loading sessions:", error);
-        alert("Could not load saved sessions.");
-        ui.updateSessionsTableUI([]); // Show empty table on error
-    }
-}
+// REMOVED loadSessionsHandler
 
 export async function loadSessionHandler(sessionId) {
-    if (confirm("Loading this session will replace your current transactions. Continue?")) {
+    log('Handlers:loadSessionHandler', `Attempting to load session ${sessionId} into active state.`);
+    if (confirm("Loading this session will replace your current unsaved transactions. Continue?")) {
         try {
-            const data = await api.loadSessionApi(sessionId);
-            console.log("Session loaded:", data);
-            alert(`Session loaded with ${data.transaction_count} transactions`);
-            await loadTransactionsHandler(); // Reload transactions to show loaded data
+            // 1. Get session data from local state
+            const sessionToLoad = state.getSessionById(sessionId);
+            if (!sessionToLoad) {
+                throw new Error("Session not found in local state.");
+            }
+
+            // 2. Load it into the active state (triggers save to IndexedDB)
+            await state.loadSessionIntoActiveState(sessionToLoad);
+            log('Handlers:loadSessionHandler', 'Session loaded into active state.');
+
+            // 3. Update UI to reflect the newly active data
+            ui.refreshTransactionsTableUI();
+            calculateAndUpdateSummary();
+            alert(`Session "${sessionToLoad.name}" loaded.`);
+
         } catch (error) {
-            console.error("Error loading session:", error);
+            error('Handlers:loadSessionHandler', 'Error loading session:', error);
             alert(`Error loading session: ${error.message}`);
         }
     }
 }
 
 export async function overwriteSessionHandler(sessionId, sessionName) {
+    log('Handlers:overwriteSessionHandler', `Attempting to overwrite session: ${sessionId} (${sessionName})`);
     if (confirm(`Are you sure you want to overwrite the session "${sessionName}" with your current transactions? This cannot be undone.`)) {
-        console.log(`Attempting to overwrite session: ${sessionId} (${sessionName})`);
+        ui.showLoading(true, "Overwriting session...");
         try {
-            const data = await api.overwriteSessionApi(sessionId);
-            console.log("Overwrite successful:", data);
-            alert(data.message || "Session overwritten successfully!");
-            // Update count in UI
-            ui.updateSessionCountUI(sessionId, data.transaction_count);
+            // 1. Get current active state data
+            const activeData = state.getActiveSessionData();
+            const sessionDataPayload = {
+                name: sessionName, // Use existing name unless UI allows changing it here
+                description: activeData.description || "", // Include description if available
+                transactions: activeData.transactions,
+                participants: activeData.participants,
+                currencies: activeData.currencies
+            };
+
+            // 2. Call API to overwrite
+            const overwriteResult = await api.overwriteSessionApi(sessionId, sessionDataPayload);
+            log('Handlers:overwriteSessionHandler', 'Overwrite successful via API:', overwriteResult);
+            alert(overwriteResult.message || "Session overwritten successfully!");
+
+            // 3. Refresh state from server & update UI
+            await refreshStateAndSessionsUI('overwrite');
+
         } catch (error) {
-            console.error("Error overwriting session:", error);
+            error('Handlers:overwriteSessionHandler', 'Error overwriting session:', error);
             alert(`Error overwriting session: ${error.message}`);
+            ui.showLoading(false); // Ensure loading is hidden on error
         }
+        // Loading is hidden by refreshStateAndSessionsUI on success
     }
 }
 
 export async function deleteSessionHandler(sessionId, sessionName) {
+    log('Handlers:deleteSessionHandler', `Attempting to delete session: ${sessionId} (${sessionName})`);
     if (confirm(`Are you sure you want to delete the session "${sessionName}" permanently?`)) {
+        ui.showLoading(true, "Deleting session...");
         try {
-            const data = await api.deleteSessionApi(sessionId);
-            console.log("Session deleted:", data);
-            await loadSessionsHandler(); // Refresh list
+            // 1. Call API to delete
+            await api.deleteSessionApi(sessionId);
+            log('Handlers:deleteSessionHandler', 'Delete successful via API.');
+
+            // 2. Refresh state from server & update UI
+            await refreshStateAndSessionsUI('delete');
+            alert(`Session "${sessionName}" deleted.`);
+
         } catch (error) {
-            console.error("Error deleting session:", error);
+            error('Handlers:deleteSessionHandler', 'Error deleting session:', error);
             alert(`Error deleting session: ${error.message}`);
+            ui.showLoading(false); // Ensure loading is hidden on error
         }
+        // Loading is hidden by refreshStateAndSessionsUI on success
     }
 }

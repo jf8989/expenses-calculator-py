@@ -1,171 +1,174 @@
 // static/js/api.js
+import { log } from './logger.js'; // Assuming a logger utility exists
 
-// Helper function for handling fetch responses
+// --- Helper Functions ---
+
+// Handles fetch responses (Keep as is)
 async function handleResponse(response) {
+    log('API:handleResponse', `Received response status: ${response.status}`);
     if (!response.ok) {
         let errorData;
         try {
             errorData = await response.json();
+            log('API:handleResponse', 'Error response data:', errorData);
         } catch (e) {
-            // If response is not JSON or empty
+            log('API:handleResponse', `HTTP error ${response.status}, no JSON body.`);
             throw new Error(response.statusText || `HTTP error! status: ${response.status}`);
         }
-        // Use error message from backend if available
-        throw new Error(errorData.error || `Server error: ${response.status}`);
+        // Use error message from backend if available, include code if present
+        const message = errorData.error || `Server error: ${response.status}`;
+        const code = errorData.code || null; // e.g., TOKEN_EXPIRED
+        const error = new Error(message);
+        error.code = code; // Attach code to error object
+        throw error;
     }
-    // For 204 No Content or similar, response.json() might fail
-    // Check status or content-type if necessary, but for this app, JSON is expected
+    // Handle 204 No Content specifically
+    if (response.status === 204) {
+        log('API:handleResponse', 'Received 204 No Content.');
+        return null; // Return null for No Content responses
+    }
+    // Try parsing JSON for other successful responses
     try {
-        return await response.json();
+        const data = await response.json();
+        log('API:handleResponse', 'Parsed JSON response:', data);
+        return data;
     } catch (e) {
-        // If response is OK but not JSON (e.g., 204), return null or handle as needed
-        if (response.status === 204) return null;
+        log('API:handleResponse', `Error parsing JSON response: ${e.message}`);
         throw new Error("Failed to parse JSON response");
     }
 }
 
-// --- Auth ---
-export function registerUser(email, password) {
-    return fetch("/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-    }).then(handleResponse);
+// Gets the current user's Firebase ID token
+async function getAuthToken() {
+    if (!window.firebaseAuth || !window.firebaseAuth.currentUser) {
+        log('API:getAuthToken', 'Auth object or current user not available.');
+        throw new Error("User not authenticated.");
+    }
+    try {
+        // Force refresh? Set true only if needed, usually false is fine.
+        const token = await window.firebaseAuth.currentUser.getIdToken(false);
+        log('API:getAuthToken', 'Successfully retrieved auth token.');
+        return token;
+    } catch (error) {
+        log('API:getAuthToken', `Error getting auth token: ${error.message}`, error);
+        // Handle specific errors like 'auth/user-token-expired' if needed,
+        // though the backend decorator often handles expiration checks.
+        throw new Error("Could not retrieve authentication token.");
+    }
 }
 
-export function loginUser(email, password) {
-    return fetch("/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-    }).then(handleResponse);
+// Helper to create authenticated headers
+async function getAuthHeaders() {
+    const token = await getAuthToken();
+    return {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+    };
 }
 
-export function logoutUser() {
-    return fetch("/logout").then(handleResponse);
-}
 
-export function checkUserStatus() {
-    return fetch("/user").then(handleResponse);
-}
+// --- REMOVED Local Auth Functions ---
+// registerUser, loginUser, logoutUser, checkUserStatus are removed.
+// Authentication state is now managed via Firebase SDK listener in main.js
+
 
 // --- Participants ---
-export function fetchParticipants() {
-    return fetch("/api/participants").then(handleResponse);
-}
-
-export function addParticipantApi(name) {
-    return fetch("/api/participants", {
+// Note: Participants are now usually fetched as part of the main user data sync.
+// These individual functions might still be useful for immediate updates after add/delete.
+export async function addParticipantApi(name) {
+    log('API:addParticipantApi', `Adding participant: ${name}`);
+    const headers = await getAuthHeaders();
+    return fetch("/api/participants", { // Endpoint remains the same
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: headers,
         body: JSON.stringify({ name }),
     }).then(handleResponse);
 }
 
-export function deleteParticipantApi(name) {
-    return fetch("/api/participants", {
+export async function deleteParticipantApi(name) {
+    log('API:deleteParticipantApi', `Deleting participant: ${name}`);
+    const headers = await getAuthHeaders();
+    return fetch("/api/participants", { // Endpoint remains the same
         method: "DELETE",
-        headers: { "Content-Type": "application/json" },
+        headers: headers,
         body: JSON.stringify({ name }),
     }).then(handleResponse);
 }
 
-// --- Transactions ---
-export function fetchTransactions() {
-    return fetch("/api/transactions").then(handleResponse);
+// --- REMOVED Transaction Functions ---
+// fetchTransactions, addTransactionsApi, fetchAssignmentHistory, updateAssignmentApi,
+// deleteTransactionApi, deleteAllTransactionsApi, unassignAllParticipantsApi,
+// updateTransactionCurrencyApi, updateTransactionAmountApi are removed.
+// Live transaction state is managed client-side.
+
+// --- Data Synchronization ---
+export async function fetchUserData(lastKnownTimestamp = null) {
+    log('API:fetchUserData', `Fetching user data. Last known timestamp: ${lastKnownTimestamp}`);
+    const headers = await getAuthHeaders(); // Need auth token for this request
+    let url = "/api/user/data";
+    if (lastKnownTimestamp) {
+        // Ensure timestamp is URL-encoded
+        url += `?lastKnownTimestamp=${encodeURIComponent(lastKnownTimestamp)}`;
+    }
+    return fetch(url, {
+        method: "GET",
+        headers: { // Only need Authorization header for GET
+            "Authorization": headers.Authorization
+        }
+    }).then(handleResponse);
+    // Note: handleResponse might need adjustment if backend returns 304 directly
+    // Currently assumes backend returns JSON like {"status": "current"} or full data
 }
 
-export function addTransactionsApi(transactions) {
-    return fetch("/api/transactions", {
+
+// --- Sessions (Interacting with Firestore via Backend) ---
+
+export async function saveSessionApi(sessionData) {
+    // Expect sessionData to be an object like:
+    // { name: "Optional Name", transactions: [...], participants: [...], currencies: {...} }
+    log('API:saveSessionApi', 'Saving new session:', sessionData);
+    const headers = await getAuthHeaders();
+    return fetch("/api/sessions", { // Use new endpoint
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(transactions),
+        headers: headers,
+        body: JSON.stringify(sessionData),
     }).then(handleResponse);
 }
 
-export function fetchAssignmentHistory() {
-    return fetch("/api/assignment-history").then(handleResponse);
-}
-
-export function updateAssignmentApi(transactionId, assignedTo) {
-    return fetch("/api/assign", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ transaction_id: transactionId, assigned_to: assignedTo }),
+export async function overwriteSessionApi(sessionId, sessionData) {
+    // Expect sessionData like above, sessionId in URL
+    log('API:overwriteSessionApi', `Overwriting session ${sessionId}:`, sessionData);
+    const headers = await getAuthHeaders();
+    return fetch(`/api/sessions/${sessionId}`, { // Use new endpoint with PUT
+        method: "PUT", // Use PUT for overwrite/replace semantics
+        headers: headers,
+        body: JSON.stringify(sessionData),
     }).then(handleResponse);
 }
 
-export function deleteTransactionApi(transactionId) {
-    return fetch(`/api/transactions/${transactionId}`, {
+export async function deleteSessionApi(sessionId) {
+    log('API:deleteSessionApi', `Deleting session ${sessionId}`);
+    const headers = await getAuthHeaders();
+    return fetch(`/api/sessions/${sessionId}`, { // Use new endpoint
         method: "DELETE",
+        headers: { // Only need Authorization header for DELETE
+            "Authorization": headers.Authorization
+        }
+        // No body needed for DELETE usually
     }).then(handleResponse);
 }
 
-export function deleteAllTransactionsApi() {
-    return fetch("/api/transactions/all", {
-        method: "DELETE",
-    }).then(handleResponse);
-}
-
-export function unassignAllParticipantsApi() {
-    return fetch("/api/transactions/unassign-all", {
-        method: "POST",
-    }).then(handleResponse);
-}
-
-export function updateTransactionCurrencyApi(transactionId, currency) {
-    return fetch("/api/update_transaction_currency", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ transactionId, currency }),
-    }).then(handleResponse);
-}
-
-export function updateTransactionAmountApi(transactionId, amount) {
-    return fetch(`/api/transactions/${transactionId}/update_amount`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amount }),
-    }).then(handleResponse);
-}
+// REMOVED fetchSessions - now part of fetchUserData
+// REMOVED loadSessionApi - loading happens client-side from cache
 
 
-// --- Sessions ---
-export function fetchSessions() {
-    return fetch("/api/sessions").then(handleResponse);
-}
-
-export function saveSessionApi(name, description = "") {
-    return fetch("/api/sessions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, description }),
-    }).then(handleResponse);
-}
-
-export function loadSessionApi(sessionId) {
-    return fetch(`/api/sessions/${sessionId}/load`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({}), // Empty body often needed for POST
-    }).then(handleResponse);
-}
-
-export function overwriteSessionApi(sessionId) {
-    return fetch(`/api/sessions/${sessionId}/overwrite`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({}), // Empty body
-    }).then(handleResponse);
-}
-
-export function deleteSessionApi(sessionId) {
-    // Note: Original code sent ID in body for DELETE, which is non-standard.
-    // Assuming backend expects it this way based on previous JS.
-    // A more RESTful way would be DELETE /api/sessions/<sessionId>
-    return fetch(`/api/sessions/${sessionId}`, { // Corrected URL based on sessions.py blueprint
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        // body: JSON.stringify({ id: sessionId }), // Body might not be needed if ID is in URL
+// --- User Info ---
+// Optional: Function to get basic user info from backend '/api/user/me'
+export async function fetchCurrentUserInfo() {
+    log('API:fetchCurrentUserInfo', 'Fetching current user info from backend.');
+    const headers = await getAuthHeaders();
+    return fetch("/api/user/me", {
+        method: "GET",
+        headers: { "Authorization": headers.Authorization }
     }).then(handleResponse);
 }

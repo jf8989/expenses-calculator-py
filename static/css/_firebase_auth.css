@@ -1,0 +1,135 @@
+/* static/css/_firebase_auth.css */
+
+/* --- Header User Status --- */
+.header-controls {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    /* Adjust spacing between theme toggle and user status */
+}
+
+#user-status {
+    display: flex;
+    /* Use flex to align items horizontally */
+    align-items: center;
+    gap: 10px;
+    /* Space between email and logout button */
+    color: var(--text-color);
+    /* Use theme variable */
+    font-size: 0.9em;
+}
+
+#user-email-display {
+    font-weight: 500;
+    /* Make email slightly bolder */
+    margin-right: 5px;
+    /* Add a little space before button if needed */
+}
+
+/* Adjust logout button size/margin if needed */
+#user-status #logout-btn {
+    padding: 5px 10px;
+    /* Make logout button slightly smaller */
+    font-size: 0.85em;
+}
+
+
+/* --- Authentication Section --- */
+.auth-container {
+    text-align: center;
+    /* Center align content */
+    max-width: 500px;
+    /* Limit width */
+    margin: 40px auto;
+    /* Center block and add top/bottom margin */
+    padding: 30px;
+    border: 1px solid var(--border-color);
+    /* Use theme variable */
+    border-radius: var(--border-radius);
+    /* Use theme variable */
+    background-color: var(--background-alt-color);
+    /* Use theme variable */
+    box-shadow: var(--box-shadow);
+    /* Use theme variable */
+}
+
+.auth-container h2 {
+    margin-bottom: 20px;
+    color: var(--heading-color);
+    /* Use theme variable */
+}
+
+.auth-container p {
+    margin-bottom: 25px;
+    color: var(--text-secondary-color);
+    /* Use theme variable */
+}
+
+#google-signin-button-container {
+    margin-top: 20px;
+}
+
+.btn-google {
+    /* Base styles inherited from .btn */
+    background-color: #4285F4;
+    /* Google Blue */
+    color: white;
+    border: none;
+    transition: background-color 0.2s ease;
+}
+
+.btn-google:hover,
+.btn-google:focus {
+    background-color: #357ae8;
+    /* Darker Google Blue */
+    color: white;
+    /* Ensure text remains white */
+    outline: none;
+    /* Remove default focus outline if needed */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.btn-google i.fab.fa-google {
+    margin-right: 10px;
+    /* Space between icon and text */
+    font-size: 1.1em;
+    /* Slightly larger icon */
+}
+
+.auth-error-message {
+    margin-top: 20px;
+    color: var(--danger-color);
+    /* Use theme variable for error text */
+    font-weight: 500;
+    padding: 10px;
+    background-color: rgba(220, 53, 69, 0.1);
+    /* Light red background */
+    border: 1px solid rgba(220, 53, 69, 0.3);
+    border-radius: var(--border-radius);
+}
+
+/* Optional: Style the disclaimer if you decide to show it */
+#auth-disclaimer {
+    font-size: 0.9em;
+    text-align: left;
+    margin-top: 30px;
+    padding: 15px;
+    background-color: var(--background-color);
+    /* Use theme variable */
+    border: 1px solid var(--border-color);
+    /* Use theme variable */
+    border-radius: var(--border-radius);
+}
+
+#auth-disclaimer h3 {
+    font-size: 1em;
+    margin-bottom: 10px;
+    color: var(--heading-color);
+    /* Use theme variable */
+}
+
+#auth-disclaimer i {
+    margin-right: 8px;
+    color: var(--primary-color);
+    /* Use theme variable */
+}

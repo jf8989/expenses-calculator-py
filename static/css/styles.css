@@ -33,3 +33,6 @@
 
 /* 7. Responsive styles (should come last) */
 @import url('_responsive.css');
+
+/* 8. Firebase styles */
+@import url('_firebase_auth.css');

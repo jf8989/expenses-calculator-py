@@ -1,12 +1,11 @@
-# 📊 ExpenseSplit Pro: Shared Expense Manager
+# 📊 ExpenseSplit Pro: Shared Expense Manager (Firebase Edition)
 
 [![Python Version](https://img.shields.io/badge/python-3.9%2B-blue.svg)](https://www.python.org/downloads/)
-[![Flask Version](https://img.shields.io/badge/flask-2.x%2B-green.svg)](https://flask.palletsprojects.com/)
+[![Flask Version](https://img.shields.io/badge/flask-3.x%2B-green.svg)](https://flask.palletsprojects.com/)
+[![Firebase](https://img.shields.io/badge/Firebase-Auth%20%26%20Firestore-orange.svg)](https://firebase.google.com/)
 [![License](https://img.shields.io/badge/license-MIT-lightgrey.svg)](LICENSE)
 
-An intuitive web application designed to simplify the tracking, management, and splitting of shared expenses among multiple participants. Built with Python/Flask, SQLite, and Vanilla JavaScript.
-
-
+An intuitive web application designed to simplify the tracking, management, and splitting of shared expenses among multiple participants. Built with Python/Flask, Firebase (Authentication & Firestore), IndexedDB, and Vanilla JavaScript.
 
 <!-- 📸 Add a screenshot or GIF of the application interface here! -->
 <!-- Example: <p align="center"><img src="path/to/screenshot.png" alt="App Screenshot" width="700"></p> -->
@@ -15,7 +14,9 @@ An intuitive web application designed to simplify the tracking, management, and 
 
 ## ✨ Key Features
 
-*   **👤 User Authentication:** Secure registration and login system.
+*   **👤 Google Authentication:** Secure sign-in using Firebase Authentication (Google Provider).
+*   **☁️ Cloud Data Storage:** User data (participants, transactions, sessions) stored securely in Firestore.
+*   **⚡ Client-Side Caching:** Uses IndexedDB to cache data locally, minimizing Firestore reads and improving performance. Automatic data synchronization based on timestamps.
 *   **👥 Dynamic Participant Management:** Easily add or remove participants involved in expense sharing.
 *   **💸 Transaction Input & Parsing:** Paste transactions in a simple text format (`DD/MM/YYYY: Description - Amount`) for quick entry.
 *   **📊 Detailed Transaction Analysis:**
@@ -25,13 +26,13 @@ An intuitive web application designed to simplify the tracking, management, and 
     *   **🖱️ Currency Toggling:** Single-click on amount text to switch between primary and secondary display currencies.
 *   **🤖 Smart Assignment:** Automatically suggests participant assignments based on historical transaction descriptions.
 *   **💲 Multi-Currency Support:** Define primary and secondary currencies for clear display and summary.
-*   **📈 Real-time Expense Summary:** Automatically calculates and displays the total amount owed per participant in both selected currencies.
-*   **💾 Session Management:**
-    *   **Save:** Save the current state (transactions, assignments) under a specific name.
-    *   **Load:** Restore a previously saved session, replacing current data.
-    *   **Overwrite:** Update an existing saved session with the current transaction data.
+*   **📈 Real-time Expense Summary:** Automatically calculates and displays the total amount owed per participant in both selected currencies based on locally cached data.
+*   **💾 Session Management (Firestore-backed):**
+    *   **Save:** Save the current state (transactions, assignments) to Firestore under a specific name.
+    *   **Load:** Restore a previously saved session from Firestore, replacing current data (updates local cache).
+    *   **Overwrite:** Update an existing saved session in Firestore with the current transaction data.
 *   **📄 PDF Export (Client-Side):**
-    *   Generate a detailed PDF report **in the browser** for any **saved session**.
+    *   Generate a detailed PDF report **in the browser** for any **saved session** (using locally cached data).
     *   PDF includes session name, transaction list (with assignments), expense summary, and export timestamp.
 *   **📱 Responsive Design:** Functional interface across different screen sizes.
 
@@ -40,54 +41,78 @@ An intuitive web application designed to simplify the tracking, management, and 
 ## 💻 Tech Stack
 
 *   **Backend:** Python 3, Flask
-*   **Database:** SQLite
-*   **Frontend:** HTML5, CSS3, JavaScript (Vanilla)
+*   **Database:** Google Firestore (NoSQL Cloud Database)
+*   **Authentication:** Firebase Authentication (Google Provider)
+*   **Client-Side Cache:** Browser IndexedDB (potentially using the `idb` library)
+*   **Frontend:** HTML5, CSS3, JavaScript (Vanilla ES Modules)
 *   **PDF Generation:** jsPDF, jspdf-autotable (Client-Side JavaScript)
-*   **Authentication:** Flask-Session
-*   **Other Libraries:** Werkzeug (Security)
+*   **Python Libraries:** `firebase-admin`, Flask, Werkzeug
+*   **JavaScript Libraries:** Firebase SDK, jsPDF, jspdf-autotable, (`idb` - optional)
 
 ---
 
-## ⚙️ Setup and Installation
+## 🔥 Firebase Setup (Required)
 
-Follow these steps to get the project running locally.
+1.  **Create Firebase Project:** Go to the [Firebase Console](https://console.firebase.google.com/) and create a new project.
+2.  **Enable Authentication:**
+    *   Navigate to "Authentication" -> "Sign-in method".
+    *   Enable the "Google" provider. Configure OAuth consent screen details if required.
+3.  **Enable Firestore:**
+    *   Navigate to "Firestore Database" -> "Create database".
+    *   Start in **Production mode** (recommended). Choose appropriate security rules (e.g., allow read/write only for authenticated users on their own data: `allow read, write: if request.auth != null && request.auth.uid == resource.data.userId;` - adapt based on your data structure).
+    *   Select a server location.
+4.  **Register Web App:**
+    *   Go to Project Settings (⚙️) -> General -> Your apps -> Add app -> Web (</>).
+    *   Give it a nickname (e.g., "ExpenseSplit Pro Web").
+    *   Register the app. **Copy the `firebaseConfig` object** provided. You will need this for the frontend (`index.html` or a JS config file).
+5.  **Generate Service Account Key (for Backend):**
+    *   Go to Project Settings (⚙️) -> Service accounts.
+    *   Click "Generate new private key" and confirm.
+    *   **Securely store the downloaded JSON key file.** Do NOT commit it to version control. Add its filename to your `.gitignore` file.
+    *   The backend will need the *path* to this file, typically set via an environment variable.
+
+---
+
+## ⚙️ Local Setup and Installation
 
 **1. Prerequisites:**
-    *   **Python 3.9+:** Verify installation (`python --version`). Install from [python.org](https://www.python.org/downloads/) if needed. Ensure `pip` is included.
-    *   **Git:** Verify installation (`git --version`). Install from [git-scm.com](https://git-scm.com/downloads) if needed.
-    *   *(No complex system dependencies required for PDF generation anymore!)*
+    *   **Python 3.9+:** Verify installation (`python --version`).
+    *   **Git:** Verify installation (`git --version`).
+    *   **Firebase Project:** Complete the Firebase Setup steps above.
 
 **2. Clone the Repository:**
    ```bash
-   git clone https://github.com/jf8989/expenses-calculator.git
+   git clone https://github.com/jf8989/expenses-calculator.git # Or your repo URL
    cd expenses-calculator
    ```
 
-**3. Create and Activate Virtual Environment:**
-   ```bash
-   # Create the environment (using .venv is common)
-   python -m venv .venv
+**3. Configure Environment Variables:**
+* Create a .env file in the project root (and add .env to your .gitignore!).
+* Add the following variables:
+```dotenv
+# Flask Secret Key (generate a random one)
+SECRET_KEY='your_strong_random_secret_key'
 
-   # Activate it
-   # Windows (PowerShell):
-   .\.venv\Scripts\Activate.ps1
-   # Windows (Command Prompt):
-   .\.venv\Scripts\activate.bat
-   # macOS/Linux:
-   source .venv/bin/activate
-   ```
-   *(You should see `(.venv)` at the start of your terminal prompt)*
+# Path to your Firebase Admin SDK key file
+  GOOGLE_APPLICATION_CREDENTIALS='/path/to/your/serviceAccountKey.json'
+
+  # Optional: Set Flask debug mode (True/False)
+  FLASK_DEBUG=True
+  ```
+*   *Note:* When deploying (e.g., to Vercel), set these as environment variables in the deployment platform's settings instead of using a `.env` file.
 
 **4. Install Python Dependencies:**
    ```bash
-   pip install -r requirements.txt
-   ```
-   *(Ensure `requirements.txt` includes Flask, Flask-Session, Werkzeug, etc., but **not** WeasyPrint).*
-   *(If `requirements.txt` is outdated, update it after installing needed packages: `pip freeze > requirements.txt`)*
+   python -m venv .venv
+# Windows (PowerShell): .\.venv\Scripts\Activate.ps1
+# macOS/Linux: source .venv/bin/activate
+```
 
-**5. Database Initialization:**
-    *   The database (`expense_sharing.db`) and its schema (`schema.sql`) are initialized automatically the first time you run `app.py` if the database file doesn't exist, thanks to the `init_db(app)` call within the `if __name__ == '__main__':` block.
-
+**5.Install Python Dependencies:**
+```dotenv
+pip install -r requirements.txt
+  ```
+  *  (Ensure requirements.txt includes Flask, firebase-admin, python-dotenv (for local .env loading), etc. Remove Flask-Session if it was present)
 ---
 
 ## ▶️ Running the Application

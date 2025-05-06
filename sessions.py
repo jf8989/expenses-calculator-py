@@ -1,269 +1,250 @@
 # sessions.py
 import logging
 from datetime import datetime
-from flask import Blueprint, request, jsonify, session, current_app
+from flask import Blueprint, request, jsonify, g, current_app
 from werkzeug.utils import escape
-from database import get_db
+
+# Import Firestore client, FieldValue for timestamps, etc.
+from app import firestore_db
+from firebase_admin import firestore
+
+# Import the decorator
+from auth_decorator import login_required
 
 logger = logging.getLogger(__name__)
 
-sessions_bp = Blueprint('sessions', __name__, url_prefix='/api/sessions')
+sessions_bp = Blueprint('sessions', __name__, url_prefix='/api') # Changed prefix slightly
 
-@sessions_bp.before_request
-def check_user_session():
-    if 'user_id' not in session:
-        logger.warning(f"Unauthorized access attempt to sessions API endpoint: {request.endpoint}")
-        return jsonify({"error": "No has iniciado sesión"}), 401
-
-@sessions_bp.route('', methods=['GET', 'POST'])
-def handle_sessions():
-    user_id = session['user_id']
-    db = get_db()
-
-    if request.method == 'POST':
-        # Save current state as a new session
-        try:
-            data = request.json
-            name = data.get('name', '').strip()
-            description = escape(data.get('description', '').strip()) # Sanitize description
-
-            if not name:
-                today = datetime.now().strftime('%Y-%m-%d %H:%M')
-                name = f"Session {today}"
-            else:
-                name = escape(name) # Sanitize name if provided
-
-            current_app.logger.info(f"User {user_id} creating session: '{name}'")
-
-            # Use transaction for atomicity
-            db.execute("BEGIN TRANSACTION")
-
-            # Create the session record
-            cursor = db.execute(
-                'INSERT INTO sessions (user_id, name, description) VALUES (?, ?, ?)',
-                (user_id, name, description)
-            )
-            session_id = cursor.lastrowid
-            current_app.logger.info(f"Created session with ID: {session_id} for user {user_id}")
-
-            # Copy current transactions to session_transactions
-            transactions = db.execute(
-                'SELECT date, description, amount, currency, assigned_to FROM transactions WHERE user_id = ?',
-                (user_id,)
-            ).fetchall()
-
-            current_app.logger.info(f"Found {len(transactions)} transactions to copy for session {session_id}")
-
-            for t in transactions:
-                # Ensure values are strings, handle None/NULL appropriately
-                currency = t['currency'] if t['currency'] is not None else ""
-                assigned_to = t['assigned_to'] if t['assigned_to'] is not None else ""
-                db.execute(
-                    'INSERT INTO session_transactions (session_id, date, description, amount, currency, assigned_to) VALUES (?, ?, ?, ?, ?, ?)',
-                    (session_id, t['date'], t['description'], t['amount'], currency, assigned_to)
-                )
-
-            db.execute("COMMIT")
-
-            # Fetch the created session details to return
-            created_session = db.execute(
-                 'SELECT id, name, description, created_at FROM sessions WHERE id = ?', (session_id,)
-            ).fetchone()
-
-            return jsonify({
-                "id": created_session['id'],
-                "name": created_session['name'],
-                "description": created_session['description'],
-                "created_at": created_session['created_at'], # Use DB timestamp
-                "transaction_count": len(transactions)
-            }), 201 # 201 Created status
-
-        except Exception as e:
-            db.execute("ROLLBACK")
-            current_app.logger.error(f"Error saving session for user {user_id}: {type(e).__name__}: {str(e)}")
-            return jsonify({"error": f"Failed to save session: {str(e)}"}), 500
-
-    else: # GET - List all sessions
-        try:
-            sessions_raw = db.execute(
-                """
-                SELECT s.id, s.name, s.description, s.created_at, COUNT(st.id) as transaction_count
-                FROM sessions s
-                LEFT JOIN session_transactions st ON s.id = st.session_id
-                WHERE s.user_id = ?
-                GROUP BY s.id, s.name, s.description, s.created_at
-                ORDER BY s.created_at DESC
-                """,
-                (user_id,)
-            ).fetchall()
-
-            result = [dict(s) for s in sessions_raw]
-            return jsonify(result), 200
-        except Exception as e:
-            current_app.logger.error(f"Error retrieving sessions for user {user_id}: {str(e)}")
-            return jsonify({"error": f"Error retrieving sessions: {str(e)}"}), 500
-
-@sessions_bp.route('/<int:session_id>', methods=['DELETE'])
-def delete_session(session_id):
-    user_id = session['user_id']
-    db = get_db()
+# --- Helper Function to Update User Metadata Timestamp ---
+def _update_user_metadata_timestamp(user_id):
+    """Updates the lastUpdatedAt field in the user's metadata."""
     try:
-        # Use transaction to ensure both session and its transactions are deleted
-        db.execute("BEGIN TRANSACTION")
-        # Delete associated transactions first (optional, depends on FK constraints/cascade)
-        # If ON DELETE CASCADE is set for session_id in session_transactions, this is not strictly needed
-        db.execute('DELETE FROM session_transactions WHERE session_id = ?', (session_id,))
-        # Delete the session itself
-        result = db.execute('DELETE FROM sessions WHERE id = ? AND user_id = ?', (session_id, user_id))
-
-        if result.rowcount == 0:
-            db.execute("ROLLBACK") # Rollback if session wasn't found
-            current_app.logger.warning(f"Attempt to delete non-existent or unauthorized session {session_id} by user {user_id}")
-            return jsonify({"error": "Session not found or access denied"}), 404
-
-        db.execute("COMMIT")
-        current_app.logger.info(f"Session {session_id} deleted successfully by user {user_id}")
-        return jsonify({"message": "Session deleted successfully"}), 200
+        user_doc_ref = firestore_db.collection('users').document(user_id)
+        user_doc_ref.set({
+            'metadata': {
+                'lastUpdatedAt': firestore.SERVER_TIMESTAMP
+            }
+        }, merge=True)
+        logger.info(f"[Firestore:Metadata] Updated lastUpdatedAt for user {user_id}")
     except Exception as e:
-        db.execute("ROLLBACK")
-        current_app.logger.error(f"Error deleting session {session_id} for user {user_id}: {str(e)}")
-        return jsonify({"error": f"Server error: {str(e)}"}), 500
+        logger.exception(f"[Firestore:Metadata] Failed to update lastUpdatedAt for user {user_id}: {e}")
+        # Decide if this should raise an error or just log
 
+# --- New Route for Fetching All User Data (for Sync) ---
+@sessions_bp.route('/user/data', methods=['GET'])
+@login_required
+def get_user_data():
+    """
+    Fetches all relevant user data (participants, sessions with transactions)
+    based on a timestamp comparison for client-side caching.
+    """
+    user_id = g.user_id
+    last_known_timestamp_str = request.args.get('lastKnownTimestamp')
+    last_known_timestamp = None
 
-@sessions_bp.route('/<int:session_id>/load', methods=['POST'])
-def load_session(session_id):
-    user_id = session['user_id']
-    db = get_db()
+    if last_known_timestamp_str:
+        try:
+            # Firestore Timestamps often come back as ISO 8601 strings with Zulu offset
+            # Need robust parsing. Assuming ISO format like '2024-07-27T10:30:00.123Z'
+            # Remove 'Z' and add '+00:00' for Python compatibility if needed
+            if last_known_timestamp_str.endswith('Z'):
+                 last_known_timestamp_str = last_known_timestamp_str[:-1] + '+00:00'
+            last_known_timestamp = datetime.fromisoformat(last_known_timestamp_str)
+            logger.debug(f"[Firestore:Sync] Client lastKnownTimestamp: {last_known_timestamp} for user {user_id}")
+        except ValueError:
+            logger.warning(f"[Firestore:Sync] Invalid lastKnownTimestamp format '{last_known_timestamp_str}' for user {user_id}. Fetching all data.")
+            last_known_timestamp = None # Treat as invalid, fetch all
+
     try:
-        # Verify the session belongs to this user
-        session_record = db.execute(
-            'SELECT id FROM sessions WHERE id = ? AND user_id = ?',
-            (session_id, user_id)
-        ).fetchone()
+        user_doc_ref = firestore_db.collection('users').document(user_id)
+        user_doc = user_doc_ref.get(['metadata.lastUpdatedAt', 'participants']) # Get only needed fields
 
-        if not session_record:
-            return jsonify({"error": "Session not found or access denied"}), 404
+        current_metadata = user_doc.to_dict().get('metadata', {}) if user_doc.exists else {}
+        current_timestamp = current_metadata.get('lastUpdatedAt')
+        participants = user_doc.to_dict().get('participants', []) if user_doc.exists else []
 
-        current_app.logger.info(f"User {user_id} loading session {session_id}")
-        db.execute("BEGIN TRANSACTION")
+        # Compare timestamps only if both exist
+        if last_known_timestamp and current_timestamp and current_timestamp <= last_known_timestamp:
+            logger.info(f"[Firestore:Sync] Client data is current for user {user_id}. Timestamp: {current_timestamp}")
+            # Return 304 Not Modified or a specific status
+            # For simplicity, returning a status object
+            return jsonify({"status": "current", "timestamp": current_timestamp.isoformat() + "Z"}), 200
 
-        # Clear existing *current* transactions for the user
-        db.execute('DELETE FROM transactions WHERE user_id = ?', (user_id,))
+        # Fetch all sessions if data is stale or client has no timestamp
+        logger.info(f"[Firestore:Sync] Fetching all session data for user {user_id}. Reason: {'Stale data' if last_known_timestamp else 'Initial fetch'}")
+        sessions_ref = user_doc_ref.collection('sessions')
+        sessions_query = sessions_ref.stream() # Use stream for potentially large collections
 
-        # Load session transactions into current transactions table
-        session_transactions = db.execute(
-            'SELECT date, description, amount, currency, assigned_to FROM session_transactions WHERE session_id = ?',
-            (session_id,)
-        ).fetchall()
+        all_sessions = []
+        for session_doc in sessions_query:
+            session_data = session_doc.to_dict()
+            session_data['id'] = session_doc.id # Add document ID
+            # Convert Timestamps to ISO strings for JSON serialization
+            if 'createdAt' in session_data and isinstance(session_data['createdAt'], datetime):
+                 session_data['createdAt'] = session_data['createdAt'].isoformat() + "Z"
+            if 'lastUpdatedAt' in session_data and isinstance(session_data['lastUpdatedAt'], datetime):
+                 session_data['lastUpdatedAt'] = session_data['lastUpdatedAt'].isoformat() + "Z"
+            all_sessions.append(session_data)
 
-        current_app.logger.info(f"Loading {len(session_transactions)} transactions from session {session_id} for user {user_id}")
-        for t in session_transactions:
-             # Ensure values are strings, handle None/NULL appropriately
-            currency = t['currency'] if t['currency'] is not None else ""
-            assigned_to = t['assigned_to'] if t['assigned_to'] is not None else ""
-            db.execute(
-                'INSERT INTO transactions (user_id, date, description, amount, currency, assigned_to) VALUES (?, ?, ?, ?, ?, ?)',
-                (user_id, t['date'], t['description'], t['amount'], currency, assigned_to)
-            )
+        # Sort sessions if needed, e.g., by name or date
+        all_sessions.sort(key=lambda x: x.get('name', ''))
 
-        db.execute("COMMIT")
+        response_data = {
+            "status": "updated",
+            "participants": participants,
+            "sessions": all_sessions,
+            "timestamp": current_timestamp.isoformat() + "Z" if current_timestamp else None
+        }
+        logger.info(f"[Firestore:Sync] Returning full data ({len(participants)} participants, {len(all_sessions)} sessions) for user {user_id}")
+        return jsonify(response_data), 200
+
+    except Exception as e:
+        logger.exception(f"[Firestore:Sync] Error fetching user data for user {user_id}: {e}")
+        return jsonify({"error": "Failed to fetch user data"}), 500
+
+
+# --- Session CRUD Operations ---
+
+@sessions_bp.route('/sessions', methods=['POST']) # Changed from /api/sessions to /api/user/sessions
+@login_required
+def save_new_session():
+    """
+    Saves the provided client state (transactions, participants, currencies)
+    as a new session document in Firestore.
+    """
+    user_id = g.user_id
+    try:
+        data = request.json
+        # Expecting client to send the complete state to be saved
+        session_name = escape(data.get('name', '').strip())
+        description = escape(data.get('description', '').strip())
+        transactions = data.get('transactions', []) # Validate structure later if needed
+        participants = data.get('participants', []) # Validate structure later if needed
+        currencies = data.get('currencies', {}) # Validate structure later if needed
+
+        if not session_name:
+            # Generate default name if needed (or require it from client)
+            session_name = f"Session {datetime.now().strftime('%Y-%m-%d %H:%M')}"
+
+        logger.info(f"[Firestore:Sessions] User {user_id} saving new session: '{session_name}' with {len(transactions)} transactions.")
+
+        sessions_ref = firestore_db.collection('users').document(user_id).collection('sessions')
+
+        # Create new session document with auto-generated ID
+        new_session_ref = sessions_ref.document()
+        session_data = {
+            'name': session_name,
+            'description': description,
+            'transactions': transactions,
+            'participants': participants,
+            'currencies': currencies,
+            'createdAt': firestore.SERVER_TIMESTAMP,
+            'lastUpdatedAt': firestore.SERVER_TIMESTAMP
+        }
+        new_session_ref.set(session_data)
+
+        # Update the user's overall metadata timestamp
+        _update_user_metadata_timestamp(user_id)
+
+        # Fetch the timestamp to return (optional, client might get it from next sync)
+        # new_doc = new_session_ref.get()
+        # created_at = new_doc.create_time.isoformat() + "Z"
 
         return jsonify({
-            "message": "Session loaded successfully",
-            "transaction_count": len(session_transactions)
-        }), 200
-    except Exception as e:
-        db.rollback()
-        current_app.logger.error(f"Error loading session {session_id} for user {user_id}: {str(e)}")
-        return jsonify({"error": f"Server error loading session: {str(e)}"}), 500
+            "message": "Session saved successfully",
+            "sessionId": new_session_ref.id,
+            "name": session_name,
+            # "createdAt": created_at # Optionally return timestamp
+        }), 201
 
-@sessions_bp.route('/<int:session_id>/overwrite', methods=['POST'])
+    except Exception as e:
+        logger.exception(f"[Firestore:Sessions] Error saving new session for user {user_id}: {e}")
+        return jsonify({"error": f"Failed to save session: {str(e)}"}), 500
+
+
+@sessions_bp.route('/sessions/<string:session_id>', methods=['PUT']) # Changed from POST overwrite to PUT
+@login_required
 def overwrite_session(session_id):
-    user_id = session['user_id']
-    db = get_db()
+    """
+    Overwrites an existing session document with the provided client state.
+    Uses PUT method for replacing the entire resource representation (or parts via update).
+    """
+    user_id = g.user_id
     try:
-        # Verify the session belongs to this user
-        session_record = db.execute(
-            'SELECT id, name FROM sessions WHERE id = ? AND user_id = ?',
-            (session_id, user_id)
-        ).fetchone()
+        data = request.json
+        # Expecting client to send the complete state to overwrite with
+        session_name = escape(data.get('name', '').strip()) # Allow name update
+        description = escape(data.get('description', '').strip())
+        transactions = data.get('transactions', [])
+        participants = data.get('participants', [])
+        currencies = data.get('currencies', {})
 
-        if not session_record:
-            return jsonify({"error": "Session not found or access denied"}), 404
+        if not session_name:
+             return jsonify({"error": "Session name cannot be empty for update"}), 400
 
-        current_app.logger.info(f"User {user_id} attempting to overwrite session ID {session_id} ('{session_record['name']}')")
-        db.execute("BEGIN TRANSACTION")
+        logger.info(f"[Firestore:Sessions] User {user_id} overwriting session ID: {session_id} with {len(transactions)} transactions.")
 
-        # 1. Delete existing transactions *for this session*
-        delete_cursor = db.execute(
-            'DELETE FROM session_transactions WHERE session_id = ?',
-            (session_id,)
-        )
-        current_app.logger.info(f"Deleted {delete_cursor.rowcount} old transactions for session {session_id}")
+        session_doc_ref = firestore_db.collection('users').document(user_id).collection('sessions').document(session_id)
 
-        # 2. Get *current* transactions from the main table
-        current_transactions = db.execute(
-            'SELECT date, description, amount, currency, assigned_to FROM transactions WHERE user_id = ?',
-            (user_id,)
-        ).fetchall()
-        current_app.logger.info(f"Found {len(current_transactions)} current transactions to save for session {session_id}")
+        # Check if document exists before updating (optional, update handles creation too)
+        # doc_snapshot = session_doc_ref.get()
+        # if not doc_snapshot.exists:
+        #     logger.warning(f"[Firestore:Sessions] Overwrite failed: Session {session_id} not found for user {user_id}.")
+        #     return jsonify({"error": "Session not found"}), 404
 
-        # 3. Insert current transactions into session_transactions
-        new_count = 0
-        for t in current_transactions:
-            currency = t['currency'] if t['currency'] is not None else ""
-            assigned_to = t['assigned_to'] if t['assigned_to'] is not None else ""
-            db.execute(
-                'INSERT INTO session_transactions (session_id, date, description, amount, currency, assigned_to) VALUES (?, ?, ?, ?, ?, ?)',
-                (session_id, t['date'], t['description'], t['amount'], currency, assigned_to)
-            )
-            new_count += 1
+        # Update the document. Use update for partial or set(merge=True) for full replace semantics
+        session_data = {
+            'name': session_name,
+            'description': description,
+            'transactions': transactions,
+            'participants': participants,
+            'currencies': currencies,
+            'lastUpdatedAt': firestore.SERVER_TIMESTAMP
+            # Do not update 'createdAt'
+        }
+        session_doc_ref.update(session_data) # Use update to modify existing fields
 
-        # Optionally: Update an 'updated_at' timestamp on the sessions table if you add one
-        # db.execute('UPDATE sessions SET updated_at = CURRENT_TIMESTAMP WHERE id = ?', (session_id,))
+        # Update the user's overall metadata timestamp
+        _update_user_metadata_timestamp(user_id)
 
-        db.execute("COMMIT")
-
-        current_app.logger.info(f"Successfully overwrote session {session_id} with {new_count} transactions for user {user_id}.")
         return jsonify({
-            "message": f"Session '{session_record['name']}' overwritten successfully.",
-            "transaction_count": new_count
-            }), 200
+            "message": f"Session '{session_name}' overwritten successfully.",
+            "sessionId": session_id,
+            "transaction_count": len(transactions) # Return new count
+        }), 200
 
     except Exception as e:
-        db.execute("ROLLBACK")
-        current_app.logger.error(f"Error overwriting session {session_id} for user {user_id}: {str(e)}")
+        logger.exception(f"[Firestore:Sessions] Error overwriting session {session_id} for user {user_id}: {e}")
         return jsonify({"error": f"Failed to overwrite session: {str(e)}"}), 500
 
-@sessions_bp.route('/<int:session_id>/transactions', methods=['GET'])
-def get_session_transactions(session_id):
-    user_id = session['user_id']
-    db = get_db()
+
+@sessions_bp.route('/sessions/<string:session_id>', methods=['DELETE'])
+@login_required
+def delete_session(session_id):
+    """Deletes a specific session document."""
+    user_id = g.user_id
+    logger.info(f"[Firestore:Sessions] User {user_id} attempting to delete session ID: {session_id}")
     try:
-        # Verify session belongs to user
-        session_check = db.execute(
-            'SELECT id FROM sessions WHERE id = ? AND user_id = ?',
-            (session_id, user_id)
-        ).fetchone()
-        if not session_check:
-            return jsonify({"error": "Session not found or access denied"}), 404
+        session_doc_ref = firestore_db.collection('users').document(user_id).collection('sessions').document(session_id)
 
-        # Fetch transactions for this specific session
-        transactions_raw = db.execute(
-            'SELECT id, date, description, amount, currency, assigned_to FROM session_transactions WHERE session_id = ? ORDER BY id', # Added ID and order
-            (session_id,)
-        ).fetchall()
+        # Check existence before delete for accurate logging/response
+        doc_snapshot = session_doc_ref.get()
+        if not doc_snapshot.exists:
+            logger.warning(f"[Firestore:Sessions] Delete failed: Session {session_id} not found for user {user_id}.")
+            return jsonify({"error": "Session not found"}), 404
 
-        # Convert to list of dictionaries, handling assigned_to conversion
-        transactions = []
-        for row in transactions_raw:
-            t_dict = dict(row)
-            t_dict['assigned_to'] = [p.strip() for p in t_dict['assigned_to'].split(',') if p.strip()] if t_dict['assigned_to'] else []
-            transactions.append(t_dict)
+        session_doc_ref.delete()
 
-        current_app.logger.info(f"Fetched {len(transactions)} transactions for session {session_id} for user {user_id}")
-        return jsonify(transactions), 200
+        # Update the user's overall metadata timestamp
+        _update_user_metadata_timestamp(user_id)
 
+        logger.info(f"[Firestore:Sessions] Session {session_id} deleted successfully by user {user_id}")
+        return jsonify({"message": "Session deleted successfully"}), 200
     except Exception as e:
-        current_app.logger.error(f"Error fetching transactions for session {session_id} (User: {user_id}): {str(e)}")
-        return jsonify({"error": "Failed to fetch session transactions"}), 500
+        logger.exception(f"[Firestore:Sessions] Error deleting session {session_id} for user {user_id}: {e}")
+        return jsonify({"error": f"Server error deleting session: {str(e)}"}), 500
+
+
+# Removed /api/sessions (GET list) - Handled by /api/user/data
+# Removed /api/sessions/<id>/load - Handled by client cache
+# Removed /api/sessions/<id>/transactions - Handled by client cache

@@ -14,44 +14,42 @@
   <!-- Google Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&family=Roboto+Mono&display=swap"
     rel="stylesheet" />
-  <!-- Chart.js (if you plan to use it later) -->
-  <!-- <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> -->
 </head>
 
 <body>
   <header>
     <div class="header-content container">
-      <nav class="header-nav">
-        <button class="nav-btn" data-target="#currency-selection">Currency</button>
-        <button class="nav-btn" data-target="#transactions-input">Input</button>
-        <button class="nav-btn" data-target="#participants-management">Participants</button>
-        <button class="nav-btn" data-target="#transactions-analysis">Analysis</button>
-        <button class="nav-btn" data-target="#session-management">Sessions</button>
-        <button class="nav-btn" data-target="#expenses-summary">Summary</button>
+      <div class="header-branding"> <!-- Added wrapper for H1 for potential future flexibility -->
+        <h1><i class="fas fa-money-bill-wave"></i> ExpenseSplit Pro</h1>
+      </div>
+
+      <nav class="header-nav" aria-label="Main navigation">
+        <button type="button" class="nav-btn" data-target="#currency-selection">Currency</button>
+        <button type="button" class="nav-btn" data-target="#transactions-input">Input</button>
+        <button type="button" class="nav-btn" data-target="#participants-management">Participants</button>
+        <button type="button" class="nav-btn" data-target="#transactions-analysis">Analysis</button>
+        <button type="button" class="nav-btn" data-target="#session-management">Sessions</button>
+        <button type="button" class="nav-btn" data-target="#expenses-summary">Summary</button>
       </nav>
 
-      <h1><i class="fas fa-money-bill-wave"></i> ExpenseSplit Pro</h1>
       <div class="header-controls">
-        <button id="new-session-btn" class="btn btn-outline-warning btn-sm">
+        <button id="new-session-btn" class="btn btn-outline-primary btn-sm" title="Start a new expense session">
           <i class="fas fa-file-medical"></i> New Session
         </button>
-        <!-- Dark Mode Toggle START -->
-        <div class="theme-switch-wrapper">
+        <div class="theme-switch-wrapper" title="Toggle light/dark theme">
           <label class="theme-switch" for="theme-checkbox">
-            <input type="checkbox" id="theme-checkbox" />
+            <input type="checkbox" id="theme-checkbox" aria-label="Toggle theme" />
             <div class="slider round">
               <span class="icon sun"><i class="fas fa-sun"></i></span>
               <span class="icon moon"><i class="fas fa-moon"></i></span>
             </div>
           </label>
-          <span class="theme-label">Dark Mode</span>
+          <span class="theme-label">Dark Mode</span> <!-- Will be styled to be visible -->
         </div>
-        <!-- Dark Mode Toggle END -->
 
-        <!-- User Status Display (Initially Hidden) -->
-        <div id="user-status" style="display: none;">
-          <span id="user-email-display"></span>
-          <button id="logout-btn" class="btn btn-danger btn-sm">
+        <div id="user-status" style="display: none;"> <!-- JS will change to display: flex -->
+          <span id="user-email-display" class="user-email"></span>
+          <button id="logout-btn" class="btn btn-danger btn-sm" title="Sign out of your account">
             <i class="fas fa-sign-out-alt"></i> Sign Out
           </button>
         </div>
@@ -59,26 +57,9 @@
     </div>
   </header>
 
-  <!-- Authentication Section - REPLACED -->
-  <div id="auth-section" class="container section auth-container">
-    <h2><i class="fas fa-user-lock"></i> Welcome</h2>
-    <p>Sign in with Google to manage your shared expenses.</p>
-    <div id="auth-disclaimer" class="disclaimer" style="display: none;"> <!-- Keep disclaimer but hide -->
-      <h3><i class="fas fa-info-circle"></i> Privacy Note</h3>
-      <p>By signing in, you allow ExpenseSplit Pro to access your basic Google profile information (email) to identify
-        your account securely. Your expense data is stored privately in your own cloud space.</p>
-    </div>
-    <div id="google-signin-button-container">
-      <button id="google-signin-btn" class="btn btn-primary btn-google">
-        <i class="fab fa-google"></i> Sign in with Google
-      </button>
-    </div>
-    <div id="auth-error" class="auth-error-message" style="display: none;"></div> <!-- For showing auth errors -->
-  </div>
-
   <!-- Main Application Content (Hidden initially) -->
   <div id="app-content" class="container" style="display: none">
-
+    <!-- ... rest of your app content ... -->
     <!-- Currency Selection -->
     <div id="currency-selection" class="section">
       <h2><i class="fas fa-coins"></i> Currency Selection</h2>
@@ -113,14 +94,15 @@
     <div id="participants-management" class="section">
       <h2><i class="fas fa-users"></i> Participants Management</h2>
       <div class="form-group">
-        <input type="text" id="new-participant" class="form-control" placeholder="Participant's name" />
+        <input type="text" id="new-participant" class="form-control" placeholder="Participant's name"
+          list="participants-autocomplete" /> <!-- Added list attribute -->
         <datalist id="participants-autocomplete"></datalist>
         <button id="add-participant-btn" class="btn btn-success">
           <i class="fas fa-user-plus"></i> Add
         </button>
       </div>
       <div id="participants-list" class="participants-grid">
-        <!-- Participant cards added dynamically -->
+        <!-- Participant items added dynamically -->
       </div>
     </div>
 
@@ -132,7 +114,7 @@
         participants by checking the boxes. Click on the amount text to switch
         between currencies. Click the pencil (✎) icon to edit the amount.
       </p>
-      <div class="btn-group" style="margin-bottom: 15px;"> <!-- Added margin -->
+      <div class="btn-group" style="margin-bottom: 15px;">
         <button id="delete-all-transactions-btn" class="btn btn-danger">
           <i class="fas fa-trash-alt"></i> Delete All
         </button>
@@ -168,11 +150,9 @@
       <p class="instructions">
         Save your current state (transactions and assignments) to Firestore to revisit later.
       </p>
-
       <div class="row" style="display: flex; gap: 10px; align-items: flex-end; margin-bottom: 20px;">
-        <!-- Flex layout for input and button -->
         <div class="col" style="flex-grow: 1;">
-          <div class="form-group" style="margin-bottom: 0;"> <!-- Remove bottom margin -->
+          <div class="form-group" style="margin-bottom: 0;">
             <label for="session-name" style="display: block; margin-bottom: 5px;">Session Name:</label>
             <input type="text" id="session-name" class="form-control" placeholder="Optional (defaults to date/time)">
           </div>
@@ -183,7 +163,6 @@
           </button>
         </div>
       </div>
-
       <div class="saved-sessions-container">
         <h3>Saved Sessions (from Cloud)</h3>
         <div class="table-responsive">
@@ -191,7 +170,7 @@
             <thead>
               <tr>
                 <th>Name</th>
-                <th>Date Saved</th> <!-- Changed from created_at -->
+                <th>Date Saved</th>
                 <th>Transactions</th>
                 <th>Actions</th>
               </tr>
@@ -207,7 +186,6 @@
     <!-- Expenses Summary -->
     <div id="expenses-summary" class="section">
       <h2><i class="fas fa-file-invoice-dollar"></i> Expenses Summary</h2>
-
       <div class="table-responsive">
         <table id="summary-table" class="table">
           <thead>
@@ -222,21 +200,15 @@
           </tbody>
         </table>
       </div>
-      <!-- Chart placeholder (if needed later) -->
-      <!-- <div id="expense-chart"></div> -->
     </div>
-
   </div> <!-- End #app-content -->
 
-  <!-- Loading Indicator -->
   <div id="loading-indicator" style="display: none">
     <div class="spinner"></div>
-    <p>Loading data...</p> <!-- Added text -->
+    <p>Loading data...</p>
   </div>
 
-  <!-- Footer -->
   <footer class="site-footer">
-    <!-- Footer content remains the same -->
     <div class="footer-content">
       <div class="footer-section about">
         <h3>About ExpenseSplit Pro</h3>
@@ -267,50 +239,26 @@
     </div>
   </footer>
 
-  <!-- JavaScript Files -->
-  <!-- jsPDF Libraries -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
 
-  <!-- Firebase SDK -->
-  <!-- Use compatibility libraries for easier transition if needed, or modular SDK -->
-  <!-- Using modular SDK (recommended) -->
   <script type="module">
-    // Import the functions you need from the SDKs you need
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js"; // Use specific version
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import { getAuth } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-    // import { getFirestore } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js"; // Only if direct FS access needed client-side
-
-    // Your web app's Firebase configuration (PASTE YOUR CONFIG HERE)
     const firebaseConfig = {
-      apiKey: "AIzaSyCIbLXAcdSq3jcb7tLPoUpjGd3e-XA0SIA", // Replace with your actual config
-      authDomain: "expense-split-pro-46307.firebaseapp.com", // Replace with your actual config
-      projectId: "expense-split-pro-46307", // Replace with your actual config
-      storageBucket: "expense-split-pro-46307.firebasestorage.app", // Replace with your actual config
-      messagingSenderId: "120596810852", // Replace with your actual config
-      appId: "1:120596810852:web:6a9939e3d6e48961eba371" // Replace with your actual config
+      apiKey: "AIzaSyCIbLXAcdSq3jcb7tLPoUpjGd3e-XA0SIA",
+      authDomain: "expense-split-pro-46307.firebaseapp.com",
+      projectId: "expense-split-pro-46307",
+      storageBucket: "expense-split-pro-46307.firebasestorage.app", 
+      messagingSenderId: "120596810852",
+      appId: "1:120596810852:web:6a9939e3d6e48961eba371"
     };
-
-    // Initialize Firebase
     const app = initializeApp(firebaseConfig);
-
-    // Make auth instance available globally or export it for main.js
-    // Option 1: Global (simpler for this structure)
     window.firebaseApp = app;
     window.firebaseAuth = getAuth(app);
-    // window.firestoreDB = getFirestore(app); // Only if needed
-
-    // Option 2: Export (if main.js handles imports differently)
-    // export const firebaseApp = app;
-    // export const firebaseAuth = getAuth(app);
-
-    console.log("Firebase SDK initialized."); // Log initialization
+    console.log("Firebase SDK initialized.");
   </script>
-
-  <!-- Your Custom JS Files -->
-  <!-- Load main.js as a module, it will handle importing other modules -->
   <script type="module" src="{{ url_for('static', filename='js/main.js') }}"></script>
-
 </body>
 
 </html>

@@ -1,4 +1,4 @@
-/* static/css/_responsive.css */
+/* static/css/_responsive.css - Harmonized with enhanced header */
 
 /* === Medium Screens and Tablets === */
 @media (max-width: 992px) {
@@ -6,9 +6,23 @@
         max-width: 960px;
     }
 
-    /* No theme-specific changes needed here */
-}
+    /* --- Header Tweaks for Medium Screens --- */
+    .header-content {
+        gap: 1rem;
+    }
 
+    .header-nav {
+        justify-content: flex-start;
+        max-width: 100%;
+    }
+
+    /* Theme switch adjustments */
+    .theme-label {
+        display: none;
+    }
+
+    /* No theme-specific changes needed here (for body/html theme) */
+}
 
 /* === Smaller Tablets and Large Phones === */
 @media (max-width: 768px) {
@@ -19,35 +33,42 @@
         box-sizing: border-box;
     }
 
+    /* --- Header Responsive Overhaul for 768px --- */
+    header {
+        padding: 0.5rem 0;
+    }
+
     .header-content {
         flex-wrap: wrap;
-        justify-content: center;
-        gap: 10px;
+        gap: 0.75rem;
+        justify-content: space-between;
+    }
+
+    .header-branding {
+        order: 1;
+        width: auto;
     }
 
     header h1 {
-        font-size: 1.7rem;
-        text-align: center;
+        font-size: 1.3rem;
+    }
+
+    .header-controls {
+        order: 2;
+        margin-left: auto;
+    }
+
+    .header-nav {
+        order: 3;
         width: 100%;
+        margin-top: 0.5rem;
+        padding-top: 0.5rem;
+        border-top: 1px solid var(--header-border-color);
+        justify-content: flex-start;
+        max-width: 100%;
     }
 
-    /* Use danger variable for logout button */
-    #logout-btn {
-        padding: 10px 20px;
-        /* background-color: #f44336; */
-        /* Old */
-        background-color: var(--danger-color);
-        /* Use variable */
-        color: white;
-        /* Keep white text */
-        border: none;
-        border-radius: 5px;
-        /* Consider using a variable or consistent radius */
-        cursor: pointer;
-        /* Inherits .btn styles, this overrides background */
-    }
-
-
+    /* --- Form and Section Styles --- */
     .section {
         padding: 20px;
         margin-bottom: 20px;
@@ -67,7 +88,6 @@
         margin-bottom: 0;
         font-weight: 500;
         color: var(--text-color);
-        /* Ensure label color adapts */
     }
 
     #participants-management .form-group {
@@ -79,7 +99,6 @@
         flex-direction: row;
         align-items: flex-end;
     }
-
 
     .btn-group {
         display: flex;
@@ -94,6 +113,7 @@
         margin-bottom: 0;
     }
 
+    /* --- Footer Styles --- */
     .footer-content {
         flex-direction: column;
         text-align: center;
@@ -112,14 +132,11 @@
 
     .copyright {
         font-size: 0.85rem;
-        /* Color handled in _footer.css using variable */
     }
 
+    /* --- Table Styles --- */
     .table-responsive {
-        /* border: 1px solid #ddd; */
-        /* Old */
         border: 1px solid var(--border-color);
-        /* Use variable */
     }
 
     #summary-table td,
@@ -128,34 +145,60 @@
     #sessions-table th {
         padding: 10px 8px;
         font-size: 0.9rem;
-        /* Colors handled by _tables.css using variables */
     }
 
     #sessions-table td:last-child {
         white-space: nowrap;
     }
 
-    /* Center Date Saved (2nd) and Transactions (3rd) columns */
     #sessions-table td:nth-child(2),
     #sessions-table td:nth-child(3) {
         text-align: center;
     }
-
 }
 
 /* End @media (max-width: 768px) */
 
-
 /* === Smaller Phones === */
-@media (max-width: 600px) {
+@media (max-width: 576px) {
     .container {
-        padding: 10px;
+        padding: 0 15px;
+    }
+
+    /* --- Header Tweaks for Smaller Phones --- */
+    .header-content {
+        padding: 0 15px;
     }
 
     header h1 {
-        font-size: 1.5rem;
+        font-size: 1.2rem;
     }
 
+    #new-session-btn {
+        padding: 0.4rem 0.8rem;
+        font-size: 0.75rem;
+    }
+
+    .header-nav .nav-btn {
+        padding: 0.35rem 0.7rem;
+        font-size: 0.75rem;
+    }
+
+    .user-email {
+        max-width: 100px;
+        font-size: 0.75rem;
+    }
+
+    #logout-btn {
+        padding: 0.35rem 0.6rem;
+        font-size: 0.75rem;
+    }
+
+    .header-controls {
+        gap: 0.5rem;
+    }
+
+    /* --- Form and Section Styles --- */
     .section {
         padding: 15px;
         margin-bottom: 15px;
@@ -190,6 +233,7 @@
         box-sizing: border-box;
     }
 
+    /* --- Table Styles --- */
     #summary-table td,
     #summary-table th,
     #sessions-table td,
@@ -198,9 +242,9 @@
         font-size: 0.85rem;
     }
 
+    /* --- Misc Styles --- */
     .disclaimer {
         padding: 10px;
-        /* Colors handled in _sections.css */
     }
 
     .disclaimer h3 {
@@ -224,7 +268,42 @@
     #auth-section .btn:last-child {
         margin-bottom: 0;
     }
-
 }
 
-/* End @media (max-width: 600px) */
+/* End @media (max-width: 576px) */
+
+/* For very small screens - matching enhanced header */
+@media (max-width: 400px) {
+    header h1 {
+        font-size: 1.1rem;
+    }
+
+    .header-content {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .header-branding,
+    .header-controls {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .user-email {
+        max-width: 80px;
+    }
+
+    .theme-switch {
+        width: 40px;
+        height: 20px;
+    }
+
+    .slider:before {
+        height: 14px;
+        width: 14px;
+    }
+
+    input:checked+.slider:before {
+        transform: translateX(20px);
+    }
+}

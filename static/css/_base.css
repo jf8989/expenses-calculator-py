@@ -1,6 +1,12 @@
 /* static/css/_base.css */
 
 /* Base styles */
+html {
+    scroll-behavior: smooth;
+    margin: 0;
+    padding: 0;
+}
+
 body {
     font-family: "Roboto", sans-serif;
     line-height: 1.6;
@@ -10,49 +16,134 @@ body {
     display: flex;
     flex-direction: column;
     min-height: 100vh;
-    /* Body takes at least full viewport height, can grow taller */
-    /* color and background will be inherited from html or set specifically if needed */
     color: var(--text-color);
-    /* Set text color directly on body */
     background: linear-gradient(135deg, var(--bg-gradient-start) 0%, var(--bg-gradient-end) 100%);
-    /* Apply background to body */
-
 }
-
-html {
-    /* Apply base styles to HTML element */
-    height: 100%;
-    /* Optional: Often used, but min-height: 100% on body might be enough. If issues persist, try removing this too. */
-    /* For now, keeping it on html and removing from body is a common fix. */
-    margin: 0;
-    padding: 0;
-    /* The background and color can be set on html and inherited by body,
-       or set on body directly. Setting on body is often clearer. */
-}
-
-/* REMOVED the combined 'html, body' rule that set body height to 100% */
-/*
-html,
-body {
-    height: 100%;
-    margin: 0;
-    padding: 0;
-    background: linear-gradient(135deg, var(--bg-gradient-start) 0%, var(--bg-gradient-end) 100%);
-    color: var(--text-color);
-}
-*/
 
 .site-content {
     flex: 1 0 auto;
 }
 
 .container {
-    max-width: 1200px;
+    max-width: var(--container-max-width);
     margin: 0 auto;
-    padding: 20px;
+    padding: var(--container-padding);
 }
 
-html {
-    /* scroll-behavior can be here or in a more general html rule */
-    scroll-behavior: smooth;
+/* Button Styles */
+.btn {
+    border-radius: var(--button-border-radius);
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: center;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.btn-primary {
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+}
+
+.btn-primary:hover {
+    background-color: var(--primary-color-dark);
+    transform: translateY(-1px);
+    box-shadow: 0 3px 6px var(--shadow-color);
+}
+
+.btn-danger {
+    background-color: var(--danger-color);
+    color: white;
+    border: none;
+}
+
+.btn-danger:hover {
+    background-color: var(--danger-color-dark);
+}
+
+/* Form Styles */
+input,
+select,
+textarea {
+    padding: 0.6rem 0.8rem;
+    border: 1px solid var(--input-border);
+    border-radius: calc(var(--button-border-radius) - 4px);
+    background-color: var(--input-bg);
+    color: var(--text-color);
+    transition: var(--transition);
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+    outline: none;
+    border-color: var(--input-focus-border);
+    box-shadow: 0 0 0 3px var(--input-focus-shadow);
+}
+
+/* Table Styles */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 1rem;
+    background-color: var(--card-bg);
+    border-radius: 5px;
+    overflow: hidden;
+}
+
+th,
+td {
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid var(--border-color);
+}
+
+th {
+    background-color: var(--primary-color);
+    color: white;
+    font-weight: 500;
+}
+
+tr:nth-child(even) {
+    background-color: var(--table-row-even-bg);
+}
+
+tr:hover {
+    background-color: var(--table-row-hover-bg);
+}
+
+/* Card/Section Styles */
+.card,
+.section {
+    background-color: var(--card-bg);
+    border-radius: 8px;
+    box-shadow: 0 2px 8px var(--shadow-color);
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--scrollbar-track);
+}
+
+::-webkit-scrollbar-thumb {
+    background-color: var(--scrollbar-thumb);
+    border-radius: 6px;
+    border: 2px solid var(--scrollbar-track);
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--scrollbar-thumb-hover);
 }

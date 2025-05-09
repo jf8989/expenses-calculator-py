@@ -9,21 +9,51 @@ export function showLoggedInState(userEmail) {
     log('UI:showLoggedInState', `Displaying logged-in state for ${userEmail}`);
     const userStatusDiv = document.getElementById("user-status");
     const userEmailSpan = document.getElementById("user-email-display");
-    if (userEmailSpan) userEmailSpan.textContent = userEmail || 'User';
-    if (userStatusDiv) userStatusDiv.style.display = "flex"; // Use flex as defined in CSS
+    const authSection = document.getElementById("auth-section");
+    const appContent = document.getElementById("app-content");
 
-    document.getElementById("auth-section").style.display = "none";
-    document.getElementById("app-content").style.display = "block";
+    if (userEmailSpan) {
+        userEmailSpan.textContent = userEmail || 'User';
+    }
+    if (userStatusDiv) {
+        userStatusDiv.style.display = "flex"; // Use flex as defined in CSS
+    }
+
+    if (authSection) { // Guard added
+        authSection.style.display = "none";
+    } else {
+        warn('UI:showLoggedInState', 'Element with ID "auth-section" not found.');
+    }
+
+    if (appContent) { // Guard added
+        appContent.style.display = "block";
+    } else {
+        warn('UI:showLoggedInState', 'Element with ID "app-content" not found.');
+    }
 }
 
 export function showLoggedOutState() {
     log('UI:showLoggedOutState', 'Displaying logged-out state.');
     const userStatusDiv = document.getElementById("user-status");
-    if (userStatusDiv) userStatusDiv.style.display = "none";
+    const authSection = document.getElementById("auth-section");
+    const appContent = document.getElementById("app-content");
 
-    document.getElementById("auth-section").style.display = "block"; // Or 'flex' depending on CSS
-    document.getElementById("app-content").style.display = "none";
-    clearAuthError(); // Clear any previous auth errors
+    if (userStatusDiv) {
+        userStatusDiv.style.display = "none";
+    }
+
+    if (authSection) { // Guard added
+        authSection.style.display = "block"; // Or 'flex' depending on CSS
+    } else {
+        warn('UI:showLoggedOutState', 'Element with ID "auth-section" not found.');
+    }
+
+    if (appContent) { // Guard added
+        appContent.style.display = "none";
+    } else {
+        warn('UI:showLoggedOutState', 'Element with ID "app-content" not found.');
+    }
+    clearAuthError(); // Clear any previous auth errors (ensure clearAuthError is defined and handles missing elements too)
 }
 
 export function showAuthError(message) {

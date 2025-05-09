@@ -6,30 +6,44 @@ body {
     line-height: 1.6;
     margin: 0;
     padding: 0;
-    /* background is handled by the html, body rule below */
-    /* color is handled by the html, body rule below */
     transition: var(--transition);
     display: flex;
     flex-direction: column;
     min-height: 100vh;
-    /* Ensures body takes at least full viewport height */
+    /* Body takes at least full viewport height, can grow taller */
+    /* color and background will be inherited from html or set specifically if needed */
+    color: var(--text-color);
+    /* Set text color directly on body */
+    background: linear-gradient(135deg, var(--bg-gradient-start) 0%, var(--bg-gradient-end) 100%);
+    /* Apply background to body */
+
 }
 
-/* Styles to fix footer to bottom */
+html {
+    /* Apply base styles to HTML element */
+    height: 100%;
+    /* Optional: Often used, but min-height: 100% on body might be enough. If issues persist, try removing this too. */
+    /* For now, keeping it on html and removing from body is a common fix. */
+    margin: 0;
+    padding: 0;
+    /* The background and color can be set on html and inherited by body,
+       or set on body directly. Setting on body is often clearer. */
+}
+
+/* REMOVED the combined 'html, body' rule that set body height to 100% */
+/*
 html,
 body {
     height: 100%;
     margin: 0;
     padding: 0;
-    /* This rule correctly uses variables that will change with the theme */
     background: linear-gradient(135deg, var(--bg-gradient-start) 0%, var(--bg-gradient-end) 100%);
     color: var(--text-color);
 }
+*/
 
 .site-content {
-    /* Add this class to the main content wrapper div if needed */
     flex: 1 0 auto;
-    /* Allows content to grow but not shrink */
 }
 
 .container {
@@ -38,7 +52,7 @@ body {
     padding: 20px;
 }
 
-/* Add smooth scrolling */
 html {
+    /* scroll-behavior can be here or in a more general html rule */
     scroll-behavior: smooth;
 }

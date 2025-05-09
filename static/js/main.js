@@ -1,6 +1,6 @@
 // static/js/main.js
 import { initializeCurrencySelection } from "./currency.js";
-import { loadInitialTheme } from './theme.js';
+import { loadInitialTheme, setupThemeToggleEvents } from './theme.js';
 import * as handlers from './handlers.js'; // Import all handlers
 import * as state from './state.js'; // Import state functions
 import * as api from './api.js'; // Import API functions
@@ -12,6 +12,7 @@ document.addEventListener("DOMContentLoaded", async function () {
 
   // --- Initial Setup ---
   loadInitialTheme(); // Load theme first
+  setupThemeToggleEvents(); // Call this to make the label clickable
   initializeCurrencySelection(); // Setup currency dropdowns
 
   try {

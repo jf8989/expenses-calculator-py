@@ -1,4 +1,9 @@
 /* static/css/_base.css */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
 
 /* Base styles */
 html {

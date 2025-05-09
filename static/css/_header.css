@@ -60,10 +60,12 @@ header h1 i {
     padding-bottom: 5px;
     margin-bottom: -5px;
     flex-grow: 1;
-    justify-content: center;
-    /* ClaudeAI centered this, was flex-start */
-    max-width: 500px;
-    /* ClaudeAI added a max-width */
+    /* MODIFICATIONS START */
+    justify-content: flex-start;
+    /* Was center */
+    /* max-width: 500px; */
+    /* Consider removing or increasing this line */
+    /* MODIFICATIONS END */
 }
 
 .header-nav::-webkit-scrollbar {
@@ -88,9 +90,16 @@ header h1 i {
     padding: 0.45rem 1rem;
     cursor: pointer;
     transition: all 0.2s ease-in-out;
-    font-weight: 500;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
+    /* MODIFICATIONS START */
+    font-weight: 400;
+    /* Was 500 */
+    text-transform: none;
+    /* Was uppercase */
+    letter-spacing: normal;
+    /* Was 0.5px */
+    white-space: nowrap;
+    /* Added */
+    /* MODIFICATIONS END */
     position: relative;
     overflow: hidden;
 }

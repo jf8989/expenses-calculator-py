@@ -5,6 +5,28 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ExpenseSplit Pro</title>
+  <!-- ANTI-FOUC SCRIPT: Part 1 - Determine theme preference ASAP -->
+  <script>
+    (function () {
+      try {
+        const savedTheme = localStorage.getItem('theme');
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        let themeToApply = 'light'; // Default theme
+
+        if (savedTheme) {
+          themeToApply = savedTheme;
+        } else if (prefersDark) {
+          themeToApply = 'dark';
+        }
+        // Store it on <html> temporarily; body script will pick it up.
+        // This avoids trying to access document.body before it exists.
+        document.documentElement.setAttribute('data-theme-preload', themeToApply);
+        // console.log('[Inline Head Script] Preload theme set on html:', themeToApply);
+      } catch (e) {
+        // console.error('[Inline Head Script] Error determining initial theme:', e);
+      }
+    })();
+  </script>
   <!-- Link to your main CSS file -->
   <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}" />
   <!-- Link to new Firebase Auth CSS -->
@@ -17,6 +39,19 @@
 </head>
 
 <body>
+  <!-- ANTI-FOUC SCRIPT: Part 2 - Apply theme to body as soon as <body> tag is parsed -->
+  <script>
+    (function () {
+      try {
+        const themeToApply = document.documentElement.getAttribute('data-theme-preload') || 'light';
+        document.body.dataset.theme = themeToApply;
+        // console.log('[Inline Body Script] Applied initial theme to body from preload:', themeToApply);
+        document.documentElement.removeAttribute('data-theme-preload'); // Clean up temporary attribute
+      } catch (e) {
+        // console.error('[Inline Body Script] Error applying theme to body:', e);
+      }
+    })();
+  </script>
   <header>
     <div class="header-content container">
       <div class="header-branding">

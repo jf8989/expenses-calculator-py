@@ -12,17 +12,18 @@ let db = null; // Hold the DB connection reference
 // Holds the data currently being used/displayed by the application
 let appState = {
     isInitialized: false,
-    isAuthenticated: false, // Track auth status for DB operations
-    userId: null, // Store Firebase User ID for potential multi-user DB (though currently using one key)
-    participants: [], // List of all participant names for the user
-    sessions: [], // List of saved session objects { id, name, createdAt, lastUpdatedAt, transactions: [...], participants: [...], currencies: {...} }
-    activeSessionData: { // Holds the data currently being edited/viewed
+    isAuthenticated: false,
+    userId: null,
+    // participants: [], // <<< REMOVE THIS (Old global "all" participants list)
+    frequentParticipants: [], // This is the "starred" list, effectively the new global default for new sessions
+    sessions: [],
+    activeSessionData: {
         name: '',
         transactions: [],
-        participants: [],
-        currencies: { main: 'PEN', secondary: 'USD' } // Default currencies
+        participants: [], // Participants specific to this active session
+        currencies: { main: 'PEN', secondary: 'USD' }
     },
-    lastSyncedTimestamp: null // ISO 8601 string timestamp from backend
+    lastSyncedTimestamp: null
 };
 
 // --- IndexedDB Initialization ---
@@ -80,6 +81,10 @@ export async function loadStateFromDB() {
     log('State:loadStateFromDB', 'Attempting to load state from IndexedDB...');
 
     return new Promise((resolve, reject) => {
+        if (!db) {
+            error('State:loadStateFromDB', 'DB not initialized. Cannot load state.');
+            return reject('DB not initialized');
+        }
         const transaction = db.transaction(STORE_NAME, 'readonly');
         const store = transaction.objectStore(STORE_NAME);
         const request = store.get(DATA_KEY);
@@ -91,29 +96,42 @@ export async function loadStateFromDB() {
 
         request.onsuccess = (event) => {
             const loadedData = event.target.result;
-            // Store current auth state before potentially resetting
             const currentAuthStatus = appState.isAuthenticated;
             const currentUserId = appState.userId;
 
             if (loadedData) {
-                log('State:loadStateFromDB', 'State loaded successfully from DB:', loadedData);
-                appState = {
-                    ...getDefaultState(), // Start with defaults
-                    ...loadedData,      // Overwrite with loaded data
+                log('State:loadStateFromDB', 'State loaded successfully from DB (raw):', JSON.parse(JSON.stringify(loadedData))); // Log a copy
+
+                // Start with defaults, then selectively apply loaded data
+                // This prevents old/unexpected fields in loadedData from polluting appState
+                const newAppState = {
+                    ...getDefaultState(), // Ensures no 'participants' field from default
                     isInitialized: appState.isInitialized, // Preserve previous init flag if any
-                    isAuthenticated: currentAuthStatus, // <<< PRESERVE AUTH STATUS
-                    userId: currentUserId           // <<< PRESERVE USER ID
+                    isAuthenticated: currentAuthStatus,
+                    userId: currentUserId,
+
+                    // Selectively apply relevant fields from loadedData
+                    frequentParticipants: loadedData.frequentParticipants || [],
+                    sessions: loadedData.sessions || [],
+                    activeSessionData: loadedData.activeSessionData || getDefaultState().activeSessionData,
+                    lastSyncedTimestamp: loadedData.lastSyncedTimestamp || null
                 };
+                appState = newAppState;
+
+                // Log if the old 'participants' field (global list) was found in IndexedDB data
+                if (loadedData.hasOwnProperty('participants')) {
+                    warn('State:loadStateFromDB', "Detected old 'participants' field in IndexedDB data. This field has been ignored and will not be saved going forward.");
+                }
+                log('State:loadStateFromDB', 'Processed and applied state from DB:', JSON.parse(JSON.stringify(appState)));
                 resolve(appState);
             } else {
                 log('State:loadStateFromDB', 'No state found in DB for key:', DATA_KEY);
-                // Reset to default BUT preserve current auth status
                 appState = {
                     ...getDefaultState(),
-                    isAuthenticated: currentAuthStatus, // <<< PRESERVE AUTH STATUS
-                    userId: currentUserId           // <<< PRESERVE USER ID
+                    isAuthenticated: currentAuthStatus,
+                    userId: currentUserId
                 };
-                resolve(appState); // Resolve with the corrected default state
+                resolve(appState);
             }
         };
     });
@@ -130,16 +148,15 @@ async function saveStateToDB() {
     }
     if (!appState.isAuthenticated || !appState.userId) {
         log('State:saveStateToDB', 'User not authenticated, skipping save.');
-        // Don't save state if user isn't logged in
         return Promise.resolve();
     }
 
-    // Prepare the object to save (only persist relevant parts)
     const stateToSave = {
         userId: appState.userId,
-        participants: appState.participants,
-        sessions: appState.sessions,
-        activeSessionData: appState.activeSessionData, // Persist active editing state
+        // participants: appState.participants, // <<< REMOVE (Old global "all" participants list)
+        frequentParticipants: appState.frequentParticipants, // Save the "starred" list
+        sessions: appState.sessions, // Saved sessions from Firestore
+        activeSessionData: appState.activeSessionData, // Current working session (includes its own participants)
         lastSyncedTimestamp: appState.lastSyncedTimestamp
     };
 
@@ -148,7 +165,7 @@ async function saveStateToDB() {
     return new Promise((resolve, reject) => {
         const transaction = db.transaction(STORE_NAME, 'readwrite');
         const store = transaction.objectStore(STORE_NAME);
-        const request = store.put(stateToSave, DATA_KEY); // Use put to overwrite existing data at key
+        const request = store.put(stateToSave, DATA_KEY);
 
         request.onerror = (event) => {
             error('State:saveStateToDB', 'Error writing to IndexedDB:', event.target.error);
@@ -202,12 +219,13 @@ function getDefaultState() {
         isInitialized: false,
         isAuthenticated: false,
         userId: null,
-        participants: [],
+        // participants: [], // <<< REMOVE
+        frequentParticipants: [], // Default "starred" list is empty
         sessions: [],
         activeSessionData: {
             name: '',
             transactions: [],
-            participants: [],
+            participants: [], // Participants for a new/active session
             currencies: { main: 'PEN', secondary: 'USD' }
         },
         lastSyncedTimestamp: null
@@ -228,94 +246,81 @@ export function resetInMemoryState() {
  */
 export async function updateStateFromServer(data) {
     log('State:updateStateFromServer', 'Updating state from server data:', data);
-    appState.participants = data.participants || [];
-    appState.sessions = data.sessions || [];
+    // appState.participants = data.participants || []; // <<< REMOVE (No longer using this global "all" list from server)
+    appState.frequentParticipants = data.frequentParticipants || []; // Correctly update "starred"
+    appState.sessions = data.sessions || []; // Correctly update saved sessions
     appState.lastSyncedTimestamp = data.timestamp || null;
-    appState.isInitialized = true; // Mark as initialized after first successful fetch
+    appState.isInitialized = true;
 
-    // When syncing, should we reset activeSessionData or try to preserve it?
-    // Let's reset it to avoid conflicts, user can load a session if needed.
+    // When syncing, reset activeSessionData.
+    // Its participants should default to frequentParticipants for a "new session" context.
     appState.activeSessionData = getDefaultState().activeSessionData;
-    // Set default participants/currencies for new active session based on user's overall settings
-    appState.activeSessionData.participants = [...appState.participants]; // Copy current participants
-    // TODO: Load user's preferred currencies if stored, otherwise use default
+    // For a "new" active session context after sync, use frequentParticipants
+    appState.activeSessionData.participants = [...appState.frequentParticipants];
+    // TODO: User's preferred currencies for activeSessionData could be loaded here if stored globally.
 
-    await saveStateToDB(); // Persist the newly fetched state
+    await saveStateToDB();
 }
 
 // --- Getters ---
-
-export function getParticipants() { return [...appState.participants]; } // Return copy
-export function getSessions() { return [...appState.sessions]; } // Return copy
+export function getSessions() { return [...appState.sessions]; }
 export function getSessionById(sessionId) { return appState.sessions.find(s => s.id === sessionId); }
 export function getLastSyncedTimestamp() { return appState.lastSyncedTimestamp; }
-export function getActiveSessionData() { return { ...appState.activeSessionData, transactions: [...appState.activeSessionData.transactions] }; } // Deep copy needed? Shallow for now.
-export function getActiveTransactions() { return [...appState.activeSessionData.transactions]; } // Return copy
+export function getActiveSessionData() { return { ...appState.activeSessionData, transactions: [...appState.activeSessionData.transactions], participants: [...appState.activeSessionData.participants] }; } // Deeper copy for participants
+export function getActiveTransactions() { return [...appState.activeSessionData.transactions]; }
 export function getActiveCurrencies() { return { ...appState.activeSessionData.currencies }; }
 export function isInitialized() { return appState.isInitialized; }
 export function isAuthenticated() { return appState.isAuthenticated; }
 export function getUserId() { return appState.userId; }
-export function getActiveParticipants() { return [...appState.activeSessionData.participants]; } // Return copy
+export function getActiveParticipants() { return [...appState.activeSessionData.participants]; } // This now correctly returns participants of the *active session*
+export function getFrequentParticipants() { return [...appState.frequentParticipants]; } // "Starred" list
+
+export function isParticipantFrequent(name) {
+    return appState.frequentParticipants.includes(name);
+}
+
+export async function toggleFrequentParticipant(name) {
+    const list = appState.frequentParticipants;
+    const idx = list.indexOf(name);
+    if (idx === -1) {
+        list.push(name);
+    } else {
+        list.splice(idx, 1);
+    }
+    list.sort();
+    await saveStateToDB();
+    // This change should also be synced to Firestore
+    // The handler in handlers.js already calls api.updateFrequentParticipantsApi
+    return isParticipantFrequent(name);
+}
 
 // --- Setters / Updaters (Modify in-memory state AND trigger save to DB) ---
 
-export async function setAuthState(isAuthenticated, userId) { // Add async
+export async function setAuthState(isAuthenticated, userId) {
     log('State:setAuthState', `Setting auth state: ${isAuthenticated}, User ID: ${userId}`);
-    const changed = appState.isAuthenticated !== isAuthenticated || appState.userId !== userId;
+    const oldAuthStatus = appState.isAuthenticated;
     appState.isAuthenticated = isAuthenticated;
     appState.userId = userId;
+
     if (!isAuthenticated) {
-        // Clear DB state on logout
-        await clearDBState(); // Already awaited, good.
-    } else if (changed) {
-        // If logging in, try loading state. Await this!
+        await clearDBState(); // This resets appState to default (active participants empty)
+    } else if (!oldAuthStatus && isAuthenticated) { // Transitioning from logged out to logged in
         try {
-            await loadStateFromDB(); // <<< AWAIT HERE
+            await loadStateFromDB(); // Load existing state which might include activeSessionData
+            // If loadStateFromDB results in activeSessionData.participants being empty (e.g. new user, cleared state),
+            // it will be populated by frequentParticipants later in main.js via updateStateFromServer or
+            // if a specific session is loaded.
+            log('State:setAuthState', 'User logged in, state loaded from DB. Active session participants:', appState.activeSessionData.participants);
+
         } catch (err) {
             error('State:setAuthState', 'Error loading state from DB during auth change:', err);
-            // Reset to default if load fails
-            appState = { ...appState, ...getDefaultState(), isAuthenticated: true, userId: userId };
-            await saveStateToDB(); // Save the reset state
+            // Reset to default if load fails, then save this minimal state.
+            // getDefaultState() will give empty activeSessionData.participants.
+            appState = { ...getDefaultState(), isAuthenticated: true, userId: userId };
+            await saveStateToDB();
         }
     }
-    // No immediate save needed here, subsequent actions will save.
-}
-
-export async function setParticipants(participantsList) {
-    log('State:setParticipants', 'Setting participants:', participantsList);
-    appState.participants = participantsList || [];
-    // Also update active session participants if they should match?
-    // Or keep activeSessionData.participants independent? Let's keep independent for now.
-    await saveStateToDB();
-}
-
-export async function addParticipant(name) {
-    log('State:addParticipant', 'Adding participant:', name);
-    if (!appState.participants.includes(name)) {
-        appState.participants.push(name);
-        appState.participants.sort(); // Keep sorted
-        // Add to active session participants as well? Yes, makes sense.
-        if (!appState.activeSessionData.participants.includes(name)) {
-            appState.activeSessionData.participants.push(name);
-            appState.activeSessionData.participants.sort();
-        }
-        await saveStateToDB();
-        return true; // Indicate change occurred
-    }
-    return false;
-}
-
-export async function deleteParticipant(name) {
-    log('State:deleteParticipant', 'Deleting participant:', name);
-    const initialLength = appState.participants.length;
-    appState.participants = appState.participants.filter(p => p !== name);
-    // Remove from active session participants
-    appState.activeSessionData.participants = appState.activeSessionData.participants.filter(p => p !== name);
-    if (appState.participants.length !== initialLength) {
-        await saveStateToDB();
-        return true; // Indicate change occurred
-    }
-    return false;
+    // No immediate saveStateToDB() here is fine as other actions will trigger it.
 }
 
 export async function setSessions(sessionsList) {
@@ -335,22 +340,23 @@ export async function setLastSyncedTimestamp(timestamp) {
  * @param {object} session - The full session object (including transactions, participants, etc.)
  */
 export async function loadSessionIntoActiveState(session) {
-    log('State:loadSessionIntoActiveState', 'Loading session into active state:', session);
-    if (!session) {
-        // Reset to default if null/undefined session provided
+    log('State:loadSessionIntoActiveState', 'Loading session into active state:', session ? session.id : 'new session');
+    if (!session) { // For a NEW session
         appState.activeSessionData = getDefaultState().activeSessionData;
-        // Populate with current global participants
-        appState.activeSessionData.participants = [...appState.participants];
-    } else {
-        // Deep copy might be safer if transactions are complex objects
+        // For a new session, participants default to the "starred" (frequent) list
+        appState.activeSessionData.participants = [...appState.frequentParticipants];
+        log('State:loadSessionIntoActiveState', 'New session started, participants set from frequent list:', appState.activeSessionData.participants);
+    } else { // For an EXISTING session
         appState.activeSessionData = {
             name: session.name || '',
-            transactions: session.transactions ? [...session.transactions] : [],
-            participants: session.participants ? [...session.participants] : [],
+            // Ensure transactions, participants, currencies are deep copied if they are arrays/objects
+            transactions: session.transactions ? JSON.parse(JSON.stringify(session.transactions)) : [],
+            participants: session.participants ? [...session.participants] : [], // Use session's own list
             currencies: session.currencies ? { ...session.currencies } : getDefaultState().activeSessionData.currencies
         };
+        log('State:loadSessionIntoActiveState', `Existing session '${session.name}' loaded, participants:`, appState.activeSessionData.participants);
     }
-    await saveStateToDB(); // Save the newly active state
+    await saveStateToDB();
 }
 
 // --- Active Transaction Modifiers ---
@@ -446,4 +452,28 @@ export function setInitialized(value) {
     log('State:setInitialized', `Setting initialized status to: ${value}`);
     appState.isInitialized = !!value; // Ensure boolean value
     // No need to save state to DB just for this flag, it's transient session info
+}
+
+export async function addParticipantToActiveSession(name) {
+    log('State:addParticipantToActiveSession', 'Adding participant to active session:', name);
+    const list = appState.activeSessionData.participants;
+    if (!list.includes(name)) {
+        list.push(name);
+        list.sort();
+        await saveStateToDB();
+        return true;
+    }
+    return false;
+}
+
+export async function deleteParticipantFromActiveSession(name) {
+    log('State:deleteParticipantFromActiveSession', 'Deleting participant from active session:', name);
+    const before = appState.activeSessionData.participants.length;
+    appState.activeSessionData.participants =
+        appState.activeSessionData.participants.filter(p => p !== name);
+    if (appState.activeSessionData.participants.length !== before) {
+        await saveStateToDB();
+        return true;
+    }
+    return false;
 }

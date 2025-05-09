@@ -37,6 +37,14 @@ document.addEventListener("DOMContentLoaded", async function () {
   const mainCurrencySelect = document.getElementById("main-currency");
   const secondaryCurrencySelect = document.getElementById("secondary-currency");
   const saveSessionBtn = document.getElementById("save-session-btn");
+  const newSessionBtn = document.getElementById("new-session-btn");
+
+  document.querySelectorAll('.nav-btn').forEach(btn => {
+    btn.addEventListener('click', e => {
+      const tgt = document.querySelector(e.currentTarget.dataset.target);
+      if (tgt) tgt.scrollIntoView({ behavior: 'smooth' });
+    });
+  });
 
   // --- Add Event Listeners ---
   // Auth
@@ -55,7 +63,7 @@ document.addEventListener("DOMContentLoaded", async function () {
   if (mainCurrencySelect) mainCurrencySelect.addEventListener("change", handlers.currencyChangeHandler);
   if (secondaryCurrencySelect) secondaryCurrencySelect.addEventListener("change", handlers.currencyChangeHandler);
   // Sessions
-  if (saveSessionBtn) saveSessionBtn.addEventListener("click", handlers.saveSessionHandler);
+  if (newSessionBtn) newSessionBtn.addEventListener("click", handlers.newSessionHandler);
 
   // --- Firebase Auth State Listener ---
   // This is the core driver for handling login/logout and initial data load

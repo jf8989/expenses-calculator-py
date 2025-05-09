@@ -35,8 +35,9 @@ def _update_user_metadata_timestamp(user_id):
 @login_required
 def get_user_data():
     """
-    Fetches all relevant user data (participants, sessions with transactions)
+    Fetches all relevant user data (frequentParticipants, sessions with transactions)
     based on a timestamp comparison for client-side caching.
+    The old global 'participants' list is no longer fetched or returned.
     """
     user_id = g.user_id
     db = firestore.client() # Get client instance
@@ -45,16 +46,10 @@ def get_user_data():
 
     if last_known_timestamp_str:
         try:
-            # Ensure parsing handles potential timezone info correctly
-            # Remove 'Z' if present, Python's fromisoformat handles timezone offsets like +00:00
             if last_known_timestamp_str.endswith('Z'):
                  last_known_timestamp_str = last_known_timestamp_str[:-1] + '+00:00'
-            # Parse ISO string into timezone-aware datetime object
             last_known_timestamp = datetime.fromisoformat(last_known_timestamp_str)
-            # Ensure it's offset-aware for comparison with Firestore's timezone-aware timestamps
             if last_known_timestamp.tzinfo is None:
-                 # This case shouldn't happen if parsing '+00:00' works, but as a fallback:
-                 # Assume UTC if no timezone info provided by client somehow
                  last_known_timestamp = last_known_timestamp.replace(tzinfo=timezone.utc)
             logger.debug(f"[Firestore:Sync] Client lastKnownTimestamp: {last_known_timestamp} for user {user_id}")
         except ValueError:
@@ -63,51 +58,48 @@ def get_user_data():
 
     try:
         user_doc_ref = db.collection('users').document(user_id)
-        user_doc = user_doc_ref.get(['metadata.lastUpdatedAt', 'participants'])
+        # Fetch only metadata and frequentParticipants. The old 'participants' field is ignored.
+        user_doc = user_doc_ref.get(['metadata.lastUpdatedAt', 'frequentParticipants'])
 
         current_metadata = user_doc.to_dict().get('metadata', {}) if user_doc.exists else {}
-        current_timestamp = current_metadata.get('lastUpdatedAt') # Firestore timestamps are timezone-aware (UTC)
-        participants = user_doc.to_dict().get('participants', []) if user_doc.exists else []
+        current_timestamp = current_metadata.get('lastUpdatedAt')
 
-        # Compare timestamps (both should be timezone-aware)
         if last_known_timestamp and current_timestamp and current_timestamp <= last_known_timestamp:
             logger.info(f"[Firestore:Sync] Client data is current for user {user_id}. Server TS: {current_timestamp}, Client TS: {last_known_timestamp}")
-            # Ensure timestamp is returned in consistent ISO format with Z
             ts_iso = current_timestamp.isoformat(timespec='milliseconds').replace('+00:00', 'Z')
             return jsonify({"status": "current", "timestamp": ts_iso}), 200
 
         logger.info(f"[Firestore:Sync] Fetching all session data for user {user_id}. Reason: {'Stale data' if last_known_timestamp else 'Initial fetch'}")
         sessions_ref = user_doc_ref.collection('sessions')
-        sessions_query = sessions_ref.order_by('createdAt', direction=firestore.Query.DESCENDING).stream() # Order by creation time
+        sessions_query = sessions_ref.order_by('createdAt', direction=firestore.Query.DESCENDING).stream()
 
         all_sessions = []
         for session_doc in sessions_query:
             session_data = session_doc.to_dict()
             session_data['id'] = session_doc.id
-            # Convert Timestamps to ISO strings for JSON
             if 'createdAt' in session_data and isinstance(session_data['createdAt'], datetime):
-                 # Ensure conversion includes timezone 'Z'
                  session_data['createdAt'] = session_data['createdAt'].isoformat(timespec='milliseconds').replace('+00:00', 'Z')
             if 'lastUpdatedAt' in session_data and isinstance(session_data['lastUpdatedAt'], datetime):
                  session_data['lastUpdatedAt'] = session_data['lastUpdatedAt'].isoformat(timespec='milliseconds').replace('+00:00', 'Z')
             all_sessions.append(session_data)
 
-        # Current timestamp to return (use ISO format with Z)
         current_ts_iso = current_timestamp.isoformat(timespec='milliseconds').replace('+00:00', 'Z') if current_timestamp else None
+
+        frequent_participants_list = user_doc.to_dict().get('frequentParticipants', []) if user_doc.exists else []
 
         response_data = {
             "status": "updated",
-            "participants": sorted(participants), # Return sorted participants
-            "sessions": all_sessions, # Already sorted by query
+            "frequentParticipants": frequent_participants_list, # This is the "starred" list
+            "sessions": all_sessions,
             "timestamp": current_ts_iso
         }
-        logger.info(f"[Firestore:Sync] Returning full data ({len(participants)} participants, {len(all_sessions)} sessions) for user {user_id}")
+        # Corrected log message to use the length of the actual frequent_participants_list
+        logger.info(f"[Firestore:Sync] Returning full data ({len(frequent_participants_list)} frequent participants, {len(all_sessions)} sessions) for user {user_id}")
         return jsonify(response_data), 200
 
     except Exception as e:
         logger.exception(f"[Firestore:Sync] Error fetching user data for user {user_id}: {e}")
         return jsonify({"error": "Failed to fetch user data"}), 500
-
 
 # --- Session CRUD Operations ---
 
@@ -232,3 +224,15 @@ def delete_session(session_id):
     except Exception as e:
         logger.exception(f"[Firestore:Sessions] Error deleting session {session_id} for user {user_id}: {e}")
         return jsonify({"error": f"Server error deleting session: {str(e)}"}), 500
+    
+@sessions_bp.route('/user/frequentParticipants', methods=['PUT'])
+@login_required
+def set_frequent_participants():
+    user_id = g.user_id
+    data = request.json or {}
+    freq = data.get('frequent', [])
+    db  = firestore.client()
+    db.collection('users').document(user_id).set(
+        {'frequentParticipants': freq}, merge=True
+    )
+    return jsonify({"status":"ok"}), 200

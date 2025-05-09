@@ -4,11 +4,14 @@
 header {
     background-color: var(--header-bg);
     color: white;
-    /* White text usually works on dark header backgrounds */
     padding: 1rem 0;
     box-shadow: 0 4px 6px var(--shadow-color);
-    /* Use variable */
     flex-shrink: 0;
+
+    /* ---- NEW sticky behaviour ---- */
+    position: sticky;
+    top: 0;
+    z-index: 1000;
 }
 
 .header-content {
@@ -37,6 +40,39 @@ header h1 i {
     /* Explicitly set icon color if needed */
 }
 
+/* ---- Section jump bar ---- */
+.header-nav {
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    /* allow horizontal scroll on small screens */
+    scrollbar-width: none;
+    /* Firefox */
+}
+
+.header-nav::-webkit-scrollbar {
+    display: none;
+}
+
+/* Chrome */
+
+.header-nav .nav-btn {
+    flex: 0 0 auto;
+    background: transparent;
+    color: var(--footer-text);
+    border: 1px solid var(--footer-text);
+    border-radius: 20px;
+    font-size: 0.75rem;
+    padding: 4px 10px;
+    cursor: pointer;
+    transition: background .2s, color .2s;
+}
+
+.header-nav .nav-btn:hover,
+.header-nav .nav-btn:focus {
+    background: var(--footer-text);
+    color: var(--header-bg);
+}
 
 /* Theme Switch Styles */
 .theme-switch-wrapper {

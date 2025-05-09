@@ -21,8 +21,20 @@
 <body>
   <header>
     <div class="header-content container">
+      <nav class="header-nav">
+        <button class="nav-btn" data-target="#currency-selection">Currency</button>
+        <button class="nav-btn" data-target="#transactions-input">Input</button>
+        <button class="nav-btn" data-target="#participants-management">Participants</button>
+        <button class="nav-btn" data-target="#transactions-analysis">Analysis</button>
+        <button class="nav-btn" data-target="#session-management">Sessions</button>
+        <button class="nav-btn" data-target="#expenses-summary">Summary</button>
+      </nav>
+
       <h1><i class="fas fa-money-bill-wave"></i> ExpenseSplit Pro</h1>
       <div class="header-controls">
+        <button id="new-session-btn" class="btn btn-outline-warning btn-sm">
+          <i class="fas fa-file-medical"></i> New Session
+        </button>
         <!-- Dark Mode Toggle START -->
         <div class="theme-switch-wrapper">
           <label class="theme-switch" for="theme-checkbox">
@@ -102,6 +114,7 @@
       <h2><i class="fas fa-users"></i> Participants Management</h2>
       <div class="form-group">
         <input type="text" id="new-participant" class="form-control" placeholder="Participant's name" />
+        <datalist id="participants-autocomplete"></datalist>
         <button id="add-participant-btn" class="btn btn-success">
           <i class="fas fa-user-plus"></i> Add
         </button>

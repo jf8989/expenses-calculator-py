@@ -81,29 +81,51 @@ export function applyCurrencyPreferences(mainPref, secondaryPref, mainSelect, se
 
 // --- Participants UI ---
 export function updateParticipantsListUI() {
-    const participants = state.getParticipants(); // Get data from state
-    log('UI:updateParticipantsListUI', 'Updating participants list UI with state data:', participants);
-    const participantsList = document.getElementById("participants-list");
-    participantsList.innerHTML = ""; // Clear existing
-    participants.forEach((participant) => {
+    const participants = state.getActiveParticipants();
+    const tbody = document.getElementById("participants-list");
+    if (!tbody) return;
+
+    tbody.innerHTML = "";
+    participants.forEach((p) => {
         const li = document.createElement("li");
 
-        // Participant Name Span
+        /* star button */
+        const starBtn = document.createElement("button");
+        const isStar = state.isParticipantFrequent(p);
+        starBtn.innerHTML = isStar ? "★" : "☆";
+        starBtn.title = isStar ? "Unmark as frequent" : "Mark as frequent";
+        starBtn.className = "btn btn-link btn-sm participant-star-btn";
+        starBtn.onclick = () => handlers.toggleParticipantFrequentHandler(p);
+        li.appendChild(starBtn);
+
+        /* name */
         const nameSpan = document.createElement("span");
-        nameSpan.textContent = participant;
-        nameSpan.classList.add("participant-name"); // Add class for styling
+        nameSpan.textContent = p;
+        nameSpan.classList.add("participant-name");
         li.appendChild(nameSpan);
 
-        // Delete Button
-        const deleteBtn = document.createElement("button");
-        deleteBtn.innerHTML = '<i class="fas fa-trash-alt"></i>'; // Use icon
-        deleteBtn.title = `Delete ${participant}`;
-        deleteBtn.classList.add("btn", "btn-danger", "btn-sm", "participant-delete-btn"); // Add classes
-        // Use the handler function from handlers.js
-        deleteBtn.onclick = () => handlers.deleteParticipantHandler(participant);
-        li.appendChild(deleteBtn);
+        /* delete */
+        const delBtn = document.createElement("button");
+        delBtn.innerHTML = '<i class="fas fa-trash-alt"></i>';
+        delBtn.className = "btn btn-danger btn-sm participant-delete-btn";
+        delBtn.title = `Delete ${p}`;
+        delBtn.onclick = () => handlers.deleteParticipantHandler(p);
+        li.appendChild(delBtn);
 
-        participantsList.appendChild(li);
+        tbody.appendChild(li);
+    });
+
+    updateParticipantsAutocomplete();   // ★ keep datalist fresh
+}
+
+function updateParticipantsAutocomplete() {
+    const dl = document.getElementById("participants-autocomplete");
+    if (!dl) return;
+    dl.innerHTML = "";
+    state.getFrequentParticipants().forEach(name => {
+        const opt = document.createElement("option");
+        opt.value = name;
+        dl.appendChild(opt);
     });
 }
 
@@ -120,9 +142,10 @@ export function clearParticipantsList() {
  */
 export function refreshTransactionsTableUI() {
     const transactions = state.getActiveTransactions(); // Get from state
-    const participants = state.getParticipants(); // Get from state
+    // const participants = state.getParticipants(); // OLD - CAUSES ERROR
+    const participants = state.getActiveParticipants(); // CORRECTED: Use participants from the active session
     const currencies = state.getActiveCurrencies(); // Get from state
-    log('UI:refreshTransactionsTableUI', `Refreshing transactions table with ${transactions.length} transactions.`);
+    log('UI:refreshTransactionsTableUI', `Refreshing transactions table with ${transactions.length} transactions. Active participants count: ${participants.length}`);
 
     const table = document.getElementById("transactions-table");
     if (!table) return;
@@ -131,48 +154,43 @@ export function refreshTransactionsTableUI() {
 
     const headers = Array.from(table.querySelectorAll("thead th")).map(th => th.textContent.trim());
 
-    transactions.forEach((transaction, index) => { // Get index here
+    transactions.forEach((transaction, index) => {
         const row = tbody.insertRow();
-        // Store index on the row for easy access by handlers within the row
         row.dataset.transactionIndex = index;
 
-        // --- Add data-label attributes ---
-        row.insertCell().textContent = index + 1; // # column
+        row.insertCell().textContent = index + 1;
         row.cells[0].setAttribute('data-label', headers[0] || '#');
         row.insertCell().textContent = transaction.date;
         row.cells[1].setAttribute('data-label', headers[1] || 'Date');
         row.insertCell().textContent = transaction.description;
         row.cells[2].setAttribute('data-label', headers[2] || 'Description');
 
-        // Amount Cell (with edit functionality)
         const amountCell = row.insertCell();
         amountCell.classList.add("amount-cell");
         amountCell.setAttribute('data-label', headers[3] || 'Amount');
-        // Pass index instead of transaction object
         renderAmountCellContent(amountCell, index, currencies.main, currencies.secondary);
 
-        // Participant Assignment Cell
         const assignedCell = row.insertCell();
         assignedCell.setAttribute('data-label', headers[4] || 'Assigned To');
-        // Pass index and participants list
+        // Pass index and the (now correct) active session's participants list
         renderCheckboxContainer(assignedCell, index, participants);
 
-        // Actions Cell (Delete button)
         const actionsCell = row.insertCell();
         actionsCell.setAttribute('data-label', headers[5] || 'Actions');
         const deleteBtn = document.createElement("button");
         deleteBtn.textContent = "Delete";
         deleteBtn.className = "btn btn-danger btn-sm";
-        // Pass index to the handler
         deleteBtn.onclick = () => {
-            if (confirm(`Delete transaction: ${transaction.date} - ${transaction.description}?`)) {
+            // Ensure transaction object is fetched fresh from state if description is used in confirm
+            const currentTransaction = state.getActiveTransactions()[index];
+            if (confirm(`Delete transaction: ${currentTransaction.date} - ${currentTransaction.description}?`)) {
                 handlers.deleteTransactionHandler(index);
             }
         };
         actionsCell.appendChild(deleteBtn);
     });
-    updateRowNumbersUI(); // Update numbering after rendering
-    filterTransactionsUI(); // Re-apply existing filter
+    updateRowNumbersUI();
+    filterTransactionsUI();
 }
 
 
@@ -284,8 +302,9 @@ function renderCheckboxContainer(cell, transactionIndex, participants) {
     const checkboxContainer = document.createElement("div");
     checkboxContainer.className = "checkbox-container";
     const assignedTo = Array.isArray(transaction.assigned_to) ? transaction.assigned_to : [];
+    const fullList = [...new Set([...participants, ...assignedTo])];
 
-    participants.forEach((participant) => {
+    fullList.forEach((participant) => {
         const checkboxLabel = document.createElement("label");
         const checkbox = document.createElement("input");
         checkbox.type = "checkbox";
@@ -371,7 +390,13 @@ export function removeParticipantFromTransactionCheckboxes(participant) {
 // Modified to get data from state
 export function updateSummaryTableUI() {
     const transactions = state.getActiveTransactions(); // Get from state
-    const participants = state.getActiveParticipants(); // Get from state (ensure getter exists)
+    let participants = state.getActiveParticipants();
+    const extra = new Set();
+    transactions.forEach(t => {
+        (Array.isArray(t.assigned_to) ? t.assigned_to : []).forEach(p => { if (!participants.includes(p)) extra.add(p); });
+    });
+    participants = [...participants, ...extra];
+
     const currencies = state.getActiveCurrencies(); // Get from state
     const mainCurrency = currencies.main;
     const secondaryCurrency = currencies.secondary;

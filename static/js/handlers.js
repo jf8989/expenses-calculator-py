@@ -73,62 +73,83 @@ export async function currencyChangeHandler() {
 // --- Participant Handlers ---
 export async function addParticipantHandler() {
     const input = document.getElementById("new-participant");
-    const newParticipantName = input.value.trim();
-    if (newParticipantName) {
-        log('Handlers:addParticipantHandler', `Attempting to add participant: ${newParticipantName}`);
-        ui.showLoading(true, "Adding participant...");
-        try {
-            // 1. Call API (updates backend)
-            await api.addParticipantApi(newParticipantName);
-            log('Handlers:addParticipantHandler', 'API call successful.');
+    const name = input.value.trim();
+    if (!name) return;
 
-            // 2. Update local state (triggers save to IndexedDB)
-            const added = await state.addParticipant(newParticipantName);
-            log('Handlers:addParticipantHandler', `State updated: ${added}`);
+    log('Handlers:addParticipantHandler', `Adding participant '${name}' to active session.`);
+    // ui.showLoading(true, "Adding participant..."); // Optional: loading for local-only change?
 
-            // 3. Update UI
-            input.value = ""; // Clear input
-            ui.updateParticipantsListUI(state.getParticipants()); // Update list from state
-            ui.addParticipantToTransactionCheckboxes(newParticipantName); // Add checkbox to existing rows
-            calculateAndUpdateSummary(); // Recalculate summary
-        } catch (error) {
-            error('Handlers:addParticipantHandler', 'Error adding participant:', error);
-            alert(`Error adding participant: ${error.message}`);
-        } finally {
-            ui.showLoading(false);
+    try {
+        // Add participant ONLY to the current active session's list in local state (and IndexedDB)
+        // This does NOT call any API to add to a global Firestore list.
+        const added = await state.addParticipantToActiveSession(name);
+
+        if (added) {
+            ui.updateParticipantsListUI(); // Reflects change in active session
+            ui.addParticipantToTransactionCheckboxes(name);
+            calculateAndUpdateSummary(); // Uses active session participants
+            log('Handlers:addParticipantHandler', `Participant '${name}' added to active session state.`);
+        } else {
+            log('Handlers:addParticipantHandler', `Participant '${name}' already in active session state.`);
         }
+        input.value = "";
+
+    } catch (err) {
+        error('Handlers:addParticipantHandler', 'Error adding participant to active session state:', err);
+        alert(`Error adding participant: ${err.message}`);
+    } finally {
+        // ui.showLoading(false);
     }
 }
 
 export async function deleteParticipantHandler(participantName) {
-    log('Handlers:deleteParticipantHandler', `Attempting to delete participant: ${participantName}`);
-    if (!confirm(`Are you sure you want to delete participant "${participantName}"? This will also remove them from any current assignments.`)) {
-        return;
+    // Confirmation dialog logic
+    const skipConfirm = localStorage.getItem("suppressDeleteParticipantConfirm") === "true";
+    let confirmed = skipConfirm;
+
+    if (!confirmed) {
+        const msg = `Delete participant "${participantName}" from THIS active session? This will not affect other saved sessions or your starred list.`;
+        const currentEvent = window.event; // Capture event for shiftKey check
+        confirmed = confirm(msg + (currentEvent && currentEvent.shiftKey ? "\n\n(Shift+OK to not ask again for this action)" : ""));
+        if (!confirmed) return;
+        if (currentEvent && currentEvent.shiftKey) {
+            localStorage.setItem("suppressDeleteParticipantConfirm", "true");
+        }
     }
-    ui.showLoading(true, "Deleting participant...");
+
+    log('Handlers:deleteParticipantHandler', `Deleting participant '${participantName}' from active session.`);
+    // ui.showLoading(true, "Deleting participant..."); // Optional
+
     try {
-        // 1. Call API (updates backend)
-        await api.deleteParticipantApi(participantName);
-        log('Handlers:deleteParticipantHandler', 'API call successful.');
+        // Delete participant ONLY from the current active session's list in local state (and IndexedDB)
+        // This does NOT call any API to delete from a global Firestore list.
+        const deleted = await state.deleteParticipantFromActiveSession(participantName);
 
-        // 2. Update local state (triggers save to IndexedDB)
-        const deleted = await state.deleteParticipant(participantName);
-        log('Handlers:deleteParticipantHandler', `State updated: ${deleted}`);
+        if (deleted) {
+            ui.updateParticipantsListUI();
+            ui.removeParticipantFromTransactionCheckboxes(participantName);
+            calculateAndUpdateSummary();
+            log('Handlers:deleteParticipantHandler', `Participant '${participantName}' deleted from active session state.`);
+        } else {
+            log('Handlers:deleteParticipantHandler', `Participant '${participantName}' not found in active session state.`);
+        }
 
-        // 3. Update UI
-        ui.updateParticipantsListUI(state.getParticipants()); // Update list from state
-        ui.removeParticipantFromTransactionCheckboxes(participantName); // Remove checkbox from rows
-        calculateAndUpdateSummary(); // Recalculate summary
-    } catch (error) {
-        error('Handlers:deleteParticipantHandler', 'Error deleting participant:', error);
-        alert(`Error deleting participant: ${error.message}`);
+    } catch (err) {
+        error('Handlers:deleteParticipantHandler', 'Error deleting participant from active session state:', err);
+        alert(`Error deleting participant: ${err.message}`);
     } finally {
-        ui.showLoading(false);
+        // ui.showLoading(false);
     }
 }
 
-// REMOVED loadParticipantsHandler
-
+export async function toggleParticipantFrequentHandler(name) {
+    const nowStar = await state.toggleFrequentParticipant(name);
+    ui.updateParticipantsListUI();
+    // push to server (fire-and-forget)
+    api.updateFrequentParticipantsApi(state.getFrequentParticipants())
+        .catch(err => warn('Handlers:toggleFreq', 'could not sync', err));
+    return nowStar;
+}
 
 // --- Transaction Handlers (Operating on Active Session in State) ---
 export async function addTransactionsHandler() {
@@ -329,26 +350,43 @@ export async function saveSessionHandler() {
 
 export async function loadSessionHandler(sessionId) {
     log('Handlers:loadSessionHandler', `Attempting to load session ${sessionId} into active state.`);
-    if (confirm("Loading this session will replace your current unsaved transactions. Continue?")) {
-        // Rename catch variable here
+    // Consider making the confirmation message more specific if needed.
+    if (confirm("Loading this session will replace your current unsaved transactions and participants in the active editor. Continue?")) {
         try {
             const sessionToLoad = state.getSessionById(sessionId);
             if (!sessionToLoad) {
-                throw new Error("Session not found in local state.");
+                // This should ideally not happen if the UI for sessions is up-to-date.
+                error('Handlers:loadSessionHandler', `Session with ID ${sessionId} not found in local state.`);
+                alert("Error: Selected session not found. It might have been deleted or there was a sync issue.");
+                return;
             }
 
+            // Load the selected session's data into the active working state.
+            // This correctly sets activeSessionData.participants to sessionToLoad.participants.
             await state.loadSessionIntoActiveState(sessionToLoad);
-            log('Handlers:loadSessionHandler', 'Session loaded into active state.');
+            log('Handlers:loadSessionHandler', `Session '${sessionToLoad.name}' (ID: ${sessionId}) loaded into active state.`);
 
-            ui.refreshTransactionsTableUI();
-            calculateAndUpdateSummary();
-            alert(`Session "${sessionToLoad.name}" loaded.`);
+            // Now, update all relevant UI components:
+            ui.updateParticipantsListUI();      // <<< ADDED THIS LINE to refresh the Participants Management section
+            ui.refreshTransactionsTableUI();    // Refreshes the transactions table
+            calculateAndUpdateSummary();        // Recalculates and updates the summary table
 
-            // Rename catch variable here
-        } catch (err) { // <<< RENAME error to err (or similar)
-            // Use the imported logger function 'error'
-            error('Handlers:loadSessionHandler', 'Error loading session:', err); // <<< Use imported error logger
+            // Provide feedback to the user.
+            alert(`Session "${sessionToLoad.name}" loaded successfully.`);
+            // Maybe update the session name input field if there is one for the active session.
+            const sessionNameInput = document.getElementById("session-name");
+            if (sessionNameInput && sessionToLoad.name) {
+                sessionNameInput.value = sessionToLoad.name;
+            }
+
+
+        } catch (err) {
+            error('Handlers:loadSessionHandler', `Error loading session ${sessionId}:`, err);
             alert(`Error loading session: ${err.message}`);
+            // Potentially, reset to a known good state or re-render UI if loading fails critically.
+            // For example, re-render with current (potentially new/empty) active state:
+            // ui.renderInitialUI(); // Or specific parts
+            // calculateAndUpdateSummary();
         }
     }
 }
@@ -405,4 +443,13 @@ export async function deleteSessionHandler(sessionId, sessionName) {
         }
         // Loading is hidden by refreshStateAndSessionsUI on success
     }
+}
+
+export async function newSessionHandler() {
+    if (!confirm("Start a brand-new session? Unsaved changes to the current session will be lost.")) return;
+    log('Handlers:newSessionHandler', 'Creating new session using frequent participants as default.');
+    await state.loadSessionIntoActiveState(null); // This will now use frequentParticipants
+    ui.renderInitialUI(); // Will use activeSessionData.participants (now from frequent)
+    calculateAndUpdateSummary();
+    ui.clearSessionNameInput(); // Clear session name for the new session
 }

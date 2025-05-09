@@ -172,3 +172,13 @@ export async function fetchCurrentUserInfo() {
         headers: { "Authorization": headers.Authorization }
     }).then(handleResponse);
 }
+
+/* ---- Frequent participants ---- */
+export async function updateFrequentParticipantsApi(list) {
+    const headers = await getAuthHeaders();
+    return fetch("/api/user/frequentParticipants", {
+        method: "PUT",
+        headers,
+        body: JSON.stringify({ frequent: list })
+    }).then(handleResponse);
+}

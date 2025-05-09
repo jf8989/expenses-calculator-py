@@ -1,4 +1,4 @@
-/* static/css/_responsive.css - Harmonized with enhanced header */
+/* static/css/_responsive.css - Merged and Harmonized */
 
 /* === Medium Screens and Tablets === */
 @media (max-width: 992px) {
@@ -6,22 +6,25 @@
         max-width: 960px;
     }
 
-    /* --- Header Tweaks for Medium Screens --- */
+    /* --- Header Tweaks for Medium Screens (from Claude's enhanced header) --- */
     .header-content {
         gap: 1rem;
+        /* Claude's value */
     }
 
     .header-nav {
         justify-content: flex-start;
-        max-width: 100%;
+        /* Ensure nav aligns left if it has space */
+        /* max-width: 100%; */
+        /* Ensure it can take full width if other items shrink */
     }
 
-    /* Theme switch adjustments */
     .theme-label {
         display: none;
+        /* Hide theme label for space */
     }
 
-    /* No theme-specific changes needed here (for body/html theme) */
+    /* --- End Header Tweaks --- */
 }
 
 /* === Smaller Tablets and Large Phones === */
@@ -33,42 +36,61 @@
         box-sizing: border-box;
     }
 
-    /* --- Header Responsive Overhaul for 768px --- */
+    /* --- Header Responsive Overhaul for 768px (from Claude's enhanced header) --- */
     header {
         padding: 0.5rem 0;
+        /* Claude's value */
     }
 
     .header-content {
         flex-wrap: wrap;
+        /* Allow items to wrap */
         gap: 0.75rem;
+        /* Claude's value */
         justify-content: space-between;
+        /* Main axis for branding and controls */
     }
 
     .header-branding {
         order: 1;
+        /* First item */
         width: auto;
+        /* Allow natural width */
+        /* flex-grow: 1; /* Optional: allow branding to take more space */
     }
 
     header h1 {
         font-size: 1.3rem;
+        /* Claude's value */
     }
 
     .header-controls {
         order: 2;
+        /* Second item, will align to the right of branding */
         margin-left: auto;
+        /* Push controls to the right if branding doesn't fill space */
+        width: auto;
+        /* Allow natural width */
     }
 
     .header-nav {
         order: 3;
+        /* Navigation bar below branding and controls */
         width: 100%;
+        /* Full width for the nav bar */
         margin-top: 0.5rem;
         padding-top: 0.5rem;
-        border-top: 1px solid var(--header-border-color);
+        border-top: 1px solid var(--header-border-color, rgba(255, 255, 255, 0.1));
         justify-content: flex-start;
+        /* Align nav items to the start */
         max-width: 100%;
+        /* Override any desktop max-width */
     }
 
-    /* --- Form and Section Styles --- */
+    /* .theme-label still display: none; from 992px breakpoint */
+    /* --- End Header Responsive Overhaul --- */
+
+    /* Your existing general responsive rules for 768px */
     .section {
         padding: 20px;
         margin-bottom: 20px;
@@ -113,7 +135,6 @@
         margin-bottom: 0;
     }
 
-    /* --- Footer Styles --- */
     .footer-content {
         flex-direction: column;
         text-align: center;
@@ -134,7 +155,6 @@
         font-size: 0.85rem;
     }
 
-    /* --- Table Styles --- */
     .table-responsive {
         border: 1px solid var(--border-color);
     }
@@ -157,48 +177,64 @@
     }
 }
 
-/* End @media (max-width: 768px) */
 
 /* === Smaller Phones === */
 @media (max-width: 576px) {
-    .container {
-        padding: 0 15px;
-    }
+    /* Your existing breakpoint, slightly larger than Claude's 400px for these */
+    /* .container { padding: 0 15px; } /* Your original rule was padding: 10px; Let's use Claude's for header-content */
 
-    /* --- Header Tweaks for Smaller Phones --- */
+    /* --- Header Tweaks for Smaller Phones (from Claude's enhanced header) --- */
     .header-content {
-        padding: 0 15px;
+        padding: 0 var(--container-padding, 15px);
+        /* Match general container padding */
     }
 
     header h1 {
         font-size: 1.2rem;
+        /* Claude's value */
     }
 
     #new-session-btn {
         padding: 0.4rem 0.8rem;
+        /* Claude's value */
         font-size: 0.75rem;
+        /* Claude's value */
     }
 
     .header-nav .nav-btn {
         padding: 0.35rem 0.7rem;
+        /* Claude's value */
         font-size: 0.75rem;
+        /* Claude's value */
     }
 
     .user-email {
         max-width: 100px;
+        /* Claude's value */
         font-size: 0.75rem;
+        /* Claude's value */
     }
 
     #logout-btn {
         padding: 0.35rem 0.6rem;
+        /* Claude's value */
         font-size: 0.75rem;
+        /* Claude's value */
     }
 
     .header-controls {
         gap: 0.5rem;
+        /* Claude's value */
     }
 
-    /* --- Form and Section Styles --- */
+    /* --- End Header Tweaks --- */
+
+    /* Your existing general responsive rules for 600px (now 576px) */
+    .container {
+        padding: 10px;
+    }
+
+    /* Keep your original smaller container padding for content */
     .section {
         padding: 15px;
         margin-bottom: 15px;
@@ -233,7 +269,6 @@
         box-sizing: border-box;
     }
 
-    /* --- Table Styles --- */
     #summary-table td,
     #summary-table th,
     #sessions-table td,
@@ -242,7 +277,6 @@
         font-size: 0.85rem;
     }
 
-    /* --- Misc Styles --- */
     .disclaimer {
         padding: 10px;
     }
@@ -270,23 +304,32 @@
     }
 }
 
-/* End @media (max-width: 576px) */
-
-/* For very small screens - matching enhanced header */
+/* For very small screens - (from Claude's enhanced header) */
 @media (max-width: 400px) {
     header h1 {
         font-size: 1.1rem;
     }
 
     .header-content {
+        /* This will override the 768px flex-wrap:wrap and make it column */
         flex-direction: column;
         align-items: center;
+        /* Center items in the column */
     }
 
     .header-branding,
     .header-controls {
         width: 100%;
+        /* Make branding and controls full width */
         justify-content: space-between;
+        /* Space out items within branding/controls */
+        margin-left: 0;
+        /* Reset margin-left from .header-controls */
+    }
+
+    .header-nav {
+        /* Ensure nav is also full width and centered if desired */
+        justify-content: center;
     }
 
     .user-email {
@@ -294,6 +337,7 @@
     }
 
     .theme-switch {
+        /* Styles for the switch itself if needed */
         width: 40px;
         height: 20px;
     }

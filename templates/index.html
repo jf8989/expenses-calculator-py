@@ -19,10 +19,9 @@
 <body>
   <header>
     <div class="header-content container">
-      <div class="header-branding"> <!-- Added wrapper for H1 for potential future flexibility -->
+      <div class="header-branding">
         <h1><i class="fas fa-money-bill-wave"></i> ExpenseSplit Pro</h1>
       </div>
-
       <nav class="header-nav" aria-label="Main navigation">
         <button type="button" class="nav-btn" data-target="#currency-selection">Currency</button>
         <button type="button" class="nav-btn" data-target="#transactions-input">Input</button>
@@ -31,7 +30,6 @@
         <button type="button" class="nav-btn" data-target="#session-management">Sessions</button>
         <button type="button" class="nav-btn" data-target="#expenses-summary">Summary</button>
       </nav>
-
       <div class="header-controls">
         <button id="new-session-btn" class="btn btn-outline-primary btn-sm" title="Start a new expense session">
           <i class="fas fa-file-medical"></i> New Session
@@ -44,10 +42,9 @@
               <span class="icon moon"><i class="fas fa-moon"></i></span>
             </div>
           </label>
-          <span class="theme-label">Dark Mode</span> <!-- Will be styled to be visible -->
+          <span class="theme-label">Dark Mode</span>
         </div>
-
-        <div id="user-status" style="display: none;"> <!-- JS will change to display: flex -->
+        <div id="user-status" style="display: none;">
           <span id="user-email-display" class="user-email"></span>
           <button id="logout-btn" class="btn btn-danger btn-sm" title="Sign out of your account">
             <i class="fas fa-sign-out-alt"></i> Sign Out
@@ -57,10 +54,25 @@
     </div>
   </header>
 
+  <!-- Authentication Section - THIS IS THE IMPORTANT PART -->
+  <div id="auth-section" class="container section auth-container">
+    <h2><i class="fas fa-user-lock"></i> Welcome</h2>
+    <p>Sign in with Google to manage your shared expenses.</p>
+    <div id="auth-disclaimer" class="disclaimer" style="display: none;">
+      <h3><i class="fas fa-info-circle"></i> Privacy Note</h3>
+      <p>By signing in, you allow ExpenseSplit Pro to access your basic Google profile information (email) to identify
+        your account securely. Your expense data is stored privately in your own cloud space.</p>
+    </div>
+    <div id="google-signin-button-container">
+      <button id="google-signin-btn" class="btn btn-primary btn-google">
+        <i class="fab fa-google"></i> Sign in with Google
+      </button>
+    </div>
+    <div id="auth-error" class="auth-error-message" style="display: none;"></div>
+  </div>
+
   <!-- Main Application Content (Hidden initially) -->
   <div id="app-content" class="container" style="display: none">
-    <!-- ... rest of your app content ... -->
-    <!-- Currency Selection -->
     <div id="currency-selection" class="section">
       <h2><i class="fas fa-coins"></i> Currency Selection</h2>
       <div class="form-group">
@@ -72,8 +84,6 @@
         <select id="secondary-currency" class="form-control"></select>
       </div>
     </div>
-
-    <!-- Transaction Input -->
     <div id="transactions-input" class="section">
       <h2><i class="fas fa-receipt"></i> Transaction Input</h2>
       <p class="instructions">
@@ -89,24 +99,19 @@
         <i class="fas fa-plus-circle"></i> Add Transactions
       </button>
     </div>
-
-    <!-- Participants Management -->
     <div id="participants-management" class="section">
       <h2><i class="fas fa-users"></i> Participants Management</h2>
       <div class="form-group">
         <input type="text" id="new-participant" class="form-control" placeholder="Participant's name"
-          list="participants-autocomplete" /> <!-- Added list attribute -->
+          list="participants-autocomplete" />
         <datalist id="participants-autocomplete"></datalist>
         <button id="add-participant-btn" class="btn btn-success">
           <i class="fas fa-user-plus"></i> Add
         </button>
       </div>
       <div id="participants-list" class="participants-grid">
-        <!-- Participant items added dynamically -->
       </div>
     </div>
-
-    <!-- Transaction Analysis -->
     <div id="transactions-analysis" class="section">
       <h2><i class="fas fa-chart-bar"></i> Transaction Analysis</h2>
       <p class="instructions">
@@ -138,13 +143,10 @@
             </tr>
           </thead>
           <tbody>
-            <!-- Transaction rows added dynamically -->
           </tbody>
         </table>
       </div>
     </div>
-
-    <!-- Session Management -->
     <div id="session-management" class="section">
       <h2><i class="fas fa-save"></i> Session Management</h2>
       <p class="instructions">
@@ -176,14 +178,11 @@
               </tr>
             </thead>
             <tbody>
-              <!-- Saved sessions added dynamically -->
             </tbody>
           </table>
         </div>
       </div>
     </div>
-
-    <!-- Expenses Summary -->
     <div id="expenses-summary" class="section">
       <h2><i class="fas fa-file-invoice-dollar"></i> Expenses Summary</h2>
       <div class="table-responsive">
@@ -196,7 +195,6 @@
             </tr>
           </thead>
           <tbody>
-            <!-- Summary rows added dynamically -->
           </tbody>
         </table>
       </div>
@@ -222,7 +220,6 @@
         <p><i class="fas fa-envelope"></i> juanfrajf.contacto@gmail.com</p>
       </div>
       <div class="footer-section social">
-        <h3>Follow Me</h3>
         <a href="https://www.linkedin.com/in/jfmarcenaroa/" class="social-icon" target="_blank"><i
             class="fab fa-linkedin"></i></a>
         <a href="https://github.com/jf8989?tab=repositories" class="social-icon" target="_blank"><i
@@ -249,7 +246,7 @@
       apiKey: "AIzaSyCIbLXAcdSq3jcb7tLPoUpjGd3e-XA0SIA",
       authDomain: "expense-split-pro-46307.firebaseapp.com",
       projectId: "expense-split-pro-46307",
-      storageBucket: "expense-split-pro-46307.firebasestorage.app", 
+      storageBucket: "expense-split-pro-46307.firebasestorage.app",
       messagingSenderId: "120596810852",
       appId: "1:120596810852:web:6a9939e3d6e48961eba371"
     };

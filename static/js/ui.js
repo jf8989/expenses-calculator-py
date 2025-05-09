@@ -307,7 +307,7 @@ function renderCheckboxContainer(cell, transactionIndex, participants) {
 }
 
 // Keep filterTransactionsUI and updateRowNumbersUI as they operate on DOM
-export function filterTransactionsUI(searchTerm) {
+export function filterTransactionsUI(searchTerm = '') {
     const tableRows = document.querySelectorAll("#transactions-table tbody tr");
     tableRows.forEach((row) => {
         const date = row.cells[1]?.textContent.toLowerCase() || '';

@@ -65,6 +65,7 @@ document.addEventListener("DOMContentLoaded", async function () {
   if (secondaryCurrencySelect) secondaryCurrencySelect.addEventListener("change", handlers.currencyChangeHandler);
   // Sessions
   if (newSessionBtn) newSessionBtn.addEventListener("click", handlers.newSessionHandler);
+  if (saveSessionBtn) saveSessionBtn.addEventListener("click", handlers.saveSessionHandler);
 
   // --- Firebase Auth State Listener ---
   // This is the core driver for handling login/logout and initial data load

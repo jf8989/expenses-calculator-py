@@ -112,23 +112,28 @@ Follow these steps to get the project running locally.
    ```
    *(You should see `(.venv)` at the start of your terminal prompt)*
 
-**4. Configure Environment Variables:**
-    *   The application needs access to your Firebase Service Account Key. Set an environment variable pointing to the location of the downloaded JSON key file **before running the server**.
-      ```bash
-      # Example (macOS/Linux - temporary for current session)
-      export FIREBASE_SERVICE_ACCOUNT_KEY="/absolute/path/to/serviceAccountKey.json"
+**4. Configure Environment Variables (run these in the same terminal where you start Flask):**
 
-      # Example (Windows PowerShell - temporary for current session)
-      $env:FIREBASE_SERVICE_ACCOUNT_KEY = "C:\absolute\path\to\serviceAccountKey.json"
-      ```
-      *(For persistent storage, add this to your `.bashrc`, `.zshrc`, `.profile`, or System Environment Variables)*
-    *   Set a Flask Secret Key (optional but recommended for production):
-      ```bash
-      # Example (macOS/Linux)
-      export SECRET_KEY='your-very-strong-secret-key'
-      # Example (Windows PowerShell)
-      $env:SECRET_KEY = 'your-very-strong-secret-key'
-      ```
+1.  Place the Firebase service account JSON you downloaded from the console in the project root (the default file name is `serviceAccountKey.json`).
+2.  Export the path to that file **before** running `python3 app.py`:
+    ```bash
+    # macOS/Linux/WSL
+    export FIREBASE_SERVICE_ACCOUNT_KEY="$PWD/serviceAccountKey.json"
+    ```
+    ```powershell
+    # Windows PowerShell
+    $env:FIREBASE_SERVICE_ACCOUNT_KEY = "C:\absolute\path\to\serviceAccountKey.json"
+    ```
+    *(For persistence, add the export command to your shell profile: `.bashrc`, `.zshrc`, `.profile`, etc.)*
+3.  Set a Flask secret key (optional locally, required for production):
+    ```bash
+    # macOS/Linux/WSL
+    export SECRET_KEY='your-very-strong-secret-key'
+    ```
+    ```powershell
+    # Windows PowerShell
+    $env:SECRET_KEY = 'your-very-strong-secret-key'
+    ```
 
 **5. Install Python Dependencies:**
    ```bash

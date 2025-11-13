@@ -1,25 +1,25 @@
-/* static/css/_header.css - Enhanced Header CSS (Media queries removed, to be placed in _responsive.css) */
+/* static/css/_header.css - Enhanced Responsive Header */
 
 /* Base Header Styles */
 header {
-    background: linear-gradient(to right, var(--header-bg-gradient-start, #1e3a5f), var(--header-bg-gradient-end, #2c5282));
-    color: var(--header-text-color, white);
-    padding: 0.75rem 0;
-    box-shadow: 0 3px 10px var(--shadow-color, rgba(0, 0, 0, 0.15));
+    background: linear-gradient(to right, var(--header-bg-gradient-start), var(--header-bg-gradient-end));
+    color: var(--header-text-color);
+    padding: 1rem 0;
+    box-shadow: var(--shadow-md);
     position: sticky;
     top: 0;
     z-index: 1000;
-    border-bottom: 1px solid var(--header-border-color, rgba(255, 255, 255, 0.1));
+    border-bottom: 1px solid var(--header-border-color);
 }
 
 .header-content {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    max-width: var(--container-max-width, 1200px);
+    max-width: var(--container-max-width);
     margin: 0 auto;
-    padding: 0 var(--container-padding, 20px);
-    gap: 1.5rem;
+    padding: 0 var(--container-padding);
+    gap: var(--space-lg);
 }
 
 /* Branding Section */
@@ -27,89 +27,82 @@ header {
     display: flex;
     align-items: center;
     flex-shrink: 0;
+    z-index: 1001;
 }
 
 header h1 {
     margin: 0;
-    font-size: 1.5rem;
-    font-weight: 500;
-    letter-spacing: 0.5px;
-    color: var(--header-text-color, white);
+    font-size: var(--font-size-2xl);
+    font-weight: 600;
+    letter-spacing: -0.5px;
+    color: var(--header-text-color);
     display: flex;
     align-items: center;
-    gap: 0.6rem;
+    gap: var(--space-sm);
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
 header h1 i {
-    color: var(--header-icon-color, #8ecdf7);
-    font-size: 1.4rem;
+    color: var(--header-icon-color);
+    font-size: 1.5rem;
     filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.3));
+}
+
+/* Mobile Menu Toggle */
+.mobile-menu-toggle {
+    display: none;
+    background: none;
+    border: none;
+    color: var(--header-text-color);
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: var(--space-sm);
+    border-radius: var(--button-border-radius);
+    transition: var(--transition-base);
+    z-index: 1001;
+}
+
+.mobile-menu-toggle:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.mobile-menu-toggle:focus {
+    outline: 2px solid rgba(255, 255, 255, 0.5);
+    outline-offset: 2px;
 }
 
 /* Navigation Section */
 .header-nav {
     display: flex;
     align-items: center;
-    gap: 0.7rem;
-    overflow-x: auto;
-    overflow-y: hidden;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: thin;
-    scrollbar-color: var(--scrollbar-thumb-color, rgba(255, 255, 255, 0.4)) transparent;
-    padding-bottom: 5px;
-    margin-bottom: -5px;
+    gap: var(--space-sm);
     flex-grow: 1;
-    /* MODIFICATIONS START */
-    justify-content: flex-start;
-    /* Was center */
-    /* max-width: 500px; */
-    /* Consider removing or increasing this line */
-    /* MODIFICATIONS END */
-}
-
-.header-nav::-webkit-scrollbar {
-    height: 3px;
-}
-
-.header-nav::-webkit-scrollbar-thumb {
-    background-color: var(--scrollbar-thumb-color, rgba(255, 255, 255, 0.4));
-    border-radius: 3px;
-}
-
-.header-nav::-webkit-scrollbar-track {
-    background-color: transparent;
+    justify-content: center;
+    max-width: 600px;
 }
 
 .header-nav .nav-btn {
-    background-color: var(--header-nav-btn-bg, rgba(255, 255, 255, 0.1));
-    color: var(--header-nav-btn-text, var(--header-text-color, white));
-    border: 1px solid var(--header-nav-btn-border, rgba(255, 255, 255, 0.2));
-    border-radius: var(--button-border-radius, 20px);
-    font-size: 0.85rem;
-    padding: 0.45rem 1rem;
+    background-color: var(--header-nav-btn-bg);
+    color: var(--header-nav-btn-text);
+    border: 1px solid var(--header-nav-btn-border);
+    border-radius: var(--button-border-radius);
+    font-size: var(--font-size-sm);
+    padding: 0.5rem 1rem;
     cursor: pointer;
-    transition: all 0.2s ease-in-out;
-    /* MODIFICATIONS START */
-    font-weight: 400;
-    /* Was 500 */
-    text-transform: none;
-    /* Was uppercase */
-    letter-spacing: normal;
-    /* Was 0.5px */
+    transition: var(--transition-base);
+    font-weight: 500;
     white-space: nowrap;
-    /* Added */
-    /* MODIFICATIONS END */
     position: relative;
     overflow: hidden;
+    min-height: 44px;
 }
 
 .header-nav .nav-btn:hover,
 .header-nav .nav-btn:focus {
-    background-color: var(--header-nav-btn-hover-bg, rgba(255, 255, 255, 0.2));
-    border-color: var(--header-nav-btn-hover-border, rgba(255, 255, 255, 0.4));
+    background-color: var(--header-nav-btn-hover-bg);
+    border-color: var(--header-nav-btn-hover-border);
     transform: translateY(-1px);
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
 }
 
 .header-nav .nav-btn:active {
@@ -118,9 +111,8 @@ header h1 i {
 }
 
 .header-nav .nav-btn.active {
-    /* For active page/section indication */
-    background-color: var(--primary-color, #4299e1);
-    border-color: var(--primary-color, #4299e1);
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
     color: white;
     font-weight: 600;
 }
@@ -129,50 +121,51 @@ header h1 i {
 .header-controls {
     display: flex;
     align-items: center;
-    gap: 1rem;
+    gap: var(--space-md);
     flex-shrink: 0;
 }
 
 #new-session-btn {
-    background-color: var(--primary-color, #4299e1);
+    background-color: var(--primary-color);
     color: white;
     border: none;
-    padding: 0.45rem 1rem;
-    border-radius: var(--button-border-radius, 20px);
-    font-size: 0.85rem;
+    padding: 0.5rem 1rem;
+    border-radius: var(--button-border-radius);
+    font-size: var(--font-size-sm);
     font-weight: 600;
-    display: flex;
+    display: inline-flex;
     align-items: center;
-    gap: 0.5rem;
-    transition: all 0.2s ease;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
+    gap: var(--space-sm);
+    transition: var(--transition-base);
+    box-shadow: var(--shadow);
+    white-space: nowrap;
+    min-height: 44px;
 }
 
 #new-session-btn:hover {
-    background-color: var(--primary-color-dark, #3182ce);
+    background-color: var(--primary-color-dark);
     transform: translateY(-1px);
-    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15);
+    box-shadow: var(--shadow-md);
 }
 
 #new-session-btn:active {
     transform: translateY(0);
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--shadow-sm);
+}
+
+#new-session-btn i {
+    font-size: 1rem;
 }
 
 /* Theme Switch Styles */
 .theme-switch-wrapper {
     display: flex;
     align-items: center;
-    gap: 0.6rem;
+    gap: var(--space-sm);
     background-color: rgba(0, 0, 0, 0.15);
-    /* Claude added bg to wrapper */
-    padding: 0.25rem 0.6rem;
-    /* Claude added padding */
+    padding: 0.25rem var(--space-sm);
     border-radius: 30px;
-    /* Claude added radius */
-    transition: background-color 0.3s;
+    transition: var(--transition-base);
 }
 
 .theme-switch-wrapper:hover {
@@ -180,13 +173,14 @@ header h1 i {
 }
 
 .theme-label {
-    font-size: 0.8rem;
-    color: var(--header-text-color, white);
+    font-size: var(--font-size-sm);
+    color: var(--header-text-color);
     opacity: 0.9;
     font-weight: 500;
     cursor: pointer;
     user-select: none;
-    transition: opacity 0.2s;
+    transition: var(--transition-fast);
+    white-space: nowrap;
 }
 
 .theme-switch-wrapper:hover .theme-label {
@@ -196,8 +190,8 @@ header h1 i {
 .theme-switch {
     position: relative;
     display: inline-block;
-    width: 44px;
-    height: 22px;
+    width: 48px;
+    height: 24px;
 }
 
 .theme-switch input {
@@ -214,75 +208,69 @@ header h1 i {
     right: 0;
     bottom: 0;
     background-color: rgba(0, 0, 0, 0.2);
-    /* Claude changed inactive bg */
-    transition: .4s;
-    border-radius: 22px;
+    transition: 0.3s;
+    border-radius: 24px;
     box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2);
-    /* Claude added inset shadow */
 }
 
 .slider:before {
     position: absolute;
     content: "";
-    height: 16px;
-    width: 16px;
+    height: 18px;
+    width: 18px;
     left: 3px;
     bottom: 3px;
     background-color: white;
-    transition: .4s;
+    transition: 0.3s;
     border-radius: 50%;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
-    /* Claude added shadow to knob */
 }
 
-input:checked+.slider {
-    background-color: var(--primary-color, #4299e1);
+input:checked + .slider {
+    background-color: var(--primary-color);
 }
 
-input:checked+.slider:before {
-    transform: translateX(22px);
+input:checked + .slider:before {
+    transform: translateX(24px);
 }
 
 .slider .icon {
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
-    font-size: 10px;
+    font-size: 11px;
     color: white;
-    transition: opacity 0.3s ease;
+    transition: var(--transition-fast);
+    pointer-events: none;
 }
 
 .slider .sun {
-    left: 4px;
+    left: 5px;
     opacity: 1;
 }
 
 .slider .moon {
-    right: 4px;
+    right: 5px;
     opacity: 0;
 }
 
-input:checked+.slider .sun {
+input:checked + .slider .sun {
     opacity: 0;
 }
 
-input:checked+.slider .moon {
+input:checked + .slider .moon {
     opacity: 1;
 }
 
 /* User Status */
 #user-status {
     display: flex;
-    /* This should be dynamically set by JS */
     align-items: center;
-    gap: 0.75rem;
+    gap: var(--space-sm);
     background-color: rgba(0, 0, 0, 0.15);
-    /* Claude added bg */
-    padding: 0.3rem 0.75rem;
-    /* Claude added padding */
+    padding: 0.3rem var(--space-sm);
     border-radius: 30px;
-    /* Claude added radius */
-    transition: background-color 0.3s;
+    transition: var(--transition-base);
 }
 
 #user-status:hover {
@@ -290,8 +278,8 @@ input:checked+.slider .moon {
 }
 
 .user-email {
-    font-size: 0.85rem;
-    color: var(--header-text-color, white);
+    font-size: var(--font-size-sm);
+    color: var(--header-text-color);
     max-width: 150px;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -300,21 +288,25 @@ input:checked+.slider .moon {
 }
 
 #logout-btn {
-    background-color: var(--danger-color, #e53e3e);
+    background-color: var(--danger-color);
     color: white;
     border: none;
-    padding: 0.4rem 0.8rem;
-    border-radius: var(--button-border-radius, 20px);
-    font-size: 0.8rem;
+    padding: 0.4rem var(--space-sm);
+    border-radius: var(--button-border-radius);
+    font-size: var(--font-size-sm);
     font-weight: 500;
-    display: flex;
+    display: inline-flex;
     align-items: center;
-    gap: 0.4rem;
-    transition: all 0.2s ease;
+    gap: 0.3rem;
+    transition: var(--transition-base);
+    white-space: nowrap;
+    min-height: 36px;
 }
 
 #logout-btn:hover {
-    background-color: var(--danger-color-dark, #c53030);
+    background-color: var(--danger-color-dark);
 }
 
-/* Media queries that were in Claude's _header.css are REMOVED from here and will be merged into _responsive.css */
+#logout-btn i {
+    font-size: 0.9rem;
+}

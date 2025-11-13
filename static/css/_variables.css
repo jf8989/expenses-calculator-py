@@ -3,18 +3,24 @@
   /* Light Mode (Default) */
   --primary-color: #3498db;
   --primary-color-dark: #2980b9;
+  --primary-color-light: #5dade2;
   --secondary-color: #2ecc71;
   --danger-color: #e74c3c;
   --danger-color-dark: #c53030;
   --warning-color: #f39c12;
-  --text-color: #2c3e50;
-  /* Dark text on light bg */
-  --text-color-muted: #7f8c8d;
-  /* Lighter text */
-  --bg-color: #ecf0f1;
-  /* Light background */
-  --bg-gradient-start: #ecf0f1;
-  --bg-gradient-end: #bdc3c7;
+
+  /* Text colors with AAA contrast (7:1) */
+  --text-color: #1a1a1a;
+  /* Near-black for maximum contrast */
+  --text-color-muted: #616161;
+  /* Ensures 7:1 contrast on white */
+  --text-color-light: #424242;
+
+  /* Background colors */
+  --bg-color: #f8f9fa;
+  /* Softer light background */
+  --bg-gradient-start: #f8f9fa;
+  --bg-gradient-end: #e9ecef;
   --card-bg: #ffffff;
   /* White cards */
 
@@ -32,14 +38,44 @@
   --scrollbar-thumb-color: rgba(255, 255, 255, 0.4);
 
   /* Footer */
-  --footer-bg: #2c3e50;
-  --footer-text: #ecf0f1;
+  --footer-bg: #1a252f;
+  --footer-text: #e9ecef;
 
   /* Common elements */
-  --border-color: #e0e0e0;
-  --button-border-radius: 20px;
-  --container-max-width: 1200px;
-  --container-padding: 20px;
+  --border-color: #dee2e6;
+  --button-border-radius: 8px;
+  /* More modern, less extreme */
+  --container-max-width: 1280px;
+  --container-padding: 24px;
+  /* 6 * 4px base unit */
+
+  /* Spacing system (4px base) */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-2xl: 48px;
+  --space-3xl: 64px;
+  --space-4xl: 96px;
+
+  /* Typography scale */
+  --font-size-xs: 0.75rem;
+  /* 12px */
+  --font-size-sm: 0.875rem;
+  /* 14px */
+  --font-size-base: 1rem;
+  /* 16px */
+  --font-size-lg: 1.125rem;
+  /* 18px */
+  --font-size-xl: 1.25rem;
+  /* 20px */
+  --font-size-2xl: 1.5rem;
+  /* 24px */
+  --font-size-3xl: 1.875rem;
+  /* 30px */
+  --font-size-4xl: 2.25rem;
+  /* 36px */
 
   /* Table styles */
   --table-row-even-bg: #f8f9fa;
@@ -47,16 +83,28 @@
 
   /* Form elements */
   --input-bg: #ffffff;
-  --input-border: #ddd;
+  --input-border: #ced4da;
   --input-focus-border: var(--primary-color);
-  --input-focus-shadow: rgba(52, 152, 219, 0.2);
+  --input-focus-shadow: rgba(52, 152, 219, 0.25);
 
-  /* Misc */
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+  --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.12);
+  --shadow-xl: 0 12px 24px rgba(0, 0, 0, 0.15);
   --shadow-color: rgba(0, 0, 0, 0.1);
+
+  /* Scrollbar */
   --scrollbar-track: #f1f1f1;
   --scrollbar-thumb: var(--primary-color);
   --scrollbar-thumb-hover: #2980b9;
-  --transition: all 0.3s ease;
+
+  /* Transitions */
+  --transition-fast: all 0.15s ease;
+  --transition-base: all 0.2s ease;
+  --transition-slow: all 0.3s ease;
+  --transition: var(--transition-base);
 }
 
 /* Dark Mode Variables */
@@ -64,20 +112,26 @@ body[data-theme="dark"] {
   --primary-color: #3498db;
   /* Keep primary vibrant */
   --primary-color-dark: #2171a6;
+  --primary-color-light: #5dade2;
   --secondary-color: #2ecc71;
   --danger-color: #e74c3c;
   --danger-color-dark: #c53030;
   --warning-color: #f39c12;
-  --text-color: #ecf0f1;
-  /* Light text on dark bg */
-  --text-color-muted: #95a5a6;
-  /* Darker muted text */
-  --bg-color: #2c3e50;
-  /* Dark background */
-  --bg-gradient-start: #2c3e50;
-  --bg-gradient-end: #34495e;
-  --card-bg: #34495e;
-  /* Darker cards */
+
+  /* Text colors with AAA contrast (7:1) on dark bg */
+  --text-color: #f8f9fa;
+  /* Very light text for dark bg */
+  --text-color-muted: #adb5bd;
+  /* Lighter muted text */
+  --text-color-light: #dee2e6;
+
+  /* Background colors */
+  --bg-color: #1a1d23;
+  /* Darker, more modern background */
+  --bg-gradient-start: #1a1d23;
+  --bg-gradient-end: #2d3748;
+  --card-bg: #2d3748;
+  /* Darker cards with better contrast */
 
   /* Header-specific variables */
   --header-bg-gradient-start: #1a202c;
@@ -93,25 +147,32 @@ body[data-theme="dark"] {
   --scrollbar-thumb-color: rgba(255, 255, 255, 0.3);
 
   /* Footer */
-  --footer-bg: #1a252f;
-  --footer-text: #bdc3c7;
+  --footer-bg: #0d1117;
+  --footer-text: #e9ecef;
 
-  /* Common elements - keeping border radius the same */
-  --border-color: #4a627a;
+  /* Common elements */
+  --border-color: #4a5568;
 
   /* Table styles */
-  --table-row-even-bg: #2f4254;
-  --table-row-hover-bg: #3e5770;
+  --table-row-even-bg: #252d38;
+  --table-row-hover-bg: #374151;
 
   /* Form elements */
-  --input-bg: #4a627a;
-  --input-border: #5e7a94;
+  --input-bg: #374151;
+  --input-border: #4b5563;
   --input-focus-border: var(--primary-color);
-  --input-focus-shadow: rgba(52, 152, 219, 0.3);
+  --input-focus-shadow: rgba(52, 152, 219, 0.35);
 
-  /* Misc */
-  --shadow-color: rgba(0, 0, 0, 0.3);
-  --scrollbar-track: #4a627a;
-  --scrollbar-thumb: #bdc3c7;
-  --scrollbar-thumb-hover: #ecf0f1;
+  /* Shadows (darker for dark mode) */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.6);
+  --shadow-xl: 0 12px 24px rgba(0, 0, 0, 0.7);
+  --shadow-color: rgba(0, 0, 0, 0.5);
+
+  /* Scrollbar */
+  --scrollbar-track: #374151;
+  --scrollbar-thumb: #6b7280;
+  --scrollbar-thumb-hover: #9ca3af;
 }

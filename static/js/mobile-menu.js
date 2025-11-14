@@ -7,11 +7,12 @@
   // Wait for DOM to be fully loaded
   document.addEventListener('DOMContentLoaded', function () {
     const mobileMenuToggle = document.getElementById('mobile-menu-toggle');
+    const mobileMenuClose = document.getElementById('mobile-menu-close');
     const headerNav = document.getElementById('header-nav');
     const mobileMenuOverlay = document.getElementById('mobile-menu-overlay');
     const navButtons = headerNav.querySelectorAll('.nav-btn');
 
-    if (!mobileMenuToggle || !headerNav || !mobileMenuOverlay) {
+    if (!mobileMenuToggle || !headerNav || !mobileMenuOverlay || !mobileMenuClose) {
       console.error('Mobile menu elements not found');
       return;
     }
@@ -47,6 +48,7 @@
 
     // Event Listeners
     mobileMenuToggle.addEventListener('click', toggleMobileMenu);
+    mobileMenuClose.addEventListener('click', closeMobileMenu);
     mobileMenuOverlay.addEventListener('click', closeMobileMenu);
 
     // Close menu when clicking a navigation button

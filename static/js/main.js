@@ -39,6 +39,7 @@ document.addEventListener("DOMContentLoaded", async function () {
   const secondaryCurrencySelect = document.getElementById("secondary-currency");
   const saveSessionBtn = document.getElementById("save-session-btn");
   const newSessionBtn = document.getElementById("new-session-btn");
+  const sessionSortSelect = document.getElementById("session-sort");
 
   document.querySelectorAll('.nav-btn').forEach(btn => {
     btn.addEventListener('click', e => {
@@ -66,6 +67,7 @@ document.addEventListener("DOMContentLoaded", async function () {
   // Sessions
   if (newSessionBtn) newSessionBtn.addEventListener("click", handlers.newSessionHandler);
   if (saveSessionBtn) saveSessionBtn.addEventListener("click", handlers.saveSessionHandler);
+  if (sessionSortSelect) sessionSortSelect.addEventListener("change", () => ui.updateSessionsTableUI());
 
   // --- Firebase Auth State Listener ---
   // This is the core driver for handling login/logout and initial data load

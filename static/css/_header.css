@@ -73,6 +73,11 @@ header h1 i {
     outline-offset: 2px;
 }
 
+/* Mobile menu close button (hidden on desktop, shown in mobile menu) */
+.mobile-menu-close {
+    display: none;
+}
+
 /* Navigation Section - Full width in grid */
 .header-nav {
     display: flex;

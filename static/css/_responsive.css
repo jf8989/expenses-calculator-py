@@ -30,16 +30,6 @@
         padding: 0.45rem 0.8rem;
         font-size: 0.75rem;
     }
-
-    #new-session-btn span {
-        display: none; /* Hide text, keep icon */
-    }
-
-    #new-session-btn {
-        padding: 0.6rem;
-        min-width: 44px;
-        justify-content: center;
-    }
 }
 
 /* === Tablets and Large Phones === */
@@ -98,6 +88,35 @@
         overflow-y: auto;
     }
 
+    /* Mobile Menu Close Button */
+    .mobile-menu-close {
+        position: absolute;
+        top: var(--space-md);
+        right: var(--space-md);
+        background: transparent;
+        border: none;
+        color: var(--text-color);
+        font-size: 1.5rem;
+        cursor: pointer;
+        padding: var(--space-sm);
+        border-radius: 50%;
+        width: 44px;
+        height: 44px;
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+        transition: var(--transition-base);
+    }
+
+    .mobile-menu-close:hover {
+        background: var(--table-row-hover-bg);
+    }
+
+    .mobile-menu-close:focus {
+        outline: 2px solid var(--primary-color);
+        outline-offset: 2px;
+    }
+
     .header-nav.mobile-menu-open {
         right: 0;
     }
@@ -143,8 +162,37 @@
         opacity: 1;
     }
 
+    .header-controls {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+    }
+
+    #user-status {
+        display: flex;
+        align-items: center;
+        gap: var(--space-xs);
+        flex-wrap: nowrap;
+    }
+
     .user-email {
-        max-width: 120px;
+        font-size: var(--font-size-sm);
+        max-width: 100px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    #logout-btn span,
+    #new-session-btn span {
+        display: none;
+    }
+
+    #logout-btn,
+    #new-session-btn {
+        padding: 0.6rem;
+        min-width: 44px;
+        justify-content: center;
     }
 
     /* General responsive rules */
@@ -238,16 +286,6 @@
 
     .user-email {
         display: none;
-    }
-
-    #logout-btn span {
-        display: none;
-    }
-
-    #logout-btn {
-        padding: 0.5rem;
-        min-width: 44px;
-        justify-content: center;
     }
 
     .section {

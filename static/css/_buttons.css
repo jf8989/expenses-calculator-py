@@ -84,6 +84,15 @@
     filter: brightness(1.1);
 }
 
+.btn-info {
+    background-color: var(--info-color);
+    color: white;
+}
+
+.btn-info:hover:not(:disabled) {
+    background-color: var(--info-color-dark);
+}
+
 /* Button sizes */
 .btn-sm {
     padding: 0.5rem 1rem;

@@ -91,16 +91,11 @@
         <button id="new-session-btn" class="btn btn-outline-primary btn-sm" title="Start a new expense session">
           <i class="fas fa-file-medical"></i><span> New Session</span>
         </button>
-        <div class="theme-switch-wrapper" title="Toggle light/dark theme">
-          <label class="theme-switch" for="theme-checkbox">
-            <input type="checkbox" id="theme-checkbox" aria-label="Toggle theme" />
-            <div class="slider round">
-              <span class="icon sun"><i class="fas fa-sun"></i></span>
-              <span class="icon moon"><i class="fas fa-moon"></i></span>
-            </div>
-          </label>
-          <span class="theme-label">Dark Mode</span>
-        </div>
+        <button class="theme-toggle" id="theme-toggle" aria-label="Toggle dark mode" title="Toggle theme">
+          <input type="checkbox" id="theme-checkbox" style="display: none;" />
+          <i class="fas fa-sun sun-icon"></i>
+          <i class="fas fa-moon moon-icon"></i>
+        </button>
         <div id="user-status" style="display: none;">
           <span id="user-email-display" class="user-email"></span>
           <button id="logout-btn" class="btn btn-danger btn-sm" title="Sign out of your account">

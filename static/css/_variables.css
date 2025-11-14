@@ -1,35 +1,33 @@
 /* static/css/_variables.css */
 :root {
-  /* Light Mode (Default) */
-  --primary-color: #3498db;
-  --primary-color-dark: #2980b9;
-  --primary-color-light: #5dade2;
-  --secondary-color: #2ecc71;
-  --danger-color: #e74c3c;
-  --danger-color-dark: #c53030;
-  --warning-color: #f39c12;
+  /* Light Mode - Softer, less bright, professional */
+  --primary-color: #2563eb;
+  --primary-color-dark: #1d4ed8;
+  --primary-color-light: #3b82f6;
+  --secondary-color: #059669;
+  --danger-color: #dc2626;
+  --danger-color-dark: #b91c1c;
+  --warning-color: #d97706;
+  --info-color: #0891b2;
+  --info-color-dark: #0e7490;
 
-  /* Text colors with AAA contrast (7:1) */
-  --text-color: #1a1a1a;
-  /* Near-black for maximum contrast */
-  --text-color-muted: #616161;
-  /* Ensures 7:1 contrast on white */
-  --text-color-light: #424242;
+  /* Text colors - Softer, less harsh */
+  --text-color: #1f2937;
+  --text-color-muted: #6b7280;
+  --text-color-light: #4b5563;
 
-  /* Background colors */
-  --bg-color: #f8f9fa;
-  /* Softer light background */
-  --bg-gradient-start: #f8f9fa;
-  --bg-gradient-end: #e9ecef;
+  /* Background colors - Much softer, not blindingly white */
+  --bg-color: #f9fafb;
+  --bg-gradient-start: #f9fafb;
+  --bg-gradient-end: #f3f4f6;
   --card-bg: #ffffff;
-  /* White cards */
 
-  /* Header-specific variables */
-  --header-bg-gradient-start: #2c5282;
-  --header-bg-gradient-end: #3182ce;
+  /* Header */
+  --header-bg-gradient-start: #1e40af;
+  --header-bg-gradient-end: #2563eb;
   --header-text-color: white;
   --header-border-color: rgba(255, 255, 255, 0.1);
-  --header-icon-color: #8ecdf7;
+  --header-icon-color: #93c5fd;
   --header-nav-btn-bg: rgba(255, 255, 255, 0.1);
   --header-nav-btn-text: white;
   --header-nav-btn-border: rgba(255, 255, 255, 0.2);
@@ -38,16 +36,14 @@
   --scrollbar-thumb-color: rgba(255, 255, 255, 0.4);
 
   /* Footer */
-  --footer-bg: #1a252f;
-  --footer-text: #e9ecef;
+  --footer-bg: #111827;
+  --footer-text: #f3f4f6;
 
   /* Common elements */
-  --border-color: #dee2e6;
+  --border-color: #e5e7eb;
   --button-border-radius: 8px;
-  /* More modern, less extreme */
-  --container-max-width: 1280px;
+  --container-max-width: 1400px;
   --container-padding: 24px;
-  /* 6 * 4px base unit */
 
   /* Spacing system (4px base) */
   --space-xs: 4px;
@@ -61,44 +57,36 @@
 
   /* Typography scale */
   --font-size-xs: 0.75rem;
-  /* 12px */
   --font-size-sm: 0.875rem;
-  /* 14px */
   --font-size-base: 1rem;
-  /* 16px */
   --font-size-lg: 1.125rem;
-  /* 18px */
   --font-size-xl: 1.25rem;
-  /* 20px */
   --font-size-2xl: 1.5rem;
-  /* 24px */
   --font-size-3xl: 1.875rem;
-  /* 30px */
   --font-size-4xl: 2.25rem;
-  /* 36px */
 
   /* Table styles */
-  --table-row-even-bg: #f8f9fa;
-  --table-row-hover-bg: #e9ecef;
+  --table-row-even-bg: #f9fafb;
+  --table-row-hover-bg: #f3f4f6;
 
   /* Form elements */
   --input-bg: #ffffff;
-  --input-border: #ced4da;
+  --input-border: #d1d5db;
   --input-focus-border: var(--primary-color);
-  --input-focus-shadow: rgba(52, 152, 219, 0.25);
+  --input-focus-shadow: rgba(37, 99, 235, 0.25);
 
-  /* Shadows */
+  /* Shadows - softer */
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
-  --shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
-  --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.1);
-  --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.12);
-  --shadow-xl: 0 12px 24px rgba(0, 0, 0, 0.15);
-  --shadow-color: rgba(0, 0, 0, 0.1);
+  --shadow: 0 2px 4px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.1);
+  --shadow-xl: 0 12px 24px rgba(0, 0, 0, 0.12);
+  --shadow-color: rgba(0, 0, 0, 0.08);
 
   /* Scrollbar */
-  --scrollbar-track: #f1f1f1;
+  --scrollbar-track: #f3f4f6;
   --scrollbar-thumb: var(--primary-color);
-  --scrollbar-thumb-hover: #2980b9;
+  --scrollbar-thumb-hover: #1d4ed8;
 
   /* Transitions */
   --transition-fast: all 0.15s ease;
@@ -107,72 +95,69 @@
   --transition: var(--transition-base);
 }
 
-/* Dark Mode Variables */
+/* Dark Mode - Professional, sophisticated palette */
 body[data-theme="dark"] {
-  --primary-color: #3498db;
-  /* Keep primary vibrant */
-  --primary-color-dark: #2171a6;
-  --primary-color-light: #5dade2;
-  --secondary-color: #2ecc71;
-  --danger-color: #e74c3c;
-  --danger-color-dark: #c53030;
-  --warning-color: #f39c12;
+  --primary-color: #3b82f6;
+  --primary-color-dark: #2563eb;
+  --primary-color-light: #60a5fa;
+  --secondary-color: #10b981;
+  --danger-color: #ef4444;
+  --danger-color-dark: #dc2626;
+  --warning-color: #f59e0b;
+  --info-color: #06b6d4;
+  --info-color-dark: #0891b2;
 
-  /* Text colors with AAA contrast (7:1) on dark bg */
-  --text-color: #f8f9fa;
-  /* Very light text for dark bg */
-  --text-color-muted: #adb5bd;
-  /* Lighter muted text */
-  --text-color-light: #dee2e6;
+  /* Text colors - professional */
+  --text-color: #f3f4f6;
+  --text-color-muted: #9ca3af;
+  --text-color-light: #d1d5db;
 
-  /* Background colors */
-  --bg-color: #1a1d23;
-  /* Darker, more modern background */
-  --bg-gradient-start: #1a1d23;
-  --bg-gradient-end: #2d3748;
-  --card-bg: #2d3748;
-  /* Darker cards with better contrast */
+  /* Background colors - sophisticated, not childish */
+  --bg-color: #0f1419;
+  --bg-gradient-start: #0f1419;
+  --bg-gradient-end: #1a1f2e;
+  --card-bg: #1a1f2e;
 
-  /* Header-specific variables */
-  --header-bg-gradient-start: #1a202c;
-  --header-bg-gradient-end: #2d3748;
-  --header-text-color: white;
+  /* Header */
+  --header-bg-gradient-start: #0a0e14;
+  --header-bg-gradient-end: #1a1f2e;
+  --header-text-color: #f3f4f6;
   --header-border-color: rgba(255, 255, 255, 0.05);
-  --header-icon-color: #63b3ed;
-  --header-nav-btn-bg: rgba(255, 255, 255, 0.1);
-  --header-nav-btn-text: white;
-  --header-nav-btn-border: rgba(255, 255, 255, 0.15);
-  --header-nav-btn-hover-bg: rgba(255, 255, 255, 0.15);
-  --header-nav-btn-hover-border: rgba(255, 255, 255, 0.3);
+  --header-icon-color: #60a5fa;
+  --header-nav-btn-bg: rgba(255, 255, 255, 0.08);
+  --header-nav-btn-text: #f3f4f6;
+  --header-nav-btn-border: rgba(255, 255, 255, 0.12);
+  --header-nav-btn-hover-bg: rgba(255, 255, 255, 0.12);
+  --header-nav-btn-hover-border: rgba(255, 255, 255, 0.25);
   --scrollbar-thumb-color: rgba(255, 255, 255, 0.3);
 
   /* Footer */
-  --footer-bg: #0d1117;
-  --footer-text: #e9ecef;
+  --footer-bg: #000000;
+  --footer-text: #f3f4f6;
 
   /* Common elements */
-  --border-color: #4a5568;
+  --border-color: #374151;
 
   /* Table styles */
-  --table-row-even-bg: #252d38;
+  --table-row-even-bg: #1f2937;
   --table-row-hover-bg: #374151;
 
   /* Form elements */
-  --input-bg: #374151;
-  --input-border: #4b5563;
+  --input-bg: #1f2937;
+  --input-border: #374151;
   --input-focus-border: var(--primary-color);
-  --input-focus-shadow: rgba(52, 152, 219, 0.35);
+  --input-focus-shadow: rgba(59, 130, 246, 0.35);
 
-  /* Shadows (darker for dark mode) */
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
-  --shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
-  --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.5);
-  --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.6);
-  --shadow-xl: 0 12px 24px rgba(0, 0, 0, 0.7);
-  --shadow-color: rgba(0, 0, 0, 0.5);
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+  --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.6);
+  --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.7);
+  --shadow-xl: 0 12px 24px rgba(0, 0, 0, 0.8);
+  --shadow-color: rgba(0, 0, 0, 0.6);
 
   /* Scrollbar */
-  --scrollbar-track: #374151;
-  --scrollbar-thumb: #6b7280;
-  --scrollbar-thumb-hover: #9ca3af;
+  --scrollbar-track: #1f2937;
+  --scrollbar-thumb: #4b5563;
+  --scrollbar-thumb-hover: #6b7280;
 }

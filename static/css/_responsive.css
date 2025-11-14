@@ -1,115 +1,214 @@
-/* static/css/_responsive.css - Merged and Harmonized */
+/* static/css/_responsive.css - Enhanced Responsive Design */
 
-/* === Medium Screens and Tablets === */
-@media (max-width: 992px) {
-    .container {
-        max-width: 960px;
-    }
-
-    /* --- Header Tweaks for Medium Screens (from Claude's enhanced header) --- */
+/* === Large Tablets === */
+@media (max-width: 1200px) {
     .header-content {
-        gap: 1rem;
-        /* Claude's value */
+        gap: var(--space-lg);
     }
 
     .header-nav {
-        justify-content: flex-start;
-        /* Ensure nav aligns left if it has space */
-        /* max-width: 100%; */
-        /* Ensure it can take full width if other items shrink */
+        gap: var(--space-sm);
     }
 
-    .theme-label {
-        display: none;
-        /* Hide theme label for space */
+    .header-nav .nav-btn {
+        padding: 0.5rem 0.9rem;
+        font-size: 0.8rem;
     }
-
-    /* --- End Header Tweaks --- */
 }
 
-/* === Smaller Tablets and Large Phones === */
-@media (max-width: 768px) {
+/* === Medium Tablets === */
+@media (max-width: 992px) {
     .container {
-        padding: 15px;
-        width: 100%;
         max-width: 100%;
-        box-sizing: border-box;
-    }
-
-    /* --- Header Responsive Overhaul for 768px (from Claude's enhanced header) --- */
-    header {
-        padding: 0.5rem 0;
-        /* Claude's value */
     }
 
     .header-content {
-        flex-wrap: wrap;
-        /* Allow items to wrap */
-        gap: 0.75rem;
-        /* Claude's value */
-        justify-content: space-between;
-        /* Main axis for branding and controls */
+        gap: var(--space-md);
+    }
+
+    .header-nav .nav-btn {
+        padding: 0.45rem 0.8rem;
+        font-size: 0.75rem;
+    }
+}
+
+/* === Tablets and Large Phones === */
+@media (max-width: 768px) {
+    .container {
+        padding: var(--space-md);
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    /* Switch to mobile menu */
+    .mobile-menu-toggle {
+        display: flex;
+        order: 3;
+    }
+
+    header {
+        padding: 0.75rem 0;
+    }
+
+    .header-content {
+        grid-template-columns: 1fr auto auto;
+        gap: var(--space-md);
     }
 
     .header-branding {
         order: 1;
-        /* First item */
-        width: auto;
-        /* Allow natural width */
-        /* flex-grow: 1; /* Optional: allow branding to take more space */
     }
 
     header h1 {
-        font-size: 1.3rem;
-        /* Claude's value */
+        font-size: var(--font-size-xl);
     }
 
     .header-controls {
         order: 2;
-        /* Second item, will align to the right of branding */
-        margin-left: auto;
-        /* Push controls to the right if branding doesn't fill space */
-        width: auto;
-        /* Allow natural width */
+        gap: var(--space-sm);
     }
 
+    /* Mobile Navigation Drawer */
     .header-nav {
-        order: 3;
-        /* Navigation bar below branding and controls */
-        width: 100%;
-        /* Full width for the nav bar */
-        margin-top: 0.5rem;
-        padding-top: 0.5rem;
-        border-top: 1px solid var(--header-border-color, rgba(255, 255, 255, 0.1));
+        position: fixed;
+        top: 0;
+        right: -100%;
+        width: 300px;
+        max-width: 85vw;
+        height: 100vh;
+        background: var(--card-bg);
+        box-shadow: -4px 0 20px rgba(0, 0, 0, 0.3);
+        z-index: 1002;
+        flex-direction: column;
         justify-content: flex-start;
-        /* Align nav items to the start */
-        max-width: 100%;
-        /* Override any desktop max-width */
+        align-items: stretch;
+        padding: var(--space-3xl) var(--space-lg) var(--space-lg);
+        gap: var(--space-md);
+        transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        overflow-y: auto;
     }
 
-    /* .theme-label still display: none; from 992px breakpoint */
-    /* --- End Header Responsive Overhaul --- */
+    /* Mobile Menu Close Button */
+    .mobile-menu-close {
+        position: absolute;
+        top: var(--space-md);
+        right: var(--space-md);
+        background: transparent;
+        border: none;
+        color: var(--text-color);
+        font-size: 1.5rem;
+        cursor: pointer;
+        padding: var(--space-sm);
+        border-radius: 50%;
+        width: 44px;
+        height: 44px;
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+        transition: var(--transition-base);
+    }
 
-    /* Your existing general responsive rules for 768px */
+    .mobile-menu-close:hover {
+        background: var(--table-row-hover-bg);
+    }
+
+    .mobile-menu-close:focus {
+        outline: 2px solid var(--primary-color);
+        outline-offset: 2px;
+    }
+
+    .header-nav.mobile-menu-open {
+        right: 0;
+    }
+
+    .header-nav .nav-btn {
+        width: 100%;
+        justify-content: flex-start;
+        padding: var(--space-md) var(--space-lg);
+        font-size: var(--font-size-base);
+        background-color: var(--table-row-even-bg);
+        border: 1px solid var(--border-color);
+        color: var(--text-color);
+        text-align: left;
+    }
+
+    .header-nav .nav-btn:hover {
+        background-color: var(--table-row-hover-bg);
+        transform: translateX(4px);
+    }
+
+    .header-nav .nav-btn.active {
+        background-color: var(--primary-color);
+        border-color: var(--primary-color);
+        color: white;
+    }
+
+    /* Mobile Menu Overlay */
+    .mobile-menu-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 999;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+
+    .mobile-menu-overlay.active {
+        display: block;
+        opacity: 1;
+    }
+
+    .header-controls {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+    }
+
+    #user-status {
+        display: flex;
+        align-items: center;
+        gap: var(--space-xs);
+        flex-wrap: nowrap;
+    }
+
+    .user-email {
+        font-size: var(--font-size-sm);
+        max-width: 100px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    #logout-btn span,
+    #new-session-btn span {
+        display: none;
+    }
+
+    #logout-btn,
+    #new-session-btn {
+        padding: 0.6rem;
+        min-width: 44px;
+        justify-content: center;
+    }
+
+    /* General responsive rules */
     .section {
-        padding: 20px;
-        margin-bottom: 20px;
+        padding: var(--space-lg);
+        margin-bottom: var(--space-lg);
     }
 
     .section h2 {
-        font-size: 1.6rem;
+        font-size: var(--font-size-2xl);
     }
 
     .form-group {
         display: flex;
         flex-direction: column;
-        gap: 8px;
-    }
-
-    .form-group label {
-        margin-bottom: 0;
-        font-weight: 500;
-        color: var(--text-color);
+        gap: var(--space-sm);
     }
 
     #participants-management .form-group {
@@ -126,13 +225,12 @@
         display: flex;
         flex-wrap: wrap;
         justify-content: center;
-        gap: 10px;
+        gap: var(--space-sm);
     }
 
     .btn-group .btn {
         flex-grow: 1;
         min-width: 120px;
-        margin-bottom: 0;
     }
 
     .footer-content {
@@ -142,17 +240,16 @@
 
     .footer-section {
         width: 100%;
-        padding: 0 15px;
-        box-sizing: border-box;
-        margin-bottom: 20px;
+        padding: 0 var(--space-md);
+        margin-bottom: var(--space-lg);
     }
 
     .footer-section.social .social-icon {
-        margin: 0 10px;
+        margin: 0 var(--space-sm);
     }
 
     .copyright {
-        font-size: 0.85rem;
+        font-size: var(--font-size-sm);
     }
 
     .table-responsive {
@@ -163,85 +260,43 @@
     #summary-table th,
     #sessions-table td,
     #sessions-table th {
-        padding: 10px 8px;
-        font-size: 0.9rem;
-    }
-
-    #sessions-table td:last-child {
-        white-space: nowrap;
-    }
-
-    #sessions-table td:nth-child(2),
-    #sessions-table td:nth-child(3) {
-        text-align: center;
+        padding: var(--space-sm);
+        font-size: var(--font-size-sm);
     }
 }
 
-
-/* === Smaller Phones === */
+/* === Mobile Phones === */
 @media (max-width: 576px) {
-    /* Your existing breakpoint, slightly larger than Claude's 400px for these */
-    /* .container { padding: 0 15px; } /* Your original rule was padding: 10px; Let's use Claude's for header-content */
-
-    /* --- Header Tweaks for Smaller Phones (from Claude's enhanced header) --- */
-    .header-content {
-        padding: 0 var(--container-padding, 15px);
-        /* Match general container padding */
+    .container {
+        padding: var(--space-sm);
     }
 
     header h1 {
-        font-size: 1.2rem;
-        /* Claude's value */
+        font-size: var(--font-size-lg);
     }
 
-    #new-session-btn {
-        padding: 0.4rem 0.8rem;
-        /* Claude's value */
-        font-size: 0.75rem;
-        /* Claude's value */
+    header h1 i {
+        font-size: 1rem;
     }
 
-    .header-nav .nav-btn {
-        padding: 0.35rem 0.7rem;
-        /* Claude's value */
-        font-size: 0.75rem;
-        /* Claude's value */
+    .header-nav {
+        width: 100%;
+        max-width: 100%;
     }
 
     .user-email {
-        max-width: 100px;
-        /* Claude's value */
-        font-size: 0.75rem;
-        /* Claude's value */
+        display: none;
     }
 
-    #logout-btn {
-        padding: 0.35rem 0.6rem;
-        /* Claude's value */
-        font-size: 0.75rem;
-        /* Claude's value */
-    }
-
-    .header-controls {
-        gap: 0.5rem;
-        /* Claude's value */
-    }
-
-    /* --- End Header Tweaks --- */
-
-    /* Your existing general responsive rules for 600px (now 576px) */
-    .container {
-        padding: 10px;
-    }
-
-    /* Keep your original smaller container padding for content */
     .section {
-        padding: 15px;
-        margin-bottom: 15px;
+        padding: var(--space-md);
+        margin-bottom: var(--space-md);
     }
 
     .section h2 {
-        font-size: 1.4rem;
+        font-size: var(--font-size-xl);
+        flex-direction: column;
+        align-items: flex-start;
     }
 
     #participants-management .form-group {
@@ -251,7 +306,6 @@
 
     #participants-management .form-group .btn {
         width: 100%;
-        box-sizing: border-box;
     }
 
     #session-management .row {
@@ -265,28 +319,23 @@
 
     #session-management .row .btn {
         width: 100%;
-        margin-top: 10px;
-        box-sizing: border-box;
+        margin-top: var(--space-sm);
     }
 
     #summary-table td,
     #summary-table th,
     #sessions-table td,
     #sessions-table th {
-        padding: 8px 5px;
-        font-size: 0.85rem;
+        padding: var(--space-sm) var(--space-xs);
+        font-size: var(--font-size-xs);
     }
 
     .disclaimer {
-        padding: 10px;
+        padding: var(--space-sm);
     }
 
     .disclaimer h3 {
-        font-size: 1rem;
-    }
-
-    .disclaimer ul {
-        padding-left: 15px;
+        font-size: var(--font-size-base);
     }
 
     #auth-section .btn-group {
@@ -295,59 +344,65 @@
 
     #auth-section .btn {
         width: 100%;
-        margin-bottom: 10px;
-        box-sizing: border-box;
-    }
-
-    #auth-section .btn:last-child {
-        margin-bottom: 0;
+        margin-bottom: var(--space-sm);
     }
 }
 
-/* For very small screens - (from Claude's enhanced header) */
+/* === Very Small Screens === */
 @media (max-width: 400px) {
     header h1 {
-        font-size: 1.1rem;
+        font-size: var(--font-size-base);
     }
 
-    .header-content {
-        /* This will override the 768px flex-wrap:wrap and make it column */
-        flex-direction: column;
-        align-items: center;
-        /* Center items in the column */
+    header h1 i {
+        font-size: 0.9rem;
     }
 
-    .header-branding,
-    .header-controls {
-        width: 100%;
-        /* Make branding and controls full width */
-        justify-content: space-between;
-        /* Space out items within branding/controls */
-        margin-left: 0;
-        /* Reset margin-left from .header-controls */
+    .mobile-menu-toggle {
+        font-size: 1.3rem;
+        padding: var(--space-xs);
     }
 
-    .header-nav {
-        /* Ensure nav is also full width and centered if desired */
-        justify-content: center;
-    }
-
-    .user-email {
-        max-width: 80px;
-    }
-
-    .theme-switch {
-        /* Styles for the switch itself if needed */
+    .theme-toggle {
         width: 40px;
-        height: 20px;
+        height: 40px;
+        font-size: 1rem;
     }
 
-    .slider:before {
-        height: 14px;
-        width: 14px;
+    .header-controls {
+        gap: var(--space-xs);
     }
 
-    input:checked+.slider:before {
-        transform: translateX(20px);
+    #new-session-btn {
+        padding: 0.5rem;
+        width: 40px;
+        height: 40px;
+    }
+
+    #logout-btn {
+        padding: 0.5rem;
+        width: 40px;
+        height: 40px;
+    }
+}
+
+/* === Print Styles === */
+@media print {
+    header,
+    .header-nav,
+    .mobile-menu-toggle,
+    #new-session-btn,
+    .theme-toggle,
+    #logout-btn {
+        display: none !important;
+    }
+
+    .section {
+        page-break-inside: avoid;
+    }
+
+    body {
+        background: white;
+        color: black;
     }
 }

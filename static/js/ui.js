@@ -519,10 +519,37 @@ export function updateSessionsTableUI() {
         return;
     }
 
-    // Sort sessions by name or date? Let's sort by name for consistency
-    sessions.sort((a, b) => a.name.localeCompare(b.name));
+    // Get current sort order from dropdown (default to date-desc)
+    const sortSelect = document.getElementById('session-sort');
+    const sortOrder = sortSelect ? sortSelect.value : 'date-desc';
 
-    sessions.forEach(session => {
+    // Sort sessions based on selected order
+    const sortedSessions = [...sessions].sort((a, b) => {
+        switch (sortOrder) {
+            case 'date-desc': {
+                // Newest first
+                const dateA = new Date(a.lastUpdatedAt || a.createdAt || 0);
+                const dateB = new Date(b.lastUpdatedAt || b.createdAt || 0);
+                return dateB - dateA;
+            }
+            case 'date-asc': {
+                // Oldest first
+                const dateA = new Date(a.lastUpdatedAt || a.createdAt || 0);
+                const dateB = new Date(b.lastUpdatedAt || b.createdAt || 0);
+                return dateA - dateB;
+            }
+            case 'name-asc':
+                // A-Z
+                return a.name.localeCompare(b.name);
+            case 'name-desc':
+                // Z-A
+                return b.name.localeCompare(a.name);
+            default:
+                return 0;
+        }
+    });
+
+    sortedSessions.forEach(session => {
         const row = tbody.insertRow();
         row.dataset.sessionId = session.id; // Use Firestore document ID
 

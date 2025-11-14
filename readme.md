@@ -80,7 +80,8 @@ Before running the application, you need to set up a Firebase project:
 Follow these steps to get the project running locally.
 
 **1. Prerequisites:**
-    *   **Python 3.9+:** Verify installation (`python --version`). Install from [python.org](https://www.python.org/downloads/) if needed. Ensure `pip` is included.
+    *   **Python 3.9+:** Verify installation (`python3 --version`). Install from [python.org](https://www.python.org/downloads/) if needed. Ensure `pip` is included.
+    *   **Command tip (Ubuntu/WSL):** The `python` alias is not installed by default. Use `python3`/`pip3` for every step (or install the `python-is-python3` package if you want `python` available).
     *   **Git:** Verify installation (`git --version`). Install from [git-scm.com](https://git-scm.com/downloads) if needed.
     *   **Firebase Project:** Complete the Firebase Setup steps above.
 
@@ -92,8 +93,14 @@ Follow these steps to get the project running locally.
 
 **3. Create and Activate Virtual Environment:**
    ```bash
-   # Create the environment
-   python -m venv .venv
+   # Linux/WSL prerequisite if you see "ensurepip is not available"
+   # sudo apt install python3-venv
+
+   # Create the environment (most Unix systems expose Python 3 as python3)
+   python3 -m venv .venv
+
+   # If your system maps `python` to Python 3, this works too:
+   # python -m venv .venv
 
    # Activate it
    # Windows (PowerShell):
@@ -105,23 +112,28 @@ Follow these steps to get the project running locally.
    ```
    *(You should see `(.venv)` at the start of your terminal prompt)*
 
-**4. Configure Environment Variables:**
-    *   The application needs access to your Firebase Service Account Key. Set an environment variable pointing to the location of the downloaded JSON key file.
-      ```bash
-      # Example (macOS/Linux - temporary for current session)
-      export FIREBASE_SERVICE_ACCOUNT_KEY="/path/to/your/serviceAccountKey.json"
+**4. Configure Environment Variables (run these in the same terminal where you start Flask):**
 
-      # Example (Windows PowerShell - temporary for current session)
-      $env:FIREBASE_SERVICE_ACCOUNT_KEY = "C:\path\to\your\serviceAccountKey.json"
-      ```
-      *(For persistent storage, add this to your `.bashrc`, `.zshrc`, `.profile`, or System Environment Variables)*
-    *   Set a Flask Secret Key (optional but recommended for production):
-      ```bash
-      # Example (macOS/Linux)
-      export SECRET_KEY='your-very-strong-secret-key'
-      # Example (Windows PowerShell)
-      $env:SECRET_KEY = 'your-very-strong-secret-key'
-      ```
+1.  Place the Firebase service account JSON you downloaded from the console in the project root (the default file name is `serviceAccountKey.json`).
+2.  Export the path to that file **before** running `python3 app.py`:
+    ```bash
+    # macOS/Linux/WSL
+    export FIREBASE_SERVICE_ACCOUNT_KEY="$PWD/serviceAccountKey.json"
+    ```
+    ```powershell
+    # Windows PowerShell
+    $env:FIREBASE_SERVICE_ACCOUNT_KEY = "C:\absolute\path\to\serviceAccountKey.json"
+    ```
+    *(For persistence, add the export command to your shell profile: `.bashrc`, `.zshrc`, `.profile`, etc.)*
+3.  Set a Flask secret key (optional locally, required for production):
+    ```bash
+    # macOS/Linux/WSL
+    export SECRET_KEY='your-very-strong-secret-key'
+    ```
+    ```powershell
+    # Windows PowerShell
+    $env:SECRET_KEY = 'your-very-strong-secret-key'
+    ```
 
 **5. Install Python Dependencies:**
    ```bash
@@ -145,7 +157,7 @@ Follow these steps to get the project running locally.
 2.  Ensure the `FIREBASE_SERVICE_ACCOUNT_KEY` environment variable is set correctly.
 3.  Run the Flask development server:
     ```bash
-    python app.py
+    python3 app.py
     ```
 4.  Open your web browser and navigate to: `http://127.0.0.1:5000` (or the address provided in the terminal).
 

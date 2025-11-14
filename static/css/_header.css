@@ -1,115 +1,116 @@
-/* static/css/_header.css - Enhanced Header CSS (Media queries removed, to be placed in _responsive.css) */
+/* static/css/_header.css - Enhanced Responsive Header */
 
 /* Base Header Styles */
 header {
-    background: linear-gradient(to right, var(--header-bg-gradient-start, #1e3a5f), var(--header-bg-gradient-end, #2c5282));
-    color: var(--header-text-color, white);
-    padding: 0.75rem 0;
-    box-shadow: 0 3px 10px var(--shadow-color, rgba(0, 0, 0, 0.15));
+    background: linear-gradient(to right, var(--header-bg-gradient-start), var(--header-bg-gradient-end));
+    color: var(--header-text-color);
+    padding: 1rem 0;
+    box-shadow: var(--shadow-md);
     position: sticky;
     top: 0;
     z-index: 1000;
-    border-bottom: 1px solid var(--header-border-color, rgba(255, 255, 255, 0.1));
+    border-bottom: 1px solid var(--header-border-color);
 }
 
 .header-content {
-    display: flex;
-    justify-content: space-between;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
     align-items: center;
-    max-width: var(--container-max-width, 1200px);
+    max-width: var(--container-max-width);
     margin: 0 auto;
-    padding: 0 var(--container-padding, 20px);
-    gap: 1.5rem;
+    padding: 0 var(--container-padding);
+    gap: var(--space-2xl);
 }
 
 /* Branding Section */
 .header-branding {
     display: flex;
     align-items: center;
-    flex-shrink: 0;
+    z-index: 1001;
 }
 
 header h1 {
     margin: 0;
-    font-size: 1.5rem;
-    font-weight: 500;
-    letter-spacing: 0.5px;
-    color: var(--header-text-color, white);
+    font-size: var(--font-size-2xl);
+    font-weight: 600;
+    letter-spacing: -0.5px;
+    color: var(--header-text-color);
     display: flex;
     align-items: center;
-    gap: 0.6rem;
+    gap: var(--space-sm);
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+    white-space: nowrap;
 }
 
 header h1 i {
-    color: var(--header-icon-color, #8ecdf7);
-    font-size: 1.4rem;
+    color: var(--header-icon-color);
+    font-size: 1.5rem;
     filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.3));
 }
 
-/* Navigation Section */
+/* Mobile Menu Toggle */
+.mobile-menu-toggle {
+    display: none;
+    background: none;
+    border: none;
+    color: var(--header-text-color);
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: var(--space-sm);
+    border-radius: var(--button-border-radius);
+    transition: var(--transition-base);
+    z-index: 1001;
+    min-width: 44px;
+    min-height: 44px;
+}
+
+.mobile-menu-toggle:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.mobile-menu-toggle:focus {
+    outline: 2px solid rgba(255, 255, 255, 0.5);
+    outline-offset: 2px;
+}
+
+/* Mobile menu close button (hidden on desktop, shown in mobile menu) */
+.mobile-menu-close {
+    display: none;
+}
+
+/* Navigation Section - Full width in grid */
 .header-nav {
     display: flex;
     align-items: center;
-    gap: 0.7rem;
-    overflow-x: auto;
-    overflow-y: hidden;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: thin;
-    scrollbar-color: var(--scrollbar-thumb-color, rgba(255, 255, 255, 0.4)) transparent;
-    padding-bottom: 5px;
-    margin-bottom: -5px;
-    flex-grow: 1;
-    /* MODIFICATIONS START */
-    justify-content: flex-start;
-    /* Was center */
-    /* max-width: 500px; */
-    /* Consider removing or increasing this line */
-    /* MODIFICATIONS END */
-}
-
-.header-nav::-webkit-scrollbar {
-    height: 3px;
-}
-
-.header-nav::-webkit-scrollbar-thumb {
-    background-color: var(--scrollbar-thumb-color, rgba(255, 255, 255, 0.4));
-    border-radius: 3px;
-}
-
-.header-nav::-webkit-scrollbar-track {
-    background-color: transparent;
+    gap: var(--space-md);
+    justify-content: center;
 }
 
 .header-nav .nav-btn {
-    background-color: var(--header-nav-btn-bg, rgba(255, 255, 255, 0.1));
-    color: var(--header-nav-btn-text, var(--header-text-color, white));
-    border: 1px solid var(--header-nav-btn-border, rgba(255, 255, 255, 0.2));
-    border-radius: var(--button-border-radius, 20px);
-    font-size: 0.85rem;
-    padding: 0.45rem 1rem;
+    background-color: var(--header-nav-btn-bg);
+    color: var(--header-nav-btn-text);
+    border: 1px solid var(--header-nav-btn-border);
+    border-radius: var(--button-border-radius);
+    font-size: var(--font-size-sm);
+    padding: 0.6rem 1.2rem;
     cursor: pointer;
-    transition: all 0.2s ease-in-out;
-    /* MODIFICATIONS START */
-    font-weight: 400;
-    /* Was 500 */
-    text-transform: none;
-    /* Was uppercase */
-    letter-spacing: normal;
-    /* Was 0.5px */
+    transition: var(--transition-base);
+    font-weight: 500;
     white-space: nowrap;
-    /* Added */
-    /* MODIFICATIONS END */
     position: relative;
     overflow: hidden;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-sm);
 }
 
 .header-nav .nav-btn:hover,
 .header-nav .nav-btn:focus {
-    background-color: var(--header-nav-btn-hover-bg, rgba(255, 255, 255, 0.2));
-    border-color: var(--header-nav-btn-hover-border, rgba(255, 255, 255, 0.4));
+    background-color: var(--header-nav-btn-hover-bg);
+    border-color: var(--header-nav-btn-hover-border);
     transform: translateY(-1px);
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
 }
 
 .header-nav .nav-btn:active {
@@ -118,9 +119,8 @@ header h1 i {
 }
 
 .header-nav .nav-btn.active {
-    /* For active page/section indication */
-    background-color: var(--primary-color, #4299e1);
-    border-color: var(--primary-color, #4299e1);
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
     color: white;
     font-weight: 600;
 }
@@ -129,160 +129,93 @@ header h1 i {
 .header-controls {
     display: flex;
     align-items: center;
-    gap: 1rem;
-    flex-shrink: 0;
+    gap: var(--space-md);
 }
 
 #new-session-btn {
-    background-color: var(--primary-color, #4299e1);
+    background-color: var(--primary-color);
     color: white;
     border: none;
-    padding: 0.45rem 1rem;
-    border-radius: var(--button-border-radius, 20px);
-    font-size: 0.85rem;
+    padding: 0.6rem 1.2rem;
+    border-radius: var(--button-border-radius);
+    font-size: var(--font-size-sm);
     font-weight: 600;
-    display: flex;
+    display: inline-flex;
     align-items: center;
-    gap: 0.5rem;
-    transition: all 0.2s ease;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
+    gap: var(--space-sm);
+    transition: var(--transition-base);
+    box-shadow: var(--shadow);
+    white-space: nowrap;
+    min-height: 44px;
 }
 
 #new-session-btn:hover {
-    background-color: var(--primary-color-dark, #3182ce);
+    background-color: var(--primary-color-dark);
     transform: translateY(-1px);
-    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15);
+    box-shadow: var(--shadow-md);
 }
 
 #new-session-btn:active {
     transform: translateY(0);
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--shadow-sm);
 }
 
-/* Theme Switch Styles */
-.theme-switch-wrapper {
-    display: flex;
-    align-items: center;
-    gap: 0.6rem;
-    background-color: rgba(0, 0, 0, 0.15);
-    /* Claude added bg to wrapper */
-    padding: 0.25rem 0.6rem;
-    /* Claude added padding */
-    border-radius: 30px;
-    /* Claude added radius */
-    transition: background-color 0.3s;
-}
-
-.theme-switch-wrapper:hover {
-    background-color: rgba(0, 0, 0, 0.25);
-}
-
-.theme-label {
-    font-size: 0.8rem;
-    color: var(--header-text-color, white);
-    opacity: 0.9;
-    font-weight: 500;
-    cursor: pointer;
-    user-select: none;
-    transition: opacity 0.2s;
-}
-
-.theme-switch-wrapper:hover .theme-label {
-    opacity: 1;
-}
-
-.theme-switch {
-    position: relative;
-    display: inline-block;
-    width: 44px;
-    height: 22px;
-}
-
-.theme-switch input {
-    opacity: 0;
-    width: 0;
-    height: 0;
-}
-
-.slider {
-    position: absolute;
-    cursor: pointer;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: rgba(0, 0, 0, 0.2);
-    /* Claude changed inactive bg */
-    transition: .4s;
-    border-radius: 22px;
-    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2);
-    /* Claude added inset shadow */
-}
-
-.slider:before {
-    position: absolute;
-    content: "";
-    height: 16px;
-    width: 16px;
-    left: 3px;
-    bottom: 3px;
-    background-color: white;
-    transition: .4s;
+/* Theme Toggle - Icon only, fully clickable */
+.theme-toggle {
+    background-color: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.2);
     border-radius: 50%;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
-    /* Claude added shadow to knob */
+    width: 44px;
+    height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: var(--transition-base);
+    color: var(--header-text-color);
+    font-size: 1.2rem;
 }
 
-input:checked+.slider {
-    background-color: var(--primary-color, #4299e1);
+.theme-toggle:hover {
+    background-color: rgba(255, 255, 255, 0.25);
+    transform: scale(1.05);
 }
 
-input:checked+.slider:before {
-    transform: translateX(22px);
+.theme-toggle:active {
+    transform: scale(0.95);
 }
 
-.slider .icon {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    font-size: 10px;
-    color: white;
-    transition: opacity 0.3s ease;
+/* Hide the default checkbox completely */
+#theme-checkbox {
+    display: none;
 }
 
-.slider .sun {
-    left: 4px;
-    opacity: 1;
+/* Theme icon visibility */
+.theme-toggle .sun-icon {
+    display: block;
 }
 
-.slider .moon {
-    right: 4px;
-    opacity: 0;
+.theme-toggle .moon-icon {
+    display: none;
 }
 
-input:checked+.slider .sun {
-    opacity: 0;
+body[data-theme="dark"] .theme-toggle .sun-icon {
+    display: none;
 }
 
-input:checked+.slider .moon {
-    opacity: 1;
+body[data-theme="dark"] .theme-toggle .moon-icon {
+    display: block;
 }
 
 /* User Status */
 #user-status {
     display: flex;
-    /* This should be dynamically set by JS */
     align-items: center;
-    gap: 0.75rem;
+    gap: var(--space-sm);
     background-color: rgba(0, 0, 0, 0.15);
-    /* Claude added bg */
-    padding: 0.3rem 0.75rem;
-    /* Claude added padding */
+    padding: 0.4rem var(--space-md);
     border-radius: 30px;
-    /* Claude added radius */
-    transition: background-color 0.3s;
+    transition: var(--transition-base);
 }
 
 #user-status:hover {
@@ -290,31 +223,31 @@ input:checked+.slider .moon {
 }
 
 .user-email {
-    font-size: 0.85rem;
-    color: var(--header-text-color, white);
+    font-size: var(--font-size-sm);
+    color: var(--header-text-color);
     max-width: 150px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    opacity: 0.9;
+    opacity: 0.95;
 }
 
 #logout-btn {
-    background-color: var(--danger-color, #e53e3e);
+    background-color: var(--danger-color);
     color: white;
     border: none;
-    padding: 0.4rem 0.8rem;
-    border-radius: var(--button-border-radius, 20px);
-    font-size: 0.8rem;
+    padding: 0.4rem var(--space-md);
+    border-radius: var(--button-border-radius);
+    font-size: var(--font-size-sm);
     font-weight: 500;
-    display: flex;
+    display: inline-flex;
     align-items: center;
-    gap: 0.4rem;
-    transition: all 0.2s ease;
+    gap: 0.3rem;
+    transition: var(--transition-base);
+    white-space: nowrap;
+    min-height: 36px;
 }
 
 #logout-btn:hover {
-    background-color: var(--danger-color-dark, #c53030);
+    background-color: var(--danger-color-dark);
 }
-
-/* Media queries that were in Claude's _header.css are REMOVED from here and will be merged into _responsive.css */

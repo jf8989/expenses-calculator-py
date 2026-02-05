@@ -4,6 +4,10 @@ import logging
 from functools import wraps # Added for decorator
 
 from flask import Flask, jsonify, render_template, request, g # Added g
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Firebase Admin SDK
 import firebase_admin

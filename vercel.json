@@ -1,0 +1,6 @@
+{
+  "git": {
+    "deployHook": false,
+    "enabled": false
+  }
+}

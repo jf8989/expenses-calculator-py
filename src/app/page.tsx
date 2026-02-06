@@ -3,58 +3,31 @@
 import { Header } from "@/components/ui/header";
 import { ScrollToTop } from "@/components/ui/scroll-to-top";
 import { useAuth } from "@/hooks/useAuth";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { ParticipantsManager } from "@/components/expenses/ParticipantsManager";
 import { SessionsList } from "@/components/expenses/SessionsList";
 import { SessionEditor } from "@/components/expenses/SessionEditor";
 import { Session } from "@/types";
-import { getParticipants } from "@/app/actions/participants";
-import { getSessions } from "@/app/actions/sessions";
 import { Spinner } from "@/components/icons/spinner";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
 import { ParticlesBackground } from "@/components/ui/particles-background";
+import { useCachedData } from "@/hooks/useCachedData";
+import { RefreshCw } from "lucide-react";
 
 export default function Home() {
   const { user, loading: authLoading } = useAuth();
-  const [participants, setParticipants] = useState<string[]>([]);
-  const [sessions, setSessions] = useState<Session[]>([]);
-  const [loading, setLoading] = useState(true);
+  const {
+    sessions,
+    participants,
+    loading,
+    isSyncing,
+    refresh: handleSessionSaved
+  } = useCachedData(user?.uid);
   const [activeSession, setActiveSession] = useState<Session | null>(null);
   const [isCreating, setIsCreating] = useState(false);
 
-  useEffect(() => {
-    if (user) {
-      const fetchData = async () => {
-        try {
-          const [p, s] = await Promise.all([
-            getParticipants(user.uid),
-            getSessions(user.uid)
-          ]);
-          setParticipants(p);
-          setSessions(s);
-        } catch (error) {
-          console.error("Error fetching data", error);
-        } finally {
-          setLoading(false);
-        }
-      };
-      fetchData();
-    } else {
-      setLoading(false);
-    }
-  }, [user]);
-
-  const handleSessionSaved = async () => {
-    if (user) {
-      const s = await getSessions(user.uid);
-      setSessions(s);
-      setActiveSession(null);
-      setIsCreating(false);
-    }
-  };
-
-  if (authLoading || loading) {
+  if (authLoading || (loading && !sessions.length)) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Spinner className="w-10 h-10" />
@@ -144,7 +117,19 @@ export default function Home() {
                   <div className="flex-1 space-y-8">
                     <div className="flex justify-between items-center">
                       <div>
-                        <h1 className="text-4xl font-bold tracking-tight">Welcome, <span className="gradient-text">{user.displayName || "Explorer"}</span></h1>
+                        <div className="flex items-center gap-2">
+                          <h1 className="text-4xl font-bold tracking-tight">Welcome, <span className="gradient-text">{user.displayName || "Explorer"}</span></h1>
+                          {isSyncing && (
+                            <motion.div
+                              initial={{ opacity: 0, scale: 0.8 }}
+                              animate={{ opacity: 1, scale: 1 }}
+                              className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-medium"
+                            >
+                              <RefreshCw className="w-3 h-3 animate-spin" />
+                              Syncing...
+                            </motion.div>
+                          )}
+                        </div>
                         <p className="text-muted-foreground mt-1">Here&apos;s an overview of your expense sessions.</p>
                       </div>
                       <Button size="lg" onClick={() => setIsCreating(true)} className="rounded-2xl shadow-lg">

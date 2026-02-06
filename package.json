@@ -19,6 +19,7 @@
     "firebase-admin": "^13.6.0",
     "framer-motion": "^12.10.5",
     "geist": "^1.4.2",
+    "idb": "^8.0.3",
     "jspdf": "^4.1.0",
     "jspdf-autotable": "^5.0.2",
     "lucide-react": "^0.562.0",

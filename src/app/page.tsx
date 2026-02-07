@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
 import { ParticlesBackground } from "@/components/ui/particles-background";
 import { useCachedData } from "@/hooks/useCachedData";
-import { RefreshCw } from "lucide-react";
+import { RefreshCw, Zap, Cloud, Palette, Plus } from "lucide-react";
 
 export default function Home() {
   const { user, loading: authLoading } = useAuth();
@@ -29,58 +29,133 @@ export default function Home() {
 
   if (authLoading || (loading && !sessions.length)) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Spinner className="w-10 h-10" />
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4">
+        <motion.div
+          animate={{ rotate: 360 }}
+          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+        >
+          <Spinner className="w-10 h-10 text-primary" />
+        </motion.div>
+        <p className="text-sm text-muted-foreground animate-pulse">Loading your data...</p>
       </div>
     );
   }
+
+  const features = [
+    {
+      icon: Zap,
+      title: "Smart Splitting",
+      desc: "Easily split any bill among multiple participants with custom shares.",
+      color: "from-amber-500 to-orange-500"
+    },
+    {
+      icon: Cloud,
+      title: "Sync Everywhere",
+      desc: "Your data is securely stored in the cloud and synced across all devices.",
+      color: "from-cyan-500 to-blue-500"
+    },
+    {
+      icon: Palette,
+      title: "Premium Design",
+      desc: "A beautiful, dark-themed experience with smooth animations.",
+      color: "from-violet-500 to-purple-500"
+    }
+  ];
 
   return (
     <div className="relative min-h-screen flex flex-col overflow-hidden">
       <ParticlesBackground />
       <Header />
-      <main id="main-content" className="flex-1 container max-w-7xl mx-auto px-4 py-12 z-10">
+
+      {/* Decorative gradient orbs */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
+        <motion.div
+          className="absolute -top-[300px] -left-[200px] w-[600px] h-[600px] bg-primary/10 rounded-full blur-[150px]"
+          animate={{
+            x: [0, 50, 0],
+            y: [0, 30, 0],
+          }}
+          transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
+        />
+        <motion.div
+          className="absolute -bottom-[300px] -right-[200px] w-[600px] h-[600px] bg-accent/10 rounded-full blur-[150px]"
+          animate={{
+            x: [0, -50, 0],
+            y: [0, -30, 0],
+          }}
+          transition={{ duration: 15, repeat: Infinity, ease: "easeInOut" }}
+        />
+      </div>
+
+      <main id="main-content" className="flex-1 container max-w-7xl mx-auto px-4 py-8 sm:py-12 z-10">
         {!user ? (
-          <div className="flex flex-col items-center justify-center min-h-[60vh] text-center space-y-6">
+          <div className="flex flex-col items-center justify-center min-h-[60vh] text-center space-y-8">
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
-              className="space-y-4"
+              transition={{ duration: 0.6 }}
+              className="space-y-6"
             >
-              <h1 className="text-display-lg drop-shadow-sm">
-                Your <span className="gradient-text">Ultimate</span> Expense Companion
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.2, duration: 0.5 }}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 text-primary text-sm font-medium mb-4"
+              >
+                <Zap className="w-4 h-4" />
+                Start splitting smarter today
+              </motion.div>
+
+              <h1 className="text-4xl sm:text-5xl md:text-display-lg font-bold tracking-tight">
+                Your <span className="gradient-text-animated">Ultimate</span>
+                <br className="sm:hidden" /> Expense Companion
               </h1>
-              <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+
+              <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
                 Split bills, track group expenses, and settle up effortlessly.
                 Experience bill splitting with a premium, modern touch.
               </p>
             </motion.div>
 
             <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.3 }}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4, duration: 0.5 }}
+              className="flex flex-col sm:flex-row gap-4"
             >
-              <Button size="lg" className="h-14 px-8 text-lg rounded-2xl shadow-xl hover:shadow-primary/20 transition-all hover:scale-105 active:scale-95" onClick={() => window.location.href = "/login"}>
-                Get Started for Free
+              <Button
+                size="xl"
+                variant="gradient"
+                className="group"
+                onClick={() => window.location.href = "/login"}
+              >
+                Get Started Free
+                <motion.span
+                  className="ml-2"
+                  animate={{ x: [0, 5, 0] }}
+                  transition={{ duration: 1.5, repeat: Infinity }}
+                >
+                  →
+                </motion.span>
               </Button>
             </motion.div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 w-full mt-24">
-              {[
-                { title: "Smart Splitting", desc: "Easily split any bill among multiple participants with custom shares." },
-                { title: "Sync Everywhere", desc: "Your data is securely stored in the cloud and synced across all your devices.", delay: 0.1 },
-                { title: "Premium Design", desc: "A beautiful, dark-themed experience with smooth animations and glassmorphism.", delay: 0.2 }
-              ].map((feature, i) => (
+            {/* Features Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full mt-16 sm:mt-24">
+              {features.map((feature, i) => (
                 <motion.div
                   key={i}
-                  initial={{ opacity: 0, y: 20 }}
+                  initial={{ opacity: 0, y: 30 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.5 + (feature.delay || 0) }}
-                  className="p-8 rounded-3xl bg-card/30 backdrop-blur-sm border border-border/50 text-left hover:bg-card/50 transition-colors"
+                  transition={{ delay: 0.6 + (i * 0.1), duration: 0.5 }}
+                  whileHover={{ y: -5, transition: { duration: 0.2 } }}
+                  className="group p-6 sm:p-8 rounded-3xl bg-card/40 backdrop-blur-lg border border-border/50 text-left hover:bg-card/60 hover:border-primary/30 transition-all duration-300 cursor-default"
                 >
-                  <h3 className="text-xl font-bold mb-2">{feature.title}</h3>
-                  <p className="text-muted-foreground">{feature.desc}</p>
+                  <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${feature.color} flex items-center justify-center mb-4 shadow-lg group-hover:scale-110 transition-transform`}>
+                    <feature.icon className="w-6 h-6 text-white" />
+                  </div>
+                  <h3 className="text-xl font-bold mb-2 group-hover:text-primary transition-colors">{feature.title}</h3>
+                  <p className="text-muted-foreground text-sm leading-relaxed">{feature.desc}</p>
                 </motion.div>
               ))}
             </div>
@@ -108,32 +183,40 @@ export default function Home() {
             ) : (
               <motion.div
                 key="dashboard"
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 20 }}
-                className="space-y-12"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="space-y-8 sm:space-y-12"
               >
-                <div className="flex flex-col md:flex-row gap-8">
-                  <div className="flex-1 space-y-8">
-                    <div className="flex justify-between items-center">
+                <div className="flex flex-col lg:flex-row gap-8">
+                  <div className="flex-1 space-y-6 sm:space-y-8">
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                       <div>
-                        <div className="flex items-center gap-2">
-                          <h1 className="text-4xl font-bold tracking-tight">Welcome, <span className="gradient-text">{user.displayName || "Explorer"}</span></h1>
+                        <div className="flex items-center gap-3 flex-wrap">
+                          <h1 className="text-3xl sm:text-4xl font-bold tracking-tight">
+                            Welcome, <span className="gradient-text">{user.displayName || "Explorer"}</span>
+                          </h1>
                           {isSyncing && (
                             <motion.div
                               initial={{ opacity: 0, scale: 0.8 }}
                               animate={{ opacity: 1, scale: 1 }}
-                              className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-medium"
+                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-medium"
                             >
                               <RefreshCw className="w-3 h-3 animate-spin" />
                               Syncing...
                             </motion.div>
                           )}
                         </div>
-                        <p className="text-muted-foreground mt-1">Here&apos;s an overview of your expense sessions.</p>
+                        <p className="text-muted-foreground mt-1.5">Here&apos;s an overview of your expense sessions.</p>
                       </div>
-                      <Button size="lg" onClick={() => setIsCreating(true)} className="rounded-2xl shadow-lg">
-                        + New Session
+                      <Button
+                        size="lg"
+                        variant="gradient"
+                        onClick={() => setIsCreating(true)}
+                        className="shadow-xl w-full sm:w-auto gap-2"
+                      >
+                        <Plus className="w-5 h-5" />
+                        New Session
                       </Button>
                     </div>
 
@@ -144,7 +227,7 @@ export default function Home() {
                     />
                   </div>
 
-                  <div className="w-full md:w-80">
+                  <div className="w-full lg:w-80 lg:shrink-0">
                     <ParticipantsManager
                       userId={user.uid}
                       initialParticipants={participants}
@@ -157,11 +240,11 @@ export default function Home() {
         )}
       </main>
 
-      <footer className="relative border-t bg-muted/20 mt-24">
-        <div className="container px-4 sm:px-8 py-8">
+      <footer className="relative border-t border-border/50 bg-card/30 backdrop-blur-sm mt-16 sm:mt-24 z-10">
+        <div className="container px-4 sm:px-8 py-6 sm:py-8">
           <div className="text-center">
             <p className="text-sm text-muted-foreground">
-              © {new Date().getFullYear()} Expense Genie. Built for seamless financial collaboration.
+              © {new Date().getFullYear()} <span className="font-medium text-foreground">Expense Genie</span>. Built for seamless financial collaboration.
             </p>
           </div>
         </div>

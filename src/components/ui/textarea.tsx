@@ -12,15 +12,14 @@ export interface TextareaProps
 
 const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
   ({ className, label, error, id, ...props }, ref) => {
-    const textareaId =
-      id || `textarea-${label?.toLowerCase().replace(/\s/g, "-")}`;
+    const textareaId = id || `textarea-${label?.toLowerCase().replace(/\s/g, "-")}`;
 
     return (
-      <div className="w-full">
+      <div className="w-full group">
         {label && (
           <label
             htmlFor={textareaId}
-            className="block text-sm font-medium mb-2 text-foreground"
+            className="block text-xs font-semibold uppercase tracking-widest mb-2 text-muted-foreground group-focus-within:text-primary transition-colors"
           >
             {label}
           </label>
@@ -28,19 +27,24 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
         <textarea
           id={textareaId}
           className={cn(
-            "flex min-h-[120px] w-full rounded-lg border border-border bg-background px-4 py-3 text-base sm:text-sm",
-            "placeholder:text-muted-foreground",
-            "focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent",
+            "flex min-h-[100px] w-full rounded-xl border-2 border-border bg-background/50 px-4 py-3 text-base sm:text-sm",
+            "placeholder:text-muted-foreground/60",
+            "focus:outline-none focus:border-primary focus:bg-background focus:shadow-[0_0_0_4px_hsl(var(--primary)/0.1)]",
             "disabled:cursor-not-allowed disabled:opacity-50",
-            "transition-all duration-200",
-            "resize-none",
-            error && "border-red-500 focus:ring-red-500",
+            "transition-all duration-200 resize-none",
+            "hover:border-muted-foreground/30",
+            error && "border-destructive focus:border-destructive focus:shadow-[0_0_0_4px_hsl(var(--destructive)/0.1)]",
             className
           )}
           ref={ref}
           {...props}
         />
-        {error && <p className="mt-1 text-xs text-red-500">{error}</p>}
+        {error && (
+          <p className="mt-1.5 text-xs font-medium text-destructive flex items-center gap-1">
+            <span className="inline-block w-1 h-1 rounded-full bg-destructive" />
+            {error}
+          </p>
+        )}
       </div>
     );
   }

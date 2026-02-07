@@ -11,6 +11,16 @@ import { Textarea } from "@/components/ui/textarea";
 import { calculateSummary, calculateDebts } from "@/lib/calculations";
 import { SettleUp } from "./SettleUp";
 import { parseTransactions } from "@/lib/parser";
+import {
+    ArrowLeft,
+    Save,
+    BarChart3,
+    Plus,
+    FileText,
+    Trash2,
+    Calendar,
+    Check
+} from "lucide-react";
 
 interface SessionEditorProps {
     userId: string;
@@ -19,6 +29,22 @@ interface SessionEditorProps {
     onSaved: (sessionId: string) => void;
     onCancel: () => void;
 }
+
+// Get avatar color based on name
+const getAvatarColor = (name: string) => {
+    const colors = [
+        "bg-violet-500",
+        "bg-blue-500",
+        "bg-emerald-500",
+        "bg-orange-500",
+        "bg-pink-500",
+        "bg-red-500",
+        "bg-indigo-500",
+        "bg-lime-500",
+    ];
+    const index = name.charCodeAt(0) % colors.length;
+    return colors[index];
+};
 
 export function SessionEditor({ userId, initialSession, participants, onSaved, onCancel }: SessionEditorProps) {
     const [name, setName] = useState(initialSession?.name || "");
@@ -103,21 +129,36 @@ export function SessionEditor({ userId, initialSession, participants, onSaved, o
 
     return (
         <div className="space-y-6 max-w-5xl mx-auto">
-            <div className="flex items-center justify-between sticky top-24 z-20 bg-background/80 backdrop-blur-md p-4 rounded-3xl border border-border/50 shadow-lg">
-                <Button variant="ghost" onClick={onCancel} className="rounded-xl">← Dashboard</Button>
+            {/* Sticky Action Bar */}
+            <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 sticky top-20 sm:top-24 z-20 bg-background/80 backdrop-blur-xl p-4 rounded-2xl border border-border/50 shadow-lg"
+            >
+                <Button variant="ghost" onClick={onCancel} className="rounded-xl gap-2">
+                    <ArrowLeft className="w-4 h-4" />
+                    Dashboard
+                </Button>
                 <div className="flex gap-3">
                     <Button
                         variant={showSettleUp ? "secondary" : "outline"}
                         onClick={() => setShowSettleUp(!showSettleUp)}
-                        className="rounded-xl"
+                        className="rounded-xl gap-2 flex-1 sm:flex-none"
                     >
-                        {showSettleUp ? "Edit Transactions" : "View Settle Up"}
+                        <BarChart3 className="w-4 h-4" />
+                        {showSettleUp ? "Edit" : "Settle Up"}
                     </Button>
-                    <Button onClick={handleSave} disabled={isSaving || !name.trim()} className="rounded-xl px-8 shadow-primary/20 shadow-lg">
-                        {isSaving ? "Saving..." : "Save Session"}
+                    <Button
+                        onClick={handleSave}
+                        disabled={isSaving || !name.trim()}
+                        variant="gradient"
+                        className="rounded-xl gap-2 flex-1 sm:flex-none"
+                    >
+                        <Save className="w-4 h-4" />
+                        {isSaving ? "Saving..." : "Save"}
                     </Button>
                 </div>
-            </div>
+            </motion.div>
 
             <AnimatePresence mode="wait">
                 {showSettleUp ? (
@@ -142,9 +183,12 @@ export function SessionEditor({ userId, initialSession, participants, onSaved, o
                         exit={{ opacity: 0 }}
                         className="space-y-8"
                     >
-                        <Card className="border-border/50 bg-card/50 backdrop-blur-xl shadow-xl overflow-hidden border-t-4 border-t-primary">
+                        {/* Session Info Card */}
+                        <Card className="border-border/50 bg-card/50 backdrop-blur-xl shadow-xl overflow-hidden" hover={false}>
+                            <div className="h-1.5 w-full bg-gradient-to-r from-primary via-accent to-primary" />
                             <CardHeader>
-                                <CardTitle className="text-2xl font-bold">
+                                <CardTitle className="text-2xl font-bold flex items-center gap-2">
+                                    <FileText className="w-6 h-6 text-primary" />
                                     {initialSession ? "Edit" : "Create"} <span className="gradient-text">Session</span>
                                 </CardTitle>
                             </CardHeader>
@@ -161,27 +205,33 @@ export function SessionEditor({ userId, initialSession, participants, onSaved, o
                                     placeholder="Additional notes..."
                                     value={description}
                                     onChange={(e) => setDescription(e.target.value)}
-                                    className="bg-background/50 h-10 min-h-[40px]"
+                                    className="bg-background/50 min-h-[48px]"
                                 />
                             </CardContent>
                         </Card>
 
+                        {/* Transactions Section */}
                         <div className="space-y-6">
-                            <div className="flex justify-between items-center bg-secondary/20 p-4 rounded-2xl border border-border/50">
+                            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-card/30 p-4 rounded-2xl border border-border/50">
                                 <div className="flex flex-col">
-                                    <h3 className="text-xl font-bold">Transactions</h3>
+                                    <h3 className="text-xl font-bold flex items-center gap-2">
+                                        <span className="w-2 h-6 rounded-full bg-gradient-to-b from-primary to-accent" />
+                                        Transactions
+                                    </h3>
                                     <p className="text-sm text-muted-foreground">{transactions.length} items recorded</p>
                                 </div>
-                                <div className="flex gap-2">
-                                    <Button variant="outline" onClick={() => setShowBulk(!showBulk)} className="rounded-xl">
-                                        {showBulk ? "Cancel Import" : "Bulk Import"}
+                                <div className="flex gap-2 w-full sm:w-auto">
+                                    <Button variant="outline" onClick={() => setShowBulk(!showBulk)} className="rounded-xl flex-1 sm:flex-none">
+                                        {showBulk ? "Cancel" : "Bulk Import"}
                                     </Button>
-                                    <Button onClick={addTransaction} className="rounded-xl shadow-primary/10 shadow-lg">
-                                        + Add Item
+                                    <Button onClick={addTransaction} variant="gradient" className="rounded-xl gap-2 flex-1 sm:flex-none">
+                                        <Plus className="w-4 h-4" />
+                                        Add Item
                                     </Button>
                                 </div>
                             </div>
 
+                            {/* Bulk Import Panel */}
                             <AnimatePresence>
                                 {showBulk && (
                                     <motion.div
@@ -190,7 +240,7 @@ export function SessionEditor({ userId, initialSession, participants, onSaved, o
                                         exit={{ opacity: 0, height: 0 }}
                                         className="overflow-hidden"
                                     >
-                                        <Card className="border-primary/20 bg-primary/5 mb-6">
+                                        <Card className="border-primary/20 bg-primary/5 mb-6" hover={false}>
                                             <CardContent className="pt-6 space-y-4">
                                                 <Textarea
                                                     placeholder="DD/MM/YYYY : Description - Amount (one per line)"
@@ -198,7 +248,7 @@ export function SessionEditor({ userId, initialSession, participants, onSaved, o
                                                     onChange={(e) => setBulkText(e.target.value)}
                                                     className="min-h-[150px] font-mono text-sm"
                                                 />
-                                                <div className="flex justify-between items-center">
+                                                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                                                     <p className="text-xs text-muted-foreground">Format: 25/03/2024 : Coffee - 15.50</p>
                                                     <Button onClick={handleBulkImport} disabled={!bulkText.trim()}>Import Transactions</Button>
                                                 </div>
@@ -208,6 +258,7 @@ export function SessionEditor({ userId, initialSession, participants, onSaved, o
                                 )}
                             </AnimatePresence>
 
+                            {/* Transaction Cards */}
                             <div className="space-y-4">
                                 {transactions.map((tx, idx) => (
                                     <motion.div
@@ -215,7 +266,7 @@ export function SessionEditor({ userId, initialSession, participants, onSaved, o
                                         layout
                                         initial={{ opacity: 0, y: 10 }}
                                         animate={{ opacity: 1, y: 0 }}
-                                        className="p-6 rounded-3xl bg-card border border-border/50 shadow-sm space-y-6 relative group"
+                                        className="p-5 sm:p-6 rounded-2xl bg-card border border-border/50 shadow-sm space-y-5 relative group"
                                     >
                                         <div className="flex flex-wrap gap-6 items-start">
                                             <div className="flex-1 min-w-[250px] space-y-4">
@@ -225,19 +276,17 @@ export function SessionEditor({ userId, initialSession, participants, onSaved, o
                                                     value={tx.description}
                                                     onChange={(e) => updateTransaction(idx, "description", e.target.value)}
                                                 />
-                                                <div className="flex gap-4">
-                                                    <div className="flex-1">
-                                                        <Input
-                                                            label="Amount"
-                                                            type="number"
-                                                            value={tx.amount || ""}
-                                                            onChange={(e) => updateTransaction(idx, "amount", parseFloat(e.target.value) || 0)}
-                                                        />
-                                                    </div>
-                                                    <div className="flex-1">
-                                                        <label className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-1.5 block">Paid By</label>
+                                                <div className="grid grid-cols-2 gap-4">
+                                                    <Input
+                                                        label="Amount"
+                                                        type="number"
+                                                        value={tx.amount || ""}
+                                                        onChange={(e) => updateTransaction(idx, "amount", parseFloat(e.target.value) || 0)}
+                                                    />
+                                                    <div>
+                                                        <label className="block text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-2">Paid By</label>
                                                         <select
-                                                            className="w-full h-11 rounded-xl bg-secondary/50 border border-border px-4 text-sm focus:ring-2 ring-primary/20 outline-none transition-all"
+                                                            className="w-full h-12 rounded-xl bg-background/50 border-2 border-border px-4 text-sm focus:border-primary focus:shadow-[0_0_0_4px_hsl(var(--primary)/0.1)] outline-none transition-all hover:border-muted-foreground/30"
                                                             value={tx.payer}
                                                             onChange={(e) => updateTransaction(idx, "payer", e.target.value)}
                                                         >
@@ -247,38 +296,67 @@ export function SessionEditor({ userId, initialSession, participants, onSaved, o
                                                 </div>
                                             </div>
 
-                                            <div className="min-w-[200px] bg-secondary/10 p-4 rounded-2xl border border-border/50">
-                                                <label className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3 block">Split With</label>
+                                            <div className="min-w-[200px] bg-muted/30 p-4 rounded-xl border border-border/50">
+                                                <label className="block text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3">Split With</label>
                                                 <div className="space-y-2">
-                                                    {participants.map(p => (
-                                                        <label key={p} className="flex items-center gap-2 cursor-pointer hover:bg-primary/5 p-1 rounded-lg transition-colors">
-                                                            <input
-                                                                type="checkbox"
-                                                                checked={tx.splitWith.includes(p)}
-                                                                onChange={() => toggleSplitParticipant(idx, p)}
-                                                                className="w-4 h-4 rounded border-border text-primary focus:ring-primary/20"
-                                                            />
-                                                            <span className="text-sm">{p}</span>
-                                                        </label>
-                                                    ))}
+                                                    {participants.map(p => {
+                                                        const isSelected = tx.splitWith.includes(p);
+                                                        return (
+                                                            <label
+                                                                key={p}
+                                                                className={`flex items-center gap-2.5 cursor-pointer p-2 rounded-lg transition-colors ${isSelected ? 'bg-primary/10' : 'hover:bg-muted/50'}`}
+                                                            >
+                                                                <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-colors ${isSelected ? 'bg-primary border-primary' : 'border-muted-foreground/30'}`}>
+                                                                    {isSelected && <Check className="w-3 h-3 text-white" />}
+                                                                </div>
+                                                                <input
+                                                                    type="checkbox"
+                                                                    checked={isSelected}
+                                                                    onChange={() => toggleSplitParticipant(idx, p)}
+                                                                    className="sr-only"
+                                                                />
+                                                                <div className={`w-6 h-6 rounded-md ${getAvatarColor(p)} flex items-center justify-center text-white text-[10px] font-bold`}>
+                                                                    {p[0].toUpperCase()}
+                                                                </div>
+                                                                <span className="text-sm font-medium">{p}</span>
+                                                            </label>
+                                                        );
+                                                    })}
                                                 </div>
                                             </div>
                                         </div>
 
-                                        <div className="flex justify-between items-center pt-4 border-t border-border/50">
-                                            <span className="text-xs text-muted-foreground">Added on {new Date(tx.date).toLocaleDateString()}</span>
+                                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pt-4 border-t border-border/50">
+                                            <span className="text-xs text-muted-foreground flex items-center gap-1.5">
+                                                <Calendar className="w-3.5 h-3.5" />
+                                                Added on {new Date(tx.date).toLocaleDateString()}
+                                            </span>
                                             <Button
                                                 variant="ghost"
                                                 size="sm"
                                                 onClick={() => removeTransaction(idx)}
-                                                className="text-destructive hover:bg-destructive/10 rounded-xl"
+                                                className="text-destructive hover:bg-destructive/10 rounded-xl gap-2"
                                             >
-                                                Remove Item
+                                                <Trash2 className="w-4 h-4" />
+                                                Remove
                                             </Button>
                                         </div>
                                     </motion.div>
                                 ))}
                             </div>
+
+                            {transactions.length === 0 && (
+                                <motion.div
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    className="flex flex-col items-center gap-3 py-12 text-center"
+                                >
+                                    <div className="w-16 h-16 rounded-2xl bg-muted/50 flex items-center justify-center">
+                                        <FileText className="w-8 h-8 text-muted-foreground" />
+                                    </div>
+                                    <p className="text-muted-foreground">No transactions yet. Add your first expense!</p>
+                                </motion.div>
+                            )}
                         </div>
                     </motion.div>
                 )}

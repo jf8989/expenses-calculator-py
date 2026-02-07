@@ -10,24 +10,26 @@ export interface CardProps extends Omit<HTMLMotionProps<"div">, "children"> {
   hover?: boolean;
   gradient?: boolean;
   glass?: boolean;
+  glow?: boolean;
 }
 
 const Card = React.forwardRef<HTMLDivElement, CardProps>(
-  ({ className, children, hover = true, gradient = false, glass = false, ...props }, ref) => {
+  ({ className, children, hover = true, gradient = false, glass = false, glow = false, ...props }, ref) => {
     return (
       <motion.div
         ref={ref}
         className={cn(
-          "rounded-2xl border bg-card text-card-foreground",
-          hover && "card-hover cursor-pointer",
-          glass && "glass",
-          gradient && "bg-gradient-to-br from-card via-card to-muted/20",
+          "rounded-2xl border bg-card text-card-foreground shadow-sm",
+          hover && "transition-all duration-300 ease-out hover:shadow-xl hover:-translate-y-1",
+          glass && "bg-card/40 backdrop-blur-xl border-white/10",
+          gradient && "bg-gradient-to-br from-card via-card to-muted/30",
+          glow && "glow-card",
           className
         )}
         initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
-        transition={{ duration: 0.5 }}
+        transition={{ duration: 0.4, ease: "easeOut" }}
         {...props}
       >
         {children}

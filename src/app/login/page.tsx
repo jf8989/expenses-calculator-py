@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 import { useRouter } from "next/navigation";
@@ -18,9 +18,11 @@ export default function LoginPage() {
     const [isSigningIn, setIsSigningIn] = useState(false);
 
     // If already logged in, redirect to home or dashboard
-    if (user) {
-        router.push("/");
-    }
+    useEffect(() => {
+        if (user) {
+            router.push("/");
+        }
+    }, [user, router]);
 
     const handleGoogleSignIn = async () => {
         if (!auth || isSigningIn) return;

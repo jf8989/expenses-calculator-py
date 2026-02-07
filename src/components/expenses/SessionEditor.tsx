@@ -52,7 +52,12 @@ const getAvatarColor = (name: string) => {
 export function SessionEditor({ userId, initialSession, participants, onSaved, onCancel }: SessionEditorProps) {
     const [name, setName] = useState(initialSession?.name || "");
     const [description, setDescription] = useState(initialSession?.description || "");
-    const [transactions, setTransactions] = useState<Transaction[]>(initialSession?.transactions || []);
+    const [transactions, setTransactions] = useState<Transaction[]>(
+        initialSession?.transactions.map(tx => ({
+            ...tx,
+            splitWith: tx.splitWith || [] // Ensure splitWith is always an array
+        })) || []
+    );
     const [isSaving, setIsSaving] = useState(false);
     const [showSettleUp, setShowSettleUp] = useState(false);
     const [bulkText, setBulkText] = useState("");
@@ -111,9 +116,10 @@ export function SessionEditor({ userId, initialSession, participants, onSaved, o
 
     const toggleSplitParticipant = (txIdx: number, pName: string) => {
         const tx = transactions[txIdx];
-        const splitWith = tx.splitWith.includes(pName)
-            ? tx.splitWith.filter(p => p !== pName)
-            : [...tx.splitWith, pName];
+        const currentSplitWith = tx.splitWith || []; // Handle undefined
+        const splitWith = currentSplitWith.includes(pName)
+            ? currentSplitWith.filter(p => p !== pName)
+            : [...currentSplitWith, pName];
         updateTransaction(txIdx, "splitWith", splitWith);
     };
 
@@ -331,15 +337,15 @@ export function SessionEditor({ userId, initialSession, participants, onSaved, o
                                             <div className="min-w-[200px] bg-muted/30 p-4 rounded-xl border border-border/50">
                                                 <div className="flex justify-between items-center mb-3">
                                                     <label className="block text-xs font-semibold uppercase tracking-widest text-muted-foreground">Split With</label>
-                                                    {tx.amount > 0 && tx.splitWith.length > 0 && (
+                                                    {tx.amount > 0 && tx.splitWith?.length > 0 && (
                                                         <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary">
-                                                            ${(tx.amount / tx.splitWith.length).toFixed(2)} each
+                                                            ${(tx.amount / (tx.splitWith?.length || 1)).toFixed(2)} each
                                                         </span>
                                                     )}
                                                 </div>
                                                 <div className="space-y-2">
                                                     {participants.map(p => {
-                                                        const isSelected = tx.splitWith.includes(p);
+                                                        const isSelected = tx.splitWith?.includes(p) || false;
                                                         return (
                                                             <label
                                                                 key={p}

@@ -37,6 +37,7 @@ class IndexedDBService {
     const db = await this.getDB();
     const tx = db.transaction(STORES.SESSIONS, "readwrite");
     const store = tx.objectStore(STORES.SESSIONS);
+    await store.clear(); // Clear existing to ensure stale sessions are removed
     await Promise.all(sessions.map((session) => store.put(session)));
     await tx.done;
   }
@@ -44,6 +45,11 @@ class IndexedDBService {
   async getSessions(): Promise<Session[]> {
     const db = await this.getDB();
     return await db.getAll(STORES.SESSIONS);
+  }
+
+  async deleteSession(id: string) {
+    const db = await this.getDB();
+    await db.delete(STORES.SESSIONS, id);
   }
 
   async getSession(id: string): Promise<Session | undefined> {

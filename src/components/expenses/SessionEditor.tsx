@@ -19,7 +19,10 @@ import {
     FileText,
     Trash2,
     Calendar,
-    Check
+    Check,
+    TrendingUp,
+    TrendingDown,
+    DollarSign
 } from "lucide-react";
 
 interface SessionEditorProps {
@@ -210,6 +213,35 @@ export function SessionEditor({ userId, initialSession, participants, onSaved, o
                             </CardContent>
                         </Card>
 
+                        {/* Live Summary Widget */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                            {Object.values(summaries).map((s) => {
+                                const isPositive = s.balance >= 0;
+                                return (
+                                    <motion.div
+                                        key={s.name}
+                                        layout
+                                        className={`p-4 rounded-2xl border backdrop-blur-md transition-all ${isPositive
+                                            ? "bg-emerald-500/5 border-emerald-500/20"
+                                            : "bg-red-500/5 border-red-500/20"
+                                            }`}
+                                    >
+                                        <div className="flex justify-between items-center mb-1">
+                                            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{s.name}</span>
+                                            {isPositive ? (
+                                                <TrendingUp className="w-3.5 h-3.5 text-emerald-500" />
+                                            ) : (
+                                                <TrendingDown className="w-3.5 h-3.5 text-red-500" />
+                                            )}
+                                        </div>
+                                        <div className={`text-xl font-bold tabular-nums ${isPositive ? "text-emerald-500" : "text-red-500"}`}>
+                                            {isPositive ? "+" : ""}{s.balance.toFixed(2)}
+                                        </div>
+                                    </motion.div>
+                                );
+                            })}
+                        </div>
+
                         {/* Transactions Section */}
                         <div className="space-y-6">
                             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-card/30 p-4 rounded-2xl border border-border/50">
@@ -297,7 +329,14 @@ export function SessionEditor({ userId, initialSession, participants, onSaved, o
                                             </div>
 
                                             <div className="min-w-[200px] bg-muted/30 p-4 rounded-xl border border-border/50">
-                                                <label className="block text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3">Split With</label>
+                                                <div className="flex justify-between items-center mb-3">
+                                                    <label className="block text-xs font-semibold uppercase tracking-widest text-muted-foreground">Split With</label>
+                                                    {tx.amount > 0 && tx.splitWith.length > 0 && (
+                                                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary">
+                                                            ${(tx.amount / tx.splitWith.length).toFixed(2)} each
+                                                        </span>
+                                                    )}
+                                                </div>
                                                 <div className="space-y-2">
                                                     {participants.map(p => {
                                                         const isSelected = tx.splitWith.includes(p);

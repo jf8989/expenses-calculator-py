@@ -13,14 +13,33 @@ export interface Debt {
   amount: number;
 }
 
-export function calculateSummary(transactions: Transaction[], participants: string[]) {
+export function calculateSummary(
+  transactions: Transaction[],
+  participants: string[],
+) {
   const summaries: Record<string, ParticipantSummary> = {};
-  
-  participants.forEach(p => {
+
+  participants.forEach((p) => {
     summaries[p] = { name: p, totalSpent: 0, totalOwed: 0, balance: 0 };
   });
 
-  transactions.forEach(tx => {
+  transactions.forEach((tx) => {
+    // Add payer to summaries if not present
+    if (tx.payer && !summaries[tx.payer]) {
+      summaries[tx.payer] = {
+        name: tx.payer,
+        totalSpent: 0,
+        totalOwed: 0,
+        balance: 0,
+      };
+    }
+    // Add split participants to summaries if not present
+    tx.splitWith?.forEach((p) => {
+      if (p && !summaries[p]) {
+        summaries[p] = { name: p, totalSpent: 0, totalOwed: 0, balance: 0 };
+      }
+    });
+
     const amount = Number(tx.amount);
     if (isNaN(amount) || amount <= 0) return;
 
@@ -33,7 +52,7 @@ export function calculateSummary(transactions: Transaction[], participants: stri
     const splitCount = tx.splitWith?.length || 0;
     if (splitCount > 0) {
       const share = amount / splitCount;
-      tx.splitWith.forEach(p => {
+      tx.splitWith.forEach((p) => {
         if (summaries[p]) {
           summaries[p].totalOwed += share;
         }
@@ -42,21 +61,27 @@ export function calculateSummary(transactions: Transaction[], participants: stri
   });
 
   // Calculate balance (Positive means they are owed money, Negative means they owe)
-  Object.values(summaries).forEach(s => {
+  Object.values(summaries).forEach((s) => {
     s.balance = s.totalSpent - s.totalOwed;
   });
 
   return summaries;
 }
 
-export function calculateDebts(summaries: Record<string, ParticipantSummary>): Debt[] {
+export function calculateDebts(
+  summaries: Record<string, ParticipantSummary>,
+): Debt[] {
   const debts: Debt[] = [];
   const balances = Object.values(summaries)
-    .map(s => ({ name: s.name, balance: s.balance }))
-    .filter(b => Math.abs(b.balance) > 0.01);
+    .map((s) => ({ name: s.name, balance: s.balance }))
+    .filter((b) => Math.abs(b.balance) > 0.01);
 
-  const debtors = balances.filter(b => b.balance < 0).sort((a, b) => a.balance - b.balance);
-  const creditors = balances.filter(b => b.balance > 0).sort((a, b) => b.balance - a.balance);
+  const debtors = balances
+    .filter((b) => b.balance < 0)
+    .sort((a, b) => a.balance - b.balance);
+  const creditors = balances
+    .filter((b) => b.balance > 0)
+    .sort((a, b) => b.balance - a.balance);
 
   let i = 0;
   let j = 0;
@@ -69,7 +94,7 @@ export function calculateDebts(summaries: Record<string, ParticipantSummary>): D
     debts.push({
       from: debtor.name,
       to: creditor.name,
-      amount: Number(amount.toFixed(2))
+      amount: Number(amount.toFixed(2)),
     });
 
     debtor.balance += amount;

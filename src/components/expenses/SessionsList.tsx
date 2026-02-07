@@ -4,6 +4,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Session } from "@/types";
 import { deleteSession } from "@/app/actions/sessions";
+import { localDB } from "@/lib/storage/indexedDb";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Calendar, Users, CreditCard, Trash2, Sparkles } from "lucide-react";
@@ -23,6 +24,7 @@ export function SessionsList({ userId, initialSessions, onSelect }: SessionsList
 
         try {
             await deleteSession(userId, id);
+            await localDB.deleteSession(id);
             setSessions(prev => prev.filter(s => s.id !== id));
         } catch (error) {
             console.error("Error deleting session", error);

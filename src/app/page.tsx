@@ -256,6 +256,7 @@ export default function Home() {
                       userId={user.uid}
                       initialSessions={sessions}
                       onSelect={setActiveSession}
+                      isLoading={loading || isSyncing}
                     />
                   </div>
 

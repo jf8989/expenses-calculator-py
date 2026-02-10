@@ -20,8 +20,9 @@ interface SessionsListProps {
     userId: string;
     initialSessions: Session[];
     onSelect: (session: Session) => void;
+    isLoading?: boolean;
 }
-export function SessionsList({ userId, initialSessions, onSelect }: SessionsListProps) {
+export function SessionsList({ userId, initialSessions, onSelect, isLoading }: SessionsListProps) {
     const { sessions, setSessions, activeSession } = useAppStore();
     const { t, language } = useLanguage();
     const { showToast } = useToast();
@@ -205,7 +206,7 @@ export function SessionsList({ userId, initialSessions, onSelect }: SessionsList
                 </AnimatePresence>
             </div>
 
-            {sessions.length === 0 && (
+            {sessions.length === 0 && !isLoading && (
                 <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -245,6 +246,23 @@ export function SessionsList({ userId, initialSessions, onSelect }: SessionsList
                         </div>
                     </Card>
                 </motion.div>
+            )}
+
+            {isLoading && sessions.length === 0 && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {[1, 2].map((i) => (
+                        <div key={i} className="space-y-3">
+                            <div className="h-40 rounded-3xl bg-card/50 backdrop-blur-xl animate-pulse flex flex-col p-6 gap-4">
+                                <div className="h-6 w-1/3 bg-primary/10 rounded-full" />
+                                <div className="h-4 w-2/3 bg-muted/40 rounded-full" />
+                                <div className="mt-auto flex gap-2">
+                                    <div className="h-8 w-20 bg-muted/40 rounded-full" />
+                                    <div className="h-8 w-20 bg-muted/40 rounded-full" />
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
             )}
 
             <ConfirmDialog

@@ -54,14 +54,18 @@ interface AppState {
   setSessions: (sessions: Session[]) => void;
   setActiveSession: (session: Session | null) => void;
   updateActiveSession: (updater: Partial<Session> | ((session: Session) => Session)) => void;
+  resetActiveSession: () => void;
   setIsSyncing: (isSyncing: boolean) => void;
   setSyncMetadata: (timestamp: number | null) => void;
   setError: (error: string | null) => void;
 
   // Transaction specific actions
   addTransaction: (transaction: Transaction) => void;
+  addManyTransactions: (transactions: Transaction[]) => void;
   removeTransaction: (index: number) => void;
   updateTransaction: (index: number, transaction: Partial<Transaction> | ((tx: Transaction) => Transaction)) => void;
+
+  toggleFrequentParticipant: (name: string) => void;
 }
 
 export const useAppStore = create<AppState>()(
@@ -89,6 +93,17 @@ export const useAppStore = create<AppState>()(
               : { ...state.activeSession, ...updater }
             : null,
         })),
+      resetActiveSession: () =>
+        set((state) => ({
+          activeSession: {
+            name: "",
+            description: "",
+            transactions: [],
+            participants: [...state.frequentParticipants],
+            mainCurrency: "USD",
+            currencies: {},
+          },
+        })),
       setIsSyncing: (isSyncing) => set({ isSyncing }),
       setSyncMetadata: (lastSyncedTimestamp) => set({ lastSyncedTimestamp }),
       setError: (error) => set({ error }),
@@ -99,6 +114,15 @@ export const useAppStore = create<AppState>()(
             ? {
                 ...state.activeSession,
                 transactions: [transaction, ...state.activeSession.transactions], // Add to start like the UI does
+              }
+            : null,
+        })),
+      addManyTransactions: (transactions) =>
+        set((state) => ({
+          activeSession: state.activeSession
+            ? {
+                ...state.activeSession,
+                transactions: [...transactions, ...state.activeSession.transactions],
               }
             : null,
         })),
@@ -126,6 +150,14 @@ export const useAppStore = create<AppState>()(
               }
             : null,
         })),
+      toggleFrequentParticipant: (name) =>
+        set((state) => {
+          const isFrequent = state.frequentParticipants.includes(name);
+          const newFrequent = isFrequent
+            ? state.frequentParticipants.filter((p) => p !== name)
+            : [...state.frequentParticipants, name];
+          return { frequentParticipants: newFrequent };
+        }),
     }),
     {
       name: "expense-genie-storage",

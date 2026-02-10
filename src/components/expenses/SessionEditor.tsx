@@ -28,10 +28,14 @@ import {
     CheckCircle2,
     Coins,
     X,
+    Search,
+    Filter,
 } from "lucide-react";
 import { getAvatarColor } from "@/lib/avatarUtils";
 import { useLanguage } from "@/context/LanguageContext";
 import { useAppStore } from "@/store/useAppStore";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { useToast } from "@/components/ui/Toast";
 
 interface SessionEditorProps {
     userId: string;
@@ -56,6 +60,7 @@ export function SessionEditor({ userId, initialSession, participants, onSaved, o
         addTransaction: addStoreTransaction,
         removeTransaction: removeStoreTransaction,
         updateTransaction: updateStoreTransaction,
+        resetActiveSession,
     } = useAppStore();
 
     const { t } = useLanguage();
@@ -65,9 +70,16 @@ export function SessionEditor({ userId, initialSession, participants, onSaved, o
     const [showSettleUp, setShowSettleUp] = useState(false);
     const [bulkText, setBulkText] = useState("");
     const [showBulk, setShowBulk] = useState(false);
-    const [saveSuccess, setSaveSuccess] = useState(false);
+    const [searchQuery, setSearchQuery] = useState("");
     const [newCurrencyCode, setNewCurrencyCode] = useState("");
     const [newCurrencyRate, setNewCurrencyRate] = useState("");
+
+    // Dialog states
+    const [txToDelete, setTxToDelete] = useState<number | null>(null);
+    const [showClearAllConfirm, setShowClearAllConfirm] = useState(false);
+    const [showResetConfirm, setShowResetConfirm] = useState(false);
+
+    const { showToast } = useToast();
 
     // Initialize/Sync active session with initialSession
     useEffect(() => {
@@ -119,6 +131,17 @@ export function SessionEditor({ userId, initialSession, participants, onSaved, o
         return Array.from(set);
     }, [mainCurrency, secondaryCurrency, currencies]);
 
+    // Filtered transactions for visual search
+    const filteredTransactions = useMemo(() => {
+        if (!searchQuery.trim()) return transactions;
+        const query = searchQuery.toLowerCase();
+        return transactions.filter(tx =>
+            tx.description.toLowerCase().includes(query) ||
+            tx.amount.toString().includes(query) ||
+            tx.date.includes(query)
+        );
+    }, [transactions, searchQuery]);
+
     // Calculate summaries and debts memoized (with currency conversion)
     const { summaries, debts } = useMemo(() => {
         const s = calculateSummary(
@@ -147,16 +170,17 @@ export function SessionEditor({ userId, initialSession, participants, onSaved, o
             if (activeSession.id) {
                 await updateSession(userId, activeSession.id, sessionData);
                 onSaved(activeSession.id);
+                showToast(t.session.savedSuccess);
             } else {
                 const newId = await saveSession(userId, sessionData);
                 onSaved(newId);
                 // Update active session with the new ID
                 updateActiveSession({ id: newId });
+                showToast(t.session.savedSuccess);
             }
-            setSaveSuccess(true);
-            setTimeout(() => setSaveSuccess(false), 3000);
         } catch (error) {
             console.error("Error saving session", error);
+            showToast(t.common?.error || "Error saving session", "error");
         } finally {
             setIsSaving(false);
         }
@@ -186,16 +210,30 @@ export function SessionEditor({ userId, initialSession, participants, onSaved, o
         updateTransaction(txIdx, "assigned_to", assigned_to);
     };
 
-    const removeTransaction = (index: number) => {
-        removeStoreTransaction(index);
+    const removeTransaction = () => {
+        if (txToDelete !== null) {
+            removeStoreTransaction(txToDelete);
+            setTxToDelete(null);
+            showToast(t.session.remove + " success");
+        }
+    };
+
+    const clearAllTransactions = () => {
+        updateActiveSession({ transactions: [] });
+        setShowClearAllConfirm(false);
+        showToast("Cleared all transactions");
     };
 
     const handleBulkImport = () => {
+        if (!bulkText.trim()) return;
         const parsed = parseTransactions(bulkText, participants[0] || "", participants);
         if (parsed.length > 0) {
             parsed.forEach(tx => addStoreTransaction(tx));
+            showToast(`${parsed.length} transactions imported`);
             setBulkText("");
             setShowBulk(false);
+        } else {
+            showToast("No valid transactions found", "error");
         }
     };
 
@@ -266,10 +304,16 @@ export function SessionEditor({ userId, initialSession, participants, onSaved, o
                 animate={{ opacity: 1, y: 0 }}
                 className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 sticky top-20 sm:top-24 z-20 bg-background/80 backdrop-blur-xl p-4 rounded-2xl border border-border/50 shadow-lg"
             >
-                <Button variant="ghost" onClick={onCancel} className="rounded-xl gap-2">
-                    <ArrowLeft className="w-4 h-4" />
-                    {t.session.dashboard}
-                </Button>
+                <div className="flex items-center gap-2">
+                    <Button variant="ghost" onClick={onCancel} className="rounded-xl gap-2">
+                        <ArrowLeft className="w-4 h-4" />
+                        {t.session.dashboard}
+                    </Button>
+                    <Button variant="ghost" onClick={() => setShowResetConfirm(true)} className="rounded-xl gap-2 text-primary hover:bg-primary/10">
+                        <Plus className="w-4 h-4" />
+                        {t.dashboard.newSession}
+                    </Button>
+                </div>
                 <div className="flex gap-3">
                     <Button
                         variant={showSettleUp ? "secondary" : "outline"}
@@ -291,20 +335,6 @@ export function SessionEditor({ userId, initialSession, participants, onSaved, o
                 </div>
             </motion.div>
 
-            {/* Save Success Toast */}
-            <AnimatePresence>
-                {saveSuccess && (
-                    <motion.div
-                        initial={{ opacity: 0, y: 50 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: 50 }}
-                        className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2.5 px-5 py-3 rounded-2xl bg-emerald-500 text-white shadow-2xl shadow-emerald-500/30 font-medium"
-                    >
-                        <CheckCircle2 className="w-5 h-5" />
-                        {t.session.savedSuccess}
-                    </motion.div>
-                )}
-            </AnimatePresence>
 
             <AnimatePresence mode="wait">
                 {showSettleUp ? (
@@ -512,57 +542,76 @@ export function SessionEditor({ userId, initialSession, participants, onSaved, o
 
                         {/* Transactions Section */}
                         <div className="space-y-6">
-                            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-card/30 p-4 rounded-2xl border border-border/50">
-                                <div className="flex flex-col">
-                                    <h3 className="text-xl font-bold flex items-center gap-2">
-                                        <span className="w-2 h-6 rounded-full bg-gradient-to-b from-primary to-accent" />
-                                        {t.session.transactions}
-                                    </h3>
-                                    <p className="text-sm text-muted-foreground">{transactions.length} {t.session.itemsRecorded}</p>
-                                </div>
-                                <div className="flex gap-2 w-full sm:w-auto">
-                                    <Button variant="outline" onClick={() => setShowBulk(!showBulk)} className="rounded-xl flex-1 sm:flex-none">
-                                        {showBulk ? t.session.cancel : t.session.bulkImport}
-                                    </Button>
-                                    <Button onClick={addTransaction} variant="gradient" className="rounded-xl gap-2 flex-1 sm:flex-none">
-                                        <Plus className="w-4 h-4" />
-                                        {t.session.addItem}
-                                    </Button>
-                                </div>
+                            <h3 className="text-xl font-bold flex items-center gap-2">
+                                <span className="w-2 h-6 rounded-full bg-gradient-to-b from-primary to-accent" />
+                                {t.session.transactions}
+                            </h3>
+                            <p className="text-sm text-muted-foreground">{transactions.length} {t.session.itemsRecorded}</p>
+                        </div>
+                        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto flex-1 max-w-2xl px-2">
+                            <div className="relative flex-1">
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                                <Input
+                                    placeholder="Search transactions..."
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    className="pl-9 bg-background/50 border-border/50 focus:border-primary/50"
+                                />
                             </div>
+                            <div className="flex gap-2">
+                                <Button variant="outline" onClick={() => setShowBulk(!showBulk)} className="rounded-xl flex-1 sm:flex-none">
+                                    {showBulk ? t.session.cancel : t.session.bulkImport}
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    onClick={() => setShowClearAllConfirm(true)}
+                                    disabled={transactions.length === 0}
+                                    className="rounded-xl flex-1 sm:flex-none text-destructive hover:bg-destructive/10"
+                                >
+                                    <Trash2 className="w-4 h-4" />
+                                </Button>
+                                <Button onClick={addTransaction} variant="gradient" className="rounded-xl gap-2 flex-1 sm:flex-none">
+                                    <Plus className="w-4 h-4" />
+                                    {t.session.addItem}
+                                </Button>
+                            </div>
+                        </div>
 
-                            {/* Bulk Import Panel */}
-                            <AnimatePresence>
-                                {showBulk && (
-                                    <motion.div
-                                        initial={{ opacity: 0, height: 0 }}
-                                        animate={{ opacity: 1, height: "auto" }}
-                                        exit={{ opacity: 0, height: 0 }}
-                                        className="overflow-hidden"
-                                    >
-                                        <Card className="border-primary/20 bg-primary/5 mb-6" hover={false}>
-                                            <CardContent className="pt-6 space-y-4">
-                                                <Textarea
-                                                    placeholder="DD/MM/YYYY : Description - Amount (one per line)"
-                                                    value={bulkText}
-                                                    onChange={(e) => setBulkText(e.target.value)}
-                                                    className="min-h-[150px] font-mono text-sm"
-                                                />
-                                                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-                                                    <p className="text-xs text-muted-foreground">{t.session.bulkFormat}</p>
-                                                    <Button onClick={handleBulkImport} disabled={!bulkText.trim()}>{t.session.importTransactions}</Button>
-                                                </div>
-                                            </CardContent>
-                                        </Card>
-                                    </motion.div>
-                                )}
-                            </AnimatePresence>
+                        {/* Bulk Import Panel */}
+                        <AnimatePresence>
+                            {showBulk && (
+                                <motion.div
+                                    initial={{ opacity: 0, height: 0 }}
+                                    animate={{ opacity: 1, height: "auto" }}
+                                    exit={{ opacity: 0, height: 0 }}
+                                    className="overflow-hidden"
+                                >
+                                    <Card className="border-primary/20 bg-primary/5 mb-6" hover={false}>
+                                        <CardContent className="pt-6 space-y-4">
+                                            <Textarea
+                                                placeholder="DD/MM/YYYY : Description - Amount (one per line)"
+                                                value={bulkText}
+                                                onChange={(e) => setBulkText(e.target.value)}
+                                                className="min-h-[150px] font-mono text-sm"
+                                            />
+                                            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                                                <p className="text-xs text-muted-foreground">{t.session.bulkFormat}</p>
+                                                <Button onClick={handleBulkImport} disabled={!bulkText.trim()}>{t.session.importTransactions}</Button>
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
 
-                            {/* Transaction Cards */}
-                            <div className="space-y-4">
-                                {transactions.map((tx, idx) => (
+                        {/* Transaction Cards */}
+                        <div className="space-y-4">
+                            {filteredTransactions.map((tx, idx) => {
+                                // Need to find original index for store updates as map order might differ due to filtering
+                                const originalIdx = transactions.indexOf(tx);
+                                return (
                                     <motion.div
-                                        key={idx}
+                                        key={originalIdx}
                                         layout
                                         initial={{ opacity: 0, y: 10 }}
                                         animate={{ opacity: 1, y: 0 }}
@@ -574,14 +623,14 @@ export function SessionEditor({ userId, initialSession, participants, onSaved, o
                                                     label={t.session.description}
                                                     placeholder={t.session.whatWasBought}
                                                     value={tx.description}
-                                                    onChange={(e) => updateTransaction(idx, "description", e.target.value)}
+                                                    onChange={(e) => updateTransaction(originalIdx, "description", e.target.value)}
                                                 />
                                                 <div className="grid grid-cols-3 gap-4">
                                                     <Input
                                                         label={t.session.amount}
                                                         type="number"
                                                         value={tx.amount || ""}
-                                                        onChange={(e) => updateTransaction(idx, "amount", parseFloat(e.target.value) || 0)}
+                                                        onChange={(e) => updateTransaction(originalIdx, "amount", parseFloat(e.target.value) || 0)}
                                                     />
                                                     {/* Per-transaction currency toggle */}
                                                     <div>
@@ -593,7 +642,7 @@ export function SessionEditor({ userId, initialSession, participants, onSaved, o
                                                                 const currentCurrency = tx.currency || mainCurrency;
                                                                 const currentIndex = availableCurrencies.indexOf(currentCurrency);
                                                                 const nextIndex = (currentIndex + 1) % availableCurrencies.length;
-                                                                updateTransaction(idx, "currency", availableCurrencies[nextIndex]);
+                                                                updateTransaction(originalIdx, "currency", availableCurrencies[nextIndex]);
                                                             }}
                                                             className={`w-full h-12 rounded-xl border-2 flex items-center justify-center font-bold transition-all ${availableCurrencies.length > 1
                                                                 ? "bg-primary/5 border-primary/20 hover:border-primary/40 hover:bg-primary/10 cursor-pointer"
@@ -617,14 +666,14 @@ export function SessionEditor({ userId, initialSession, participants, onSaved, o
                                                                     <select
                                                                         className="flex-1 h-12 rounded-xl bg-background/50 border-2 border-border px-4 text-sm focus:border-primary focus:shadow-[0_0_0_4px_hsl(var(--primary)/0.1)] outline-none transition-all hover:border-muted-foreground/30"
                                                                         value={tx.payer}
-                                                                        onChange={(e) => updateTransaction(idx, "payer", e.target.value)}
+                                                                        onChange={(e) => updateTransaction(originalIdx, "payer", e.target.value)}
                                                                     >
                                                                         {participants.map(p => <option key={p} value={p}>{p}</option>)}
                                                                     </select>
                                                                     <Button
                                                                         variant="ghost"
                                                                         size="icon"
-                                                                        onClick={() => updateTransaction(idx, "payer", undefined)}
+                                                                        onClick={() => updateTransaction(originalIdx, "payer", undefined)}
                                                                         className="h-12 w-12 rounded-xl text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                                                                     >
                                                                         <X className="w-4 h-4" />
@@ -639,7 +688,7 @@ export function SessionEditor({ userId, initialSession, participants, onSaved, o
                                                                 >
                                                                     <Button
                                                                         variant="outline"
-                                                                        onClick={() => updateTransaction(idx, "payer", participants[0])}
+                                                                        onClick={() => updateTransaction(originalIdx, "payer", participants[0])}
                                                                         className="w-full h-12 rounded-xl border-dashed border-2 text-muted-foreground hover:text-primary hover:border-primary transition-all text-xs"
                                                                     >
                                                                         {t.session.whoPaid || "Who paid?"}
@@ -662,7 +711,7 @@ export function SessionEditor({ userId, initialSession, participants, onSaved, o
                                                         )}
                                                         <button
                                                             type="button"
-                                                            onClick={() => toggleAllParticipants(idx)}
+                                                            onClick={() => toggleAllParticipants(originalIdx)}
                                                             className="flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-muted/50 text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors"
                                                         >
                                                             {participants.every(p => tx.assigned_to?.includes(p)) ? (
@@ -687,7 +736,7 @@ export function SessionEditor({ userId, initialSession, participants, onSaved, o
                                                                 <input
                                                                     type="checkbox"
                                                                     checked={isSelected}
-                                                                    onChange={() => toggleSplitParticipant(idx, p)}
+                                                                    onChange={() => toggleSplitParticipant(originalIdx, p)}
                                                                     className="sr-only"
                                                                 />
                                                                 <div className={`w-6 h-6 rounded-md ${getAvatarColor(p)} flex items-center justify-center text-white text-[10px] font-bold`}>
@@ -709,7 +758,7 @@ export function SessionEditor({ userId, initialSession, participants, onSaved, o
                                             <Button
                                                 variant="ghost"
                                                 size="sm"
-                                                onClick={() => removeTransaction(idx)}
+                                                onClick={() => setTxToDelete(originalIdx)}
                                                 className="text-destructive hover:bg-destructive/10 rounded-xl gap-2"
                                             >
                                                 <Trash2 className="w-4 h-4" />
@@ -717,26 +766,54 @@ export function SessionEditor({ userId, initialSession, participants, onSaved, o
                                             </Button>
                                         </div>
                                     </motion.div>
-                                ))}
-                            </div>
-
-                            {transactions.length === 0 && (
-                                <motion.div
-                                    initial={{ opacity: 0 }}
-                                    animate={{ opacity: 1 }}
-                                    className="flex flex-col items-center gap-3 py-12 text-center"
-                                >
-                                    <div className="w-16 h-16 rounded-2xl bg-muted/50 flex items-center justify-center">
-                                        <FileText className="w-8 h-8 text-muted-foreground" />
-                                    </div>
-                                    <p className="text-muted-foreground">{t.session.noTransactions}</p>
-                                </motion.div>
-                            )}
+                                );
+                            })}
                         </div>
-                    </motion.div >
-                )
-                }
-            </AnimatePresence >
+
+                        {filteredTransactions.length === 0 && (
+                            <motion.div
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                className="flex flex-col items-center gap-3 py-12 text-center"
+                            >
+                                <div className="w-16 h-16 rounded-2xl bg-muted/50 flex items-center justify-center">
+                                    <FileText className="w-8 h-8 text-muted-foreground" />
+                                </div>
+                                <p className="text-muted-foreground">{searchQuery ? "No matching transactions" : t.session.noTransactions}</p>
+                            </motion.div>
+                        )}
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* Dialogs */}
+            <ConfirmDialog
+                isOpen={txToDelete !== null}
+                title="Delete Transaction"
+                message="Are you sure you want to delete this transaction?"
+                onConfirm={removeTransaction}
+                onCancel={() => setTxToDelete(null)}
+            />
+
+            <ConfirmDialog
+                isOpen={showClearAllConfirm}
+                title={t.session.confirmClear}
+                message={t.session.confirmClearMsg}
+                onConfirm={clearAllTransactions}
+                onCancel={() => setShowClearAllConfirm(false)}
+            />
+
+            <ConfirmDialog
+                isOpen={showResetConfirm}
+                title={t.session.confirmReset}
+                message={t.session.confirmResetMsg}
+                onConfirm={() => {
+                    resetActiveSession();
+                    setShowResetConfirm(false);
+                    showToast("New session started");
+                }}
+                onCancel={() => setShowResetConfirm(false)}
+            />
         </div >
     );
 }

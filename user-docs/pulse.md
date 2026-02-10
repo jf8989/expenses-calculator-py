@@ -34,4 +34,17 @@
     - Confirmed exchange rate math in `calculations.ts` handles per-transaction overrides.
     - Verified build and type safety with `npm run build`.
 
-## [2026-02-10] Phase 4: Missing Features — Feature Parity with Python [NEXT]
+## [2026-02-10] Phase 4: Missing Features — Feature Parity with Python [COMPLETED]
+- **Goal**: Reach parity with calculations and UI tricks from the legacy version.
+- **Accomplishments**:
+    - Implemented **Bulk Transaction Paste** via panel and `parseTransactions`.
+    - Integrated **Search & Filtering** for the transaction list.
+    - Added **Frequent Participants** system with star-toggling and `datalist` autocomplete.
+    - Implemented custom **Confirmation Dialogs** and **Toast Notifications**.
+    - Added **Session Overwrite** and **New Session/Reset** functionality.
+    - Verified build status: `Compiled successfully`.
+
+## [2026-02-10] Phase 5: PDF Export [NEXT]
+- **Goal**: Generate printable PDF summaries for settled-up sessions.
+- **Reference**: [IMPLEMENTATION_PHASES.md](file:///c:/00%20Development/expenses-calculator-py/user-docs/planning/IMPLEMENTATION_PHASES.md#L358-L417)
+- **Key Files**: `SettleUp.tsx`, `calculations.ts`.

@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { ThemeProvider } from "@/context/ThemeProvider";
 import { AuthProvider } from "@/context/AuthProvider";
 import { LanguageProvider } from "@/context/LanguageContext";
+import { ToastProvider } from "@/components/ui/Toast";
 
 // VIEWPORT CONFIGURATION for optimal mobile experience
 export const viewport: Viewport = {
@@ -98,9 +99,11 @@ export default function RootLayout({
         >
           <LanguageProvider>
             <AuthProvider>
-              <div className="relative flex min-h-screen flex-col" suppressHydrationWarning>
-                {children}
-              </div>
+              <ToastProvider>
+                <div className="relative flex min-h-screen flex-col" suppressHydrationWarning>
+                  {children}
+                </div>
+              </ToastProvider>
             </AuthProvider>
           </LanguageProvider>
         </ThemeProvider>

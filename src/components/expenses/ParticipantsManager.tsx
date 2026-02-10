@@ -1,48 +1,59 @@
-"use client";
-
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { addParticipant, removeParticipant } from "@/app/actions/participants";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getAvatarGradient, getInitials } from "@/lib/avatarUtils";
-import { UserPlus, X, Users } from "lucide-react";
+import { UserPlus, X, Users, Star, Trash2 } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
 import { useAppStore } from "@/store/useAppStore";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { useToast } from "@/components/ui/Toast";
 
 interface ParticipantsManagerProps {
     userId: string;
     initialParticipants: string[];
 }
 export function ParticipantsManager({ userId, initialParticipants }: ParticipantsManagerProps) {
-    const { participants, setParticipants } = useAppStore();
+    const { participants, setParticipants, frequentParticipants, toggleFrequentParticipant } = useAppStore();
     const [newName, setNewName] = useState("");
     const [isAdding, setIsAdding] = useState(false);
+    const [participantToDelete, setParticipantToDelete] = useState<string | null>(null);
     const { t } = useLanguage();
+    const { showToast } = useToast();
 
     const handleAdd = async () => {
-        if (!newName.trim() || participants.includes(newName.trim())) return;
+        const name = newName.trim();
+        if (!name || participants.includes(name)) return;
 
         setIsAdding(true);
-        const name = newName.trim();
         try {
             await addParticipant(userId, name);
             setParticipants([...participants, name].sort());
             setNewName("");
+            showToast(`${name} ${t.participants.added || "added"}`);
         } catch (error) {
             console.error("Error adding participant", error);
+            showToast(t.common?.error || "Error adding participant", "error");
         } finally {
             setIsAdding(false);
         }
     };
 
-    const handleRemove = async (name: string) => {
+    const handleRemove = async () => {
+        if (!participantToDelete) return;
+
+        const name = participantToDelete;
         try {
             await removeParticipant(userId, name);
             setParticipants(participants.filter(p => p !== name));
+            showToast(`${name} ${t.participants.removed || "removed"}`);
         } catch (error) {
             console.error("Error removing participant", error);
+            showToast(t.common?.error || "Error removing participant", "error");
+        } finally {
+            setParticipantToDelete(null);
         }
     };
 
@@ -65,13 +76,21 @@ export function ParticipantsManager({ userId, initialParticipants }: Participant
 
             <CardContent className="space-y-4 pt-4">
                 <div className="flex gap-2">
-                    <Input
-                        placeholder={t.participants.addPlaceholder}
-                        value={newName}
-                        onChange={(e) => setNewName(e.target.value)}
-                        onKeyDown={(e) => e.key === "Enter" && handleAdd()}
-                        className="bg-background/30 border-primary/20 focus:border-primary/50"
-                    />
+                    <div className="relative flex-1">
+                        <Input
+                            placeholder={t.participants.addPlaceholder}
+                            value={newName}
+                            onChange={(e) => setNewName(e.target.value)}
+                            onKeyDown={(e) => e.key === "Enter" && handleAdd()}
+                            className="bg-background/30 border-primary/20 focus:border-primary/50"
+                            list="frequent-participants"
+                        />
+                        <datalist id="frequent-participants">
+                            {frequentParticipants.filter(p => !participants.includes(p)).map(p => (
+                                <option key={p} value={p} />
+                            ))}
+                        </datalist>
+                    </div>
                     <Button
                         onClick={handleAdd}
                         disabled={isAdding || !newName.trim()}
@@ -100,14 +119,27 @@ export function ParticipantsManager({ userId, initialParticipants }: Participant
                                     </div>
                                     <span className="font-medium text-sm">{p}</span>
                                 </div>
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => handleRemove(p)}
-                                    className="h-7 w-7 p-0 opacity-0 group-hover:opacity-100 hover:text-destructive hover:bg-destructive/10 transition-all"
-                                >
-                                    <X className="w-3.5 h-3.5" />
-                                </Button>
+                                <div className="flex items-center gap-1">
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => toggleFrequentParticipant(p)}
+                                        className={`h-7 w-7 p-0 transition-all ${frequentParticipants.includes(p)
+                                                ? 'text-amber-500 opacity-100'
+                                                : 'text-muted-foreground opacity-0 group-hover:opacity-100 hover:text-amber-500 hover:bg-amber-500/10'
+                                            }`}
+                                    >
+                                        <Star className={`w-3.5 h-3.5 ${frequentParticipants.includes(p) ? 'fill-current' : ''}`} />
+                                    </Button>
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => setParticipantToDelete(p)}
+                                        className="h-7 w-7 p-0 opacity-0 group-hover:opacity-100 hover:text-destructive hover:bg-destructive/10 transition-all"
+                                    >
+                                        <X className="w-3.5 h-3.5" />
+                                    </Button>
+                                </div>
                             </motion.div>
                         ))}
                     </AnimatePresence>
@@ -128,6 +160,14 @@ export function ParticipantsManager({ userId, initialParticipants }: Participant
                     )}
                 </div>
             </CardContent>
+
+            <ConfirmDialog
+                isOpen={!!participantToDelete}
+                title={t.participants.removeTitle || "Remove Participant"}
+                message={`${t.participants.removeConfirm || "Are you sure you want to remove"} ${participantToDelete}? ${t.participants.removeWarning || "Their assignments will be cleared."}`}
+                onConfirm={handleRemove}
+                onCancel={() => setParticipantToDelete(null)}
+            />
         </Card>
     );
 }

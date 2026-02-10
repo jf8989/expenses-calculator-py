@@ -6,10 +6,14 @@ import { Session } from "@/types";
 import { deleteSession } from "@/app/actions/sessions";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Calendar, Users, CreditCard, Trash2, Sparkles } from "lucide-react";
+import { Calendar, Users, CreditCard, Trash2, Sparkles, Save } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
 import { formatCurrency } from "@/lib/utils";
 import { useAppStore } from "@/store/useAppStore";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { useToast } from "@/components/ui/Toast";
+import { useState } from "react";
+import { updateSession as updateSessionAction } from "@/app/actions/sessions";
 
 interface SessionsListProps {
     userId: string;
@@ -17,25 +21,48 @@ interface SessionsListProps {
     onSelect: (session: Session) => void;
 }
 export function SessionsList({ userId, initialSessions, onSelect }: SessionsListProps) {
-    const { sessions, setSessions } = useAppStore();
+    const { sessions, setSessions, activeSession } = useAppStore();
     const { t } = useLanguage();
+    const { showToast } = useToast();
+    const [sessionToDelete, setSessionToDelete] = useState<string | null>(null);
+    const [sessionToOverwrite, setSessionToOverwrite] = useState<string | null>(null);
+    const [isOverwriting, setIsOverwriting] = useState(false);
 
-    // Initialize store with initialSessions if needed (though useCachedData will handle it)
-    useEffect(() => {
-        if (initialSessions.length > 0 && sessions.length === 0) {
-            setSessions(initialSessions);
-        }
-    }, [initialSessions, sessions.length, setSessions]);
-
-    const handleDelete = async (id: string, e: React.MouseEvent) => {
-        e.stopPropagation();
-        if (!confirm(t.dashboard.deleteConfirm)) return;
-
+    const handleDelete = async () => {
+        if (!sessionToDelete) return;
+        const id = sessionToDelete;
         try {
             await deleteSession(userId, id);
             setSessions(sessions.filter(s => s.id !== id));
+            showToast("Session deleted");
         } catch (error) {
             console.error("Error deleting session", error);
+            showToast(t.common?.error || "Error", "error");
+        } finally {
+            setSessionToDelete(null);
+        }
+    };
+
+    const handleOverwrite = async () => {
+        if (!sessionToOverwrite || !activeSession) return;
+        const id = sessionToOverwrite;
+        setIsOverwriting(true);
+        try {
+            const sessionData: Omit<Session, "id"> = {
+                ...activeSession,
+                name: activeSession.name,
+                description: activeSession.description,
+            };
+            await updateSessionAction(userId, id, sessionData);
+            // Update local state if needed
+            setSessions(sessions.map(s => s.id === id ? { ...sessionData, id } : s));
+            showToast("Session overwritten successfully");
+        } catch (error) {
+            console.error("Error overwriting session", error);
+            showToast(t.common?.error || "Error", "error");
+        } finally {
+            setIsOverwriting(false);
+            setSessionToOverwrite(null);
         }
     };
 
@@ -86,14 +113,33 @@ export function SessionsList({ userId, initialSessions, onSelect }: SessionsList
                                         <CardTitle className="text-xl group-hover:text-primary transition-colors line-clamp-1">
                                             {session.name}
                                         </CardTitle>
-                                        <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            onClick={(e) => handleDelete(session.id!, e)}
-                                            className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 hover:text-destructive hover:bg-destructive/10 shrink-0 transition-all"
-                                        >
-                                            <Trash2 className="w-4 h-4" />
-                                        </Button>
+                                        <div className="flex gap-1">
+                                            {activeSession && activeSession.id !== session.id && (
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setSessionToOverwrite(session.id!);
+                                                    }}
+                                                    className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 hover:text-primary hover:bg-primary/10 transition-all"
+                                                    title={t.session.overwrite}
+                                                >
+                                                    <Save className="w-4 h-4" />
+                                                </Button>
+                                            )}
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setSessionToDelete(session.id!);
+                                                }}
+                                                className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 hover:text-destructive hover:bg-destructive/10 shrink-0 transition-all"
+                                            >
+                                                <Trash2 className="w-4 h-4" />
+                                            </Button>
+                                        </div>
                                     </div>
                                     <CardDescription className="line-clamp-2 min-h-[40px]">
                                         {session.description || t.dashboard.noDescription}
@@ -170,6 +216,23 @@ export function SessionsList({ userId, initialSessions, onSelect }: SessionsList
                     </Card>
                 </motion.div>
             )}
+
+            <ConfirmDialog
+                isOpen={!!sessionToDelete}
+                title={t.session.confirmDelete}
+                message={t.session.confirmDeleteMsg}
+                onConfirm={handleDelete}
+                onCancel={() => setSessionToDelete(null)}
+            />
+
+            <ConfirmDialog
+                isOpen={!!sessionToOverwrite}
+                title={t.session.confirmOverwrite}
+                message={t.session.confirmOverwriteMsg}
+                confirmLabel={t.session.overwrite}
+                onConfirm={handleOverwrite}
+                onCancel={() => setSessionToOverwrite(null)}
+            />
         </div>
     );
 }

@@ -1,30 +1,31 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Session } from "@/types";
 import { deleteSession } from "@/app/actions/sessions";
-import { localDB } from "@/lib/storage/indexedDb";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Calendar, Users, CreditCard, Trash2, Sparkles } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
 import { formatCurrency } from "@/lib/utils";
+import { useAppStore } from "@/store/useAppStore";
 
 interface SessionsListProps {
     userId: string;
     initialSessions: Session[];
     onSelect: (session: Session) => void;
 }
-
 export function SessionsList({ userId, initialSessions, onSelect }: SessionsListProps) {
-    const [sessions, setSessions] = useState<Session[]>(initialSessions);
+    const { sessions, setSessions } = useAppStore();
     const { t } = useLanguage();
 
-    // Sync with parent prop when it changes (e.g. after save/delete/refresh)
+    // Initialize store with initialSessions if needed (though useCachedData will handle it)
     useEffect(() => {
-        setSessions(initialSessions);
-    }, [initialSessions]);
+        if (initialSessions.length > 0 && sessions.length === 0) {
+            setSessions(initialSessions);
+        }
+    }, [initialSessions, sessions.length, setSessions]);
 
     const handleDelete = async (id: string, e: React.MouseEvent) => {
         e.stopPropagation();
@@ -32,8 +33,7 @@ export function SessionsList({ userId, initialSessions, onSelect }: SessionsList
 
         try {
             await deleteSession(userId, id);
-            await localDB.deleteSession(id);
-            setSessions(prev => prev.filter(s => s.id !== id));
+            setSessions(sessions.filter(s => s.id !== id));
         } catch (error) {
             console.error("Error deleting session", error);
         }

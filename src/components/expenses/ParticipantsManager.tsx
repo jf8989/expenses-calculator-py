@@ -9,16 +9,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getAvatarGradient, getInitials } from "@/lib/avatarUtils";
 import { UserPlus, X, Users } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
+import { useAppStore } from "@/store/useAppStore";
 
 interface ParticipantsManagerProps {
     userId: string;
     initialParticipants: string[];
 }
-
-
-
 export function ParticipantsManager({ userId, initialParticipants }: ParticipantsManagerProps) {
-    const [participants, setParticipants] = useState<string[]>(initialParticipants);
+    const { participants, setParticipants } = useAppStore();
     const [newName, setNewName] = useState("");
     const [isAdding, setIsAdding] = useState(false);
     const { t } = useLanguage();
@@ -30,7 +28,7 @@ export function ParticipantsManager({ userId, initialParticipants }: Participant
         const name = newName.trim();
         try {
             await addParticipant(userId, name);
-            setParticipants(prev => [...prev, name].sort());
+            setParticipants([...participants, name].sort());
             setNewName("");
         } catch (error) {
             console.error("Error adding participant", error);
@@ -42,7 +40,7 @@ export function ParticipantsManager({ userId, initialParticipants }: Participant
     const handleRemove = async (name: string) => {
         try {
             await removeParticipant(userId, name);
-            setParticipants(prev => prev.filter(p => p !== name));
+            setParticipants(participants.filter(p => p !== name));
         } catch (error) {
             console.error("Error removing participant", error);
         }

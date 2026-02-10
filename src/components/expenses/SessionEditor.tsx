@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Session, Transaction } from "@/types";
 import { saveSession, updateSession } from "@/app/actions/sessions";
@@ -31,6 +31,7 @@ import {
 } from "lucide-react";
 import { getAvatarColor } from "@/lib/avatarUtils";
 import { useLanguage } from "@/context/LanguageContext";
+import { useAppStore } from "@/store/useAppStore";
 
 interface SessionEditorProps {
     userId: string;
@@ -48,30 +49,67 @@ const CURRENCY_OPTIONS = [
 ];
 
 export function SessionEditor({ userId, initialSession, participants, onSaved, onCancel }: SessionEditorProps) {
-    const [name, setName] = useState(initialSession?.name || "");
-    const [description, setDescription] = useState(initialSession?.description || "");
-    const [transactions, setTransactions] = useState<Transaction[]>(
-        initialSession?.transactions.map(tx => ({
-            ...tx,
-            splitWith: tx.splitWith || [],
-            currency: tx.currency || undefined,
-        })) || []
-    );
+    const {
+        activeSession,
+        setActiveSession,
+        updateActiveSession,
+        addTransaction: addStoreTransaction,
+        removeTransaction: removeStoreTransaction,
+        updateTransaction: updateStoreTransaction,
+    } = useAppStore();
+
+    const { t } = useLanguage();
+
+    // Local UI-only state
     const [isSaving, setIsSaving] = useState(false);
     const [showSettleUp, setShowSettleUp] = useState(false);
     const [bulkText, setBulkText] = useState("");
     const [showBulk, setShowBulk] = useState(false);
     const [saveSuccess, setSaveSuccess] = useState(false);
-    const { t } = useLanguage();
-
-    // Currency state
-    const [mainCurrency, setMainCurrency] = useState(initialSession?.mainCurrency || "USD");
-    const [secondaryCurrency, setSecondaryCurrency] = useState(initialSession?.secondaryCurrency || "");
-    const [currencies, setCurrencies] = useState<Record<string, number>>(
-        initialSession?.currencies || {}
-    );
     const [newCurrencyCode, setNewCurrencyCode] = useState("");
     const [newCurrencyRate, setNewCurrencyRate] = useState("");
+
+    // Initialize/Sync active session with initialSession
+    useEffect(() => {
+        if (initialSession) {
+            setActiveSession({
+                ...initialSession,
+                transactions: initialSession.transactions.map(tx => ({
+                    ...tx,
+                    splitWith: tx.splitWith || [],
+                    currency: tx.currency || undefined,
+                }))
+            });
+        } else if (!activeSession) {
+            setActiveSession({
+                name: "",
+                description: "",
+                transactions: [],
+                participants: participants,
+                mainCurrency: "USD",
+                currencies: {},
+            });
+        }
+    }, [initialSession, setActiveSession, participants]);
+
+    // Computed states from activeSession
+    const name = activeSession?.name || "";
+    const description = activeSession?.description || "";
+    const transactions = activeSession?.transactions || [];
+    const mainCurrency = activeSession?.mainCurrency || "USD";
+    const secondaryCurrency = activeSession?.secondaryCurrency || "";
+    const currencies = activeSession?.currencies || {};
+
+    // Helper setters for activeSession fields
+    const setName = (newName: string) => updateActiveSession({ name: newName });
+    const setDescription = (newDesc: string) => updateActiveSession({ description: newDesc });
+    const setSecondaryCurrency = (newSecondary: string) => updateActiveSession({ secondaryCurrency: newSecondary });
+    const setCurrencies = (newCurrencies: Record<string, number> | ((prev: Record<string, number>) => Record<string, number>)) => {
+        updateActiveSession(prev => ({
+            ...prev,
+            currencies: typeof newCurrencies === "function" ? newCurrencies(prev.currencies) : newCurrencies
+        }));
+    };
 
     // All available currencies for this session (for per-transaction toggle)
     const availableCurrencies = useMemo(() => {
@@ -85,37 +123,35 @@ export function SessionEditor({ userId, initialSession, participants, onSaved, o
     const { summaries, debts } = useMemo(() => {
         const s = calculateSummary(
             transactions,
-            initialSession?.participants || participants,
+            activeSession?.participants || participants,
             mainCurrency,
             currencies,
         );
         const d = calculateDebts(s);
         return { summaries: s, debts: d };
-    }, [transactions, participants, initialSession, mainCurrency, currencies]);
+    }, [transactions, participants, activeSession?.participants, mainCurrency, currencies]);
 
     const fmt = (amount: number) => formatCurrency(Math.abs(amount), mainCurrency);
 
     const handleSave = async () => {
-        if (!name.trim()) return;
+        if (!name.trim() || !activeSession) return;
 
         setIsSaving(true);
         const sessionData: Omit<Session, "id"> = {
+            ...activeSession,
             name: name.trim(),
             description: description.trim(),
-            transactions,
-            participants: initialSession?.participants || participants,
-            mainCurrency,
-            secondaryCurrency: secondaryCurrency || undefined,
-            currencies,
         };
 
         try {
-            if (initialSession?.id) {
-                await updateSession(userId, initialSession.id, sessionData);
-                onSaved(initialSession.id);
+            if (activeSession.id) {
+                await updateSession(userId, activeSession.id, sessionData);
+                onSaved(activeSession.id);
             } else {
                 const newId = await saveSession(userId, sessionData);
                 onSaved(newId);
+                // Update active session with the new ID
+                updateActiveSession({ id: newId });
             }
             setSaveSuccess(true);
             setTimeout(() => setSaveSuccess(false), 3000);
@@ -135,13 +171,11 @@ export function SessionEditor({ userId, initialSession, participants, onSaved, o
             date: new Date().toISOString().split('T')[0],
             currency: mainCurrency,
         };
-        setTransactions(prev => [newTx, ...prev]);
+        addStoreTransaction(newTx);
     };
 
     const updateTransaction = <K extends keyof Transaction>(index: number, field: K, value: Transaction[K]) => {
-        const newTxs = [...transactions];
-        newTxs[index] = { ...newTxs[index], [field]: value };
-        setTransactions(newTxs);
+        updateStoreTransaction(index, { [field]: value });
     };
 
     const toggleSplitParticipant = (txIdx: number, pName: string) => {
@@ -154,13 +188,13 @@ export function SessionEditor({ userId, initialSession, participants, onSaved, o
     };
 
     const removeTransaction = (index: number) => {
-        setTransactions(prev => prev.filter((_, i) => i !== index));
+        removeStoreTransaction(index);
     };
 
     const handleBulkImport = () => {
         const parsed = parseTransactions(bulkText, participants[0] || "", participants);
         if (parsed.length > 0) {
-            setTransactions(prev => [...parsed, ...prev]);
+            parsed.forEach(tx => addStoreTransaction(tx));
             setBulkText("");
             setShowBulk(false);
         }
@@ -177,36 +211,52 @@ export function SessionEditor({ userId, initialSession, participants, onSaved, o
         const rate = parseFloat(newCurrencyRate);
         if (!code || isNaN(rate) || rate <= 0) return;
         if (code === mainCurrency) return;
-        setCurrencies(prev => ({ ...prev, [code]: rate }));
+        updateActiveSession(prev => ({
+            ...prev,
+            currencies: { ...prev.currencies, [code]: rate }
+        }));
         setNewCurrencyCode("");
         setNewCurrencyRate("");
     };
 
     const removeExtraCurrency = (code: string) => {
-        setCurrencies(prev => {
-            const next = { ...prev };
-            delete next[code];
-            return next;
+        updateActiveSession(prev => {
+            const nextCurrencies = { ...prev.currencies };
+            delete nextCurrencies[code];
+
+            // Reset any transactions using this currency back to main
+            const nextTransactions = prev.transactions.map(tx =>
+                tx.currency === code ? { ...tx, currency: mainCurrency } : tx
+            );
+
+            return {
+                ...prev,
+                currencies: nextCurrencies,
+                transactions: nextTransactions
+            };
         });
-        // Reset any transactions using this currency back to main
-        setTransactions(prev => prev.map(tx =>
-            tx.currency === code ? { ...tx, currency: mainCurrency } : tx
-        ));
     };
 
     // When main currency changes, update secondary's rate context
     const handleMainCurrencyChange = (newMain: string) => {
-        // If the new main was in extra currencies, remove it
-        if (currencies[newMain]) {
-            const newCurrencies = { ...currencies };
-            delete newCurrencies[newMain];
-            setCurrencies(newCurrencies);
-        }
-        setMainCurrency(newMain);
-        // Reset transaction currencies that were the old main
-        setTransactions(prev => prev.map(tx =>
-            (!tx.currency || tx.currency === mainCurrency) ? { ...tx, currency: newMain } : tx
-        ));
+        updateActiveSession(prev => {
+            const nextCurrencies = { ...prev.currencies };
+            if (nextCurrencies[newMain]) {
+                delete nextCurrencies[newMain];
+            }
+
+            // Reset transaction currencies that were the old main
+            const nextTransactions = prev.transactions.map(tx =>
+                (!tx.currency || tx.currency === mainCurrency) ? { ...tx, currency: newMain } : tx
+            );
+
+            return {
+                ...prev,
+                mainCurrency: newMain,
+                currencies: nextCurrencies,
+                transactions: nextTransactions
+            };
+        });
     };
 
     return (

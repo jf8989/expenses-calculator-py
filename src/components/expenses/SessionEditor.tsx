@@ -88,7 +88,11 @@ export function SessionEditor({ userId, initialSession, participants, onSaved, o
 
     // Initialize/Sync active session with initialSession
     useEffect(() => {
-        if (initialSession) {
+        // Only initialize if we don't have an active session yet,
+        // OR if the initialSession id is different from the active one (switching sessions)
+        const isDifferentSession = initialSession && activeSession?.id !== initialSession.id;
+
+        if (initialSession && (!activeSession || isDifferentSession)) {
             setActiveSession({
                 ...initialSession,
                 mainCurrency: initialSession.mainCurrency || "USD",
@@ -108,7 +112,7 @@ export function SessionEditor({ userId, initialSession, participants, onSaved, o
                 currencies: {},
             });
         }
-    }, [initialSession, setActiveSession, participants]);
+    }, [initialSession, setActiveSession, participants, activeSession?.id]);
 
     // Computed states from activeSession
     const name = activeSession?.name || "";

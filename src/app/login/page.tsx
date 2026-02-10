@@ -11,11 +11,13 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Spinner } from "@/components/icons/spinner";
 import { Header } from "@/components/ui/header";
 import { Shield, Sparkles } from "lucide-react";
+import { useLanguage } from "@/context/LanguageContext";
 
 export default function LoginPage() {
     const router = useRouter();
     const { user, isFirebaseActive } = useAuth();
     const [isSigningIn, setIsSigningIn] = useState(false);
+    const { t } = useLanguage();
 
     // If already logged in, redirect to home or dashboard
     useEffect(() => {
@@ -109,10 +111,10 @@ export default function LoginPage() {
                             </motion.div>
 
                             <CardTitle className="text-3xl font-bold tracking-tight">
-                                Welcome <span className="gradient-text">Back</span>
+                                {t.login.welcomeTitle} <span className="gradient-text">{t.login.welcomeHighlight}</span>
                             </CardTitle>
                             <CardDescription className="text-muted-foreground mt-2 max-w-[280px] mx-auto">
-                                Sign in to manage your expenses and split bills with ease.
+                                {t.login.loginDesc}
                             </CardDescription>
                         </CardHeader>
 
@@ -124,7 +126,7 @@ export default function LoginPage() {
                                 <div className="relative flex justify-center text-xs uppercase">
                                     <span className="bg-card/80 backdrop-blur-sm px-3 py-1 rounded-full text-muted-foreground font-medium flex items-center gap-1.5">
                                         <Shield className="w-3 h-3" />
-                                        Secure Authentication
+                                        {t.login.secureAuth}
                                     </span>
                                 </div>
                             </div>
@@ -138,7 +140,7 @@ export default function LoginPage() {
                                 {isSigningIn ? (
                                     <>
                                         <Spinner className="w-6 h-6" />
-                                        <span className="font-medium">Connecting...</span>
+                                        <span className="font-medium">{t.login.connecting}</span>
                                     </>
                                 ) : (
                                     <>
@@ -160,7 +162,7 @@ export default function LoginPage() {
                                                 fill="#EA4335"
                                             />
                                         </svg>
-                                        <span className="font-medium">Continue with Google</span>
+                                        <span className="font-medium">{t.login.continueGoogle}</span>
                                     </>
                                 )}
                             </Button>
@@ -171,7 +173,7 @@ export default function LoginPage() {
                                 transition={{ delay: 0.5 }}
                                 className="text-center text-sm text-muted-foreground"
                             >
-                                Don&apos;t have an account? No worries, we&apos;ll create one for you automatically.
+                                {t.login.noAccount}
                             </motion.div>
                         </CardContent>
                     </Card>
@@ -185,15 +187,15 @@ export default function LoginPage() {
                     >
                         <span className="flex items-center gap-1.5">
                             <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                            256-bit encryption
+                            {t.login.encryption}
                         </span>
                         <span className="flex items-center gap-1.5">
                             <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                            Firebase secure
+                            {t.login.firebaseSecure}
                         </span>
                         <span className="flex items-center gap-1.5">
                             <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                            No password needed
+                            {t.login.noPassword}
                         </span>
                     </motion.div>
                 </motion.div>

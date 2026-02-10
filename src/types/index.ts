@@ -9,6 +9,7 @@ export interface Transaction {
   payer: string;
   splitWith: string[];
   date: string;
+  currency?: string; // currency code for this transaction (defaults to session's mainCurrency)
 }
 
 export interface Session {
@@ -17,7 +18,9 @@ export interface Session {
   description: string;
   transactions: Transaction[];
   participants: string[];
-  currencies: Record<string, number>;
+  mainCurrency: string;
+  secondaryCurrency?: string;
+  currencies: Record<string, number>; // additional currencies with exchange rates relative to mainCurrency
   createdAt?: Timestamp;
   lastUpdatedAt?: Timestamp;
 }

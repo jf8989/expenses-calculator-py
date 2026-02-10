@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { calculateSummary, calculateDebts } from "@/lib/calculations";
 import { SettleUp } from "./SettleUp";
 import { parseTransactions } from "@/lib/parser";
+import { formatCurrency } from "@/lib/utils";
 import {
     ArrowLeft,
     Save,
@@ -24,9 +25,12 @@ import {
     TrendingDown,
     CheckSquare,
     Square,
-    CheckCircle2
+    CheckCircle2,
+    Coins,
+    X,
 } from "lucide-react";
 import { getAvatarColor } from "@/lib/avatarUtils";
+import { useLanguage } from "@/context/LanguageContext";
 
 interface SessionEditorProps {
     userId: string;
@@ -36,7 +40,12 @@ interface SessionEditorProps {
     onCancel: () => void;
 }
 
-
+// Common currencies
+const CURRENCY_OPTIONS = [
+    "USD", "EUR", "GBP", "COP", "MXN", "ARS", "BRL", "JPY",
+    "CAD", "AUD", "CHF", "INR", "CNY", "KRW", "SEK", "NOK",
+    "DKK", "NZD", "ZAR", "CLP",
+];
 
 export function SessionEditor({ userId, initialSession, participants, onSaved, onCancel }: SessionEditorProps) {
     const [name, setName] = useState(initialSession?.name || "");
@@ -44,7 +53,8 @@ export function SessionEditor({ userId, initialSession, participants, onSaved, o
     const [transactions, setTransactions] = useState<Transaction[]>(
         initialSession?.transactions.map(tx => ({
             ...tx,
-            splitWith: tx.splitWith || [] // Ensure splitWith is always an array
+            splitWith: tx.splitWith || [],
+            currency: tx.currency || undefined,
         })) || []
     );
     const [isSaving, setIsSaving] = useState(false);
@@ -52,13 +62,38 @@ export function SessionEditor({ userId, initialSession, participants, onSaved, o
     const [bulkText, setBulkText] = useState("");
     const [showBulk, setShowBulk] = useState(false);
     const [saveSuccess, setSaveSuccess] = useState(false);
+    const { t } = useLanguage();
 
-    // Calculate summaries and debts memoized
+    // Currency state
+    const [mainCurrency, setMainCurrency] = useState(initialSession?.mainCurrency || "USD");
+    const [secondaryCurrency, setSecondaryCurrency] = useState(initialSession?.secondaryCurrency || "");
+    const [currencies, setCurrencies] = useState<Record<string, number>>(
+        initialSession?.currencies || {}
+    );
+    const [newCurrencyCode, setNewCurrencyCode] = useState("");
+    const [newCurrencyRate, setNewCurrencyRate] = useState("");
+
+    // All available currencies for this session (for per-transaction toggle)
+    const availableCurrencies = useMemo(() => {
+        const set = new Set<string>([mainCurrency]);
+        if (secondaryCurrency) set.add(secondaryCurrency);
+        Object.keys(currencies).forEach(c => set.add(c));
+        return Array.from(set);
+    }, [mainCurrency, secondaryCurrency, currencies]);
+
+    // Calculate summaries and debts memoized (with currency conversion)
     const { summaries, debts } = useMemo(() => {
-        const s = calculateSummary(transactions, initialSession?.participants || participants);
+        const s = calculateSummary(
+            transactions,
+            initialSession?.participants || participants,
+            mainCurrency,
+            currencies,
+        );
         const d = calculateDebts(s);
         return { summaries: s, debts: d };
-    }, [transactions, participants, initialSession]);
+    }, [transactions, participants, initialSession, mainCurrency, currencies]);
+
+    const fmt = (amount: number) => formatCurrency(Math.abs(amount), mainCurrency);
 
     const handleSave = async () => {
         if (!name.trim()) return;
@@ -69,7 +104,9 @@ export function SessionEditor({ userId, initialSession, participants, onSaved, o
             description: description.trim(),
             transactions,
             participants: initialSession?.participants || participants,
-            currencies: initialSession?.currencies || { "USD": 1 },
+            mainCurrency,
+            secondaryCurrency: secondaryCurrency || undefined,
+            currencies,
         };
 
         try {
@@ -96,6 +133,7 @@ export function SessionEditor({ userId, initialSession, participants, onSaved, o
             payer: participants[0] || "",
             splitWith: [...participants],
             date: new Date().toISOString().split('T')[0],
+            currency: mainCurrency,
         };
         setTransactions(prev => [newTx, ...prev]);
     };
@@ -108,7 +146,7 @@ export function SessionEditor({ userId, initialSession, participants, onSaved, o
 
     const toggleSplitParticipant = (txIdx: number, pName: string) => {
         const tx = transactions[txIdx];
-        const currentSplitWith = tx.splitWith || []; // Handle undefined
+        const currentSplitWith = tx.splitWith || [];
         const splitWith = currentSplitWith.includes(pName)
             ? currentSplitWith.filter(p => p !== pName)
             : [...currentSplitWith, pName];
@@ -134,6 +172,43 @@ export function SessionEditor({ userId, initialSession, participants, onSaved, o
         updateTransaction(txIdx, "splitWith", allSelected ? [] : [...participants]);
     };
 
+    const addExtraCurrency = () => {
+        const code = newCurrencyCode.trim().toUpperCase();
+        const rate = parseFloat(newCurrencyRate);
+        if (!code || isNaN(rate) || rate <= 0) return;
+        if (code === mainCurrency) return;
+        setCurrencies(prev => ({ ...prev, [code]: rate }));
+        setNewCurrencyCode("");
+        setNewCurrencyRate("");
+    };
+
+    const removeExtraCurrency = (code: string) => {
+        setCurrencies(prev => {
+            const next = { ...prev };
+            delete next[code];
+            return next;
+        });
+        // Reset any transactions using this currency back to main
+        setTransactions(prev => prev.map(tx =>
+            tx.currency === code ? { ...tx, currency: mainCurrency } : tx
+        ));
+    };
+
+    // When main currency changes, update secondary's rate context
+    const handleMainCurrencyChange = (newMain: string) => {
+        // If the new main was in extra currencies, remove it
+        if (currencies[newMain]) {
+            const newCurrencies = { ...currencies };
+            delete newCurrencies[newMain];
+            setCurrencies(newCurrencies);
+        }
+        setMainCurrency(newMain);
+        // Reset transaction currencies that were the old main
+        setTransactions(prev => prev.map(tx =>
+            (!tx.currency || tx.currency === mainCurrency) ? { ...tx, currency: newMain } : tx
+        ));
+    };
+
     return (
         <div className="space-y-6 max-w-5xl mx-auto">
             {/* Sticky Action Bar */}
@@ -144,7 +219,7 @@ export function SessionEditor({ userId, initialSession, participants, onSaved, o
             >
                 <Button variant="ghost" onClick={onCancel} className="rounded-xl gap-2">
                     <ArrowLeft className="w-4 h-4" />
-                    Dashboard
+                    {t.session.dashboard}
                 </Button>
                 <div className="flex gap-3">
                     <Button
@@ -153,7 +228,7 @@ export function SessionEditor({ userId, initialSession, participants, onSaved, o
                         className="rounded-xl gap-2 flex-1 sm:flex-none"
                     >
                         <BarChart3 className="w-4 h-4" />
-                        {showSettleUp ? "Edit" : "Settle Up"}
+                        {showSettleUp ? t.session.edit : t.session.settleUp}
                     </Button>
                     <Button
                         onClick={handleSave}
@@ -162,7 +237,7 @@ export function SessionEditor({ userId, initialSession, participants, onSaved, o
                         className="rounded-xl gap-2 flex-1 sm:flex-none"
                     >
                         <Save className="w-4 h-4" />
-                        {isSaving ? "Saving..." : "Save"}
+                        {isSaving ? t.session.saving : t.session.save}
                     </Button>
                 </div>
             </motion.div>
@@ -177,7 +252,7 @@ export function SessionEditor({ userId, initialSession, participants, onSaved, o
                         className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2.5 px-5 py-3 rounded-2xl bg-emerald-500 text-white shadow-2xl shadow-emerald-500/30 font-medium"
                     >
                         <CheckCircle2 className="w-5 h-5" />
-                        Session saved successfully!
+                        {t.session.savedSuccess}
                     </motion.div>
                 )}
             </AnimatePresence>
@@ -192,10 +267,10 @@ export function SessionEditor({ userId, initialSession, participants, onSaved, o
                         className="space-y-8"
                     >
                         <div className="text-center space-y-2">
-                            <h2 className="text-3xl font-bold tracking-tight">Financial <span className="gradient-text">Summary</span></h2>
-                            <p className="text-muted-foreground">Here is how to settle up the expenses.</p>
+                            <h2 className="text-3xl font-bold tracking-tight">{t.settle.financialSummary} <span className="gradient-text">{t.settle.summaryHighlight}</span></h2>
+                            <p className="text-muted-foreground">{t.settle.howToSettle}</p>
                         </div>
-                        <SettleUp summaries={summaries} debts={debts} />
+                        <SettleUp summaries={summaries} debts={debts} mainCurrency={mainCurrency} />
                     </motion.div>
                 ) : (
                     <motion.div
@@ -211,24 +286,145 @@ export function SessionEditor({ userId, initialSession, participants, onSaved, o
                             <CardHeader>
                                 <CardTitle className="text-2xl font-bold flex items-center gap-2">
                                     <FileText className="w-6 h-6 text-primary" />
-                                    {initialSession ? "Edit" : "Create"} <span className="gradient-text">Session</span>
+                                    {initialSession ? t.session.edit : t.session.create} <span className="gradient-text">{t.session.sessionLabel}</span>
                                 </CardTitle>
                             </CardHeader>
                             <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <Input
-                                    label="Session Name"
-                                    placeholder="e.g., Road Trip 2024"
+                                    label={t.session.sessionName}
+                                    placeholder={t.session.sessionNamePlaceholder}
                                     value={name}
                                     onChange={(e) => setName(e.target.value)}
                                     className="bg-background/50"
                                 />
                                 <Textarea
-                                    label="Description"
-                                    placeholder="Additional notes..."
+                                    label={t.session.description}
+                                    placeholder={t.session.descriptionPlaceholder}
                                     value={description}
                                     onChange={(e) => setDescription(e.target.value)}
                                     className="bg-background/50 min-h-[48px]"
                                 />
+                            </CardContent>
+                        </Card>
+
+                        {/* Currency Settings Card */}
+                        <Card className="border-border/50 bg-card/50 backdrop-blur-xl shadow-xl overflow-hidden" hover={false}>
+                            <div className="h-1.5 w-full bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-500" />
+                            <CardHeader>
+                                <CardTitle className="text-xl font-bold flex items-center gap-2">
+                                    <Coins className="w-5 h-5 text-amber-500" />
+                                    {t.session.currencySettings}
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="space-y-6">
+                                {/* Main & Secondary Currency */}
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-2">{t.session.mainCurrency}</label>
+                                        <select
+                                            className="w-full h-12 rounded-xl bg-background/50 border-2 border-border px-4 text-sm focus:border-primary focus:shadow-[0_0_0_4px_hsl(var(--primary)/0.1)] outline-none transition-all hover:border-muted-foreground/30"
+                                            value={mainCurrency}
+                                            onChange={(e) => handleMainCurrencyChange(e.target.value)}
+                                        >
+                                            {CURRENCY_OPTIONS.map(c => <option key={c} value={c}>{c}</option>)}
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-2">{t.session.secondaryCurrency}</label>
+                                        <select
+                                            className="w-full h-12 rounded-xl bg-background/50 border-2 border-border px-4 text-sm focus:border-primary focus:shadow-[0_0_0_4px_hsl(var(--primary)/0.1)] outline-none transition-all hover:border-muted-foreground/30"
+                                            value={secondaryCurrency}
+                                            onChange={(e) => {
+                                                const val = e.target.value;
+                                                setSecondaryCurrency(val);
+                                                // Auto-add to currencies if not already there (with rate 1 as placeholder)
+                                                if (val && val !== mainCurrency && !currencies[val]) {
+                                                    setCurrencies(prev => ({ ...prev, [val]: 1 }));
+                                                }
+                                            }}
+                                        >
+                                            <option value="">—</option>
+                                            {CURRENCY_OPTIONS.filter(c => c !== mainCurrency).map(c => <option key={c} value={c}>{c}</option>)}
+                                        </select>
+                                    </div>
+                                </div>
+
+                                {/* Extra Currencies with Rates */}
+                                <div className="space-y-3">
+                                    {Object.entries(currencies).length > 0 && (
+                                        <div className="space-y-2">
+                                            {Object.entries(currencies).map(([code, rate]) => (
+                                                <div key={code} className="flex items-center gap-3 p-3 rounded-xl bg-muted/30 border border-border/50">
+                                                    <span className="text-sm font-bold text-primary min-w-[50px]">{code}</span>
+                                                    <div className="flex items-center gap-2 flex-1">
+                                                        <input
+                                                            type="number"
+                                                            value={rate}
+                                                            onChange={(e) => {
+                                                                const newRate = parseFloat(e.target.value) || 0;
+                                                                setCurrencies(prev => ({ ...prev, [code]: newRate }));
+                                                            }}
+                                                            className="w-28 h-9 rounded-lg bg-background/70 border border-border px-3 text-sm outline-none focus:border-primary transition-colors tabular-nums"
+                                                            step="any"
+                                                            min="0"
+                                                        />
+                                                        <span className="text-xs text-muted-foreground whitespace-nowrap">{t.session.rateHint} {mainCurrency}</span>
+                                                    </div>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => removeExtraCurrency(code)}
+                                                        className="p-1.5 rounded-lg text-destructive hover:bg-destructive/10 transition-colors"
+                                                    >
+                                                        <X className="w-3.5 h-3.5" />
+                                                    </button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+
+                                    {/* Add New Currency */}
+                                    <div className="flex items-end gap-3">
+                                        <div className="flex-1">
+                                            <label className="block text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-2">{t.session.currency}</label>
+                                            <select
+                                                className="w-full h-10 rounded-xl bg-background/50 border-2 border-border px-3 text-sm outline-none focus:border-primary transition-all"
+                                                value={newCurrencyCode}
+                                                onChange={(e) => setNewCurrencyCode(e.target.value)}
+                                            >
+                                                <option value="">—</option>
+                                                {CURRENCY_OPTIONS.filter(c => c !== mainCurrency && !currencies[c]).map(c => (
+                                                    <option key={c} value={c}>{c}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        <div className="flex-1">
+                                            <label className="block text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-2">{t.session.exchangeRate}</label>
+                                            <input
+                                                type="number"
+                                                placeholder="0.00"
+                                                value={newCurrencyRate}
+                                                onChange={(e) => setNewCurrencyRate(e.target.value)}
+                                                className="w-full h-10 rounded-xl bg-background/50 border-2 border-border px-3 text-sm outline-none focus:border-primary transition-all tabular-nums"
+                                                step="any"
+                                                min="0"
+                                            />
+                                        </div>
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={addExtraCurrency}
+                                            disabled={!newCurrencyCode || !newCurrencyRate}
+                                            className="rounded-xl gap-1 h-10"
+                                        >
+                                            <Plus className="w-3.5 h-3.5" />
+                                            {t.session.addCurrency}
+                                        </Button>
+                                    </div>
+
+                                    {Object.keys(currencies).length === 0 && (
+                                        <p className="text-xs text-muted-foreground text-center py-2">{t.session.noCurrencyHint}</p>
+                                    )}
+                                </div>
                             </CardContent>
                         </Card>
 
@@ -253,8 +449,12 @@ export function SessionEditor({ userId, initialSession, participants, onSaved, o
                                                 <TrendingDown className="w-3.5 h-3.5 text-red-500" />
                                             )}
                                         </div>
-                                        <div className={`text-xl font-bold tabular-nums ${isPositive ? "text-emerald-500" : "text-red-500"}`}>
-                                            {isPositive ? "+" : ""}${s.balance.toFixed(2)}
+                                        <div className={`text-lg font-bold tabular-nums ${isPositive ? "text-emerald-500" : "text-red-500"}`}>
+                                            {isPositive ? t.settle.getsBack : t.settle.owes} {fmt(s.balance)}
+                                        </div>
+                                        <div className="flex gap-3 mt-1 text-[10px] text-muted-foreground">
+                                            <span>{t.settle.paid}: {fmt(s.totalPaid)}</span>
+                                            <span>{t.settle.fairShare}: {fmt(s.fairShare)}</span>
                                         </div>
                                     </motion.div>
                                 );
@@ -267,17 +467,17 @@ export function SessionEditor({ userId, initialSession, participants, onSaved, o
                                 <div className="flex flex-col">
                                     <h3 className="text-xl font-bold flex items-center gap-2">
                                         <span className="w-2 h-6 rounded-full bg-gradient-to-b from-primary to-accent" />
-                                        Transactions
+                                        {t.session.transactions}
                                     </h3>
-                                    <p className="text-sm text-muted-foreground">{transactions.length} items recorded</p>
+                                    <p className="text-sm text-muted-foreground">{transactions.length} {t.session.itemsRecorded}</p>
                                 </div>
                                 <div className="flex gap-2 w-full sm:w-auto">
                                     <Button variant="outline" onClick={() => setShowBulk(!showBulk)} className="rounded-xl flex-1 sm:flex-none">
-                                        {showBulk ? "Cancel" : "Bulk Import"}
+                                        {showBulk ? t.session.cancel : t.session.bulkImport}
                                     </Button>
                                     <Button onClick={addTransaction} variant="gradient" className="rounded-xl gap-2 flex-1 sm:flex-none">
                                         <Plus className="w-4 h-4" />
-                                        Add Item
+                                        {t.session.addItem}
                                     </Button>
                                 </div>
                             </div>
@@ -300,8 +500,8 @@ export function SessionEditor({ userId, initialSession, participants, onSaved, o
                                                     className="min-h-[150px] font-mono text-sm"
                                                 />
                                                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-                                                    <p className="text-xs text-muted-foreground">Format: 25/03/2024 : Coffee - 15.50</p>
-                                                    <Button onClick={handleBulkImport} disabled={!bulkText.trim()}>Import Transactions</Button>
+                                                    <p className="text-xs text-muted-foreground">{t.session.bulkFormat}</p>
+                                                    <Button onClick={handleBulkImport} disabled={!bulkText.trim()}>{t.session.importTransactions}</Button>
                                                 </div>
                                             </CardContent>
                                         </Card>
@@ -322,20 +522,33 @@ export function SessionEditor({ userId, initialSession, participants, onSaved, o
                                         <div className="flex flex-wrap gap-6 items-start">
                                             <div className="flex-1 min-w-[250px] space-y-4">
                                                 <Input
-                                                    label="Description"
-                                                    placeholder="What was bought?"
+                                                    label={t.session.description}
+                                                    placeholder={t.session.whatWasBought}
                                                     value={tx.description}
                                                     onChange={(e) => updateTransaction(idx, "description", e.target.value)}
                                                 />
-                                                <div className="grid grid-cols-2 gap-4">
+                                                <div className="grid grid-cols-3 gap-4">
                                                     <Input
-                                                        label="Amount"
+                                                        label={t.session.amount}
                                                         type="number"
                                                         value={tx.amount || ""}
                                                         onChange={(e) => updateTransaction(idx, "amount", parseFloat(e.target.value) || 0)}
                                                     />
+                                                    {/* Per-transaction currency toggle */}
+                                                    {availableCurrencies.length > 1 && (
+                                                        <div>
+                                                            <label className="block text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-2">{t.session.currency}</label>
+                                                            <select
+                                                                className="w-full h-12 rounded-xl bg-background/50 border-2 border-border px-3 text-sm focus:border-primary focus:shadow-[0_0_0_4px_hsl(var(--primary)/0.1)] outline-none transition-all hover:border-muted-foreground/30"
+                                                                value={tx.currency || mainCurrency}
+                                                                onChange={(e) => updateTransaction(idx, "currency", e.target.value)}
+                                                            >
+                                                                {availableCurrencies.map(c => <option key={c} value={c}>{c}</option>)}
+                                                            </select>
+                                                        </div>
+                                                    )}
                                                     <div>
-                                                        <label className="block text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-2">Paid By</label>
+                                                        <label className="block text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-2">{t.session.paidBy}</label>
                                                         <select
                                                             className="w-full h-12 rounded-xl bg-background/50 border-2 border-border px-4 text-sm focus:border-primary focus:shadow-[0_0_0_4px_hsl(var(--primary)/0.1)] outline-none transition-all hover:border-muted-foreground/30"
                                                             value={tx.payer}
@@ -349,11 +562,11 @@ export function SessionEditor({ userId, initialSession, participants, onSaved, o
 
                                             <div className="min-w-[200px] bg-muted/30 p-4 rounded-xl border border-border/50">
                                                 <div className="flex justify-between items-center mb-3">
-                                                    <label className="block text-xs font-semibold uppercase tracking-widest text-muted-foreground">Split With</label>
+                                                    <label className="block text-xs font-semibold uppercase tracking-widest text-muted-foreground">{t.session.splitWith}</label>
                                                     <div className="flex items-center gap-2">
                                                         {tx.amount > 0 && tx.splitWith?.length > 0 && (
                                                             <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary">
-                                                                ${(tx.amount / (tx.splitWith?.length || 1)).toFixed(2)} each
+                                                                {formatCurrency(tx.amount / (tx.splitWith?.length || 1), tx.currency || mainCurrency)} {t.session.each}
                                                             </span>
                                                         )}
                                                         <button
@@ -362,9 +575,9 @@ export function SessionEditor({ userId, initialSession, participants, onSaved, o
                                                             className="flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-muted/50 text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors"
                                                         >
                                                             {participants.every(p => tx.splitWith?.includes(p)) ? (
-                                                                <><Square className="w-2.5 h-2.5" /> None</>
+                                                                <><Square className="w-2.5 h-2.5" /> {t.session.none}</>
                                                             ) : (
-                                                                <><CheckSquare className="w-2.5 h-2.5" /> All</>
+                                                                <><CheckSquare className="w-2.5 h-2.5" /> {t.session.all}</>
                                                             )}
                                                         </button>
                                                     </div>
@@ -400,7 +613,7 @@ export function SessionEditor({ userId, initialSession, participants, onSaved, o
                                         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pt-4 border-t border-border/50">
                                             <span className="text-xs text-muted-foreground flex items-center gap-1.5">
                                                 <Calendar className="w-3.5 h-3.5" />
-                                                Added on {new Date(tx.date).toLocaleDateString()}
+                                                {t.session.addedOn} {new Date(tx.date).toLocaleDateString()}
                                             </span>
                                             <Button
                                                 variant="ghost"
@@ -409,7 +622,7 @@ export function SessionEditor({ userId, initialSession, participants, onSaved, o
                                                 className="text-destructive hover:bg-destructive/10 rounded-xl gap-2"
                                             >
                                                 <Trash2 className="w-4 h-4" />
-                                                Remove
+                                                {t.session.remove}
                                             </Button>
                                         </div>
                                     </motion.div>
@@ -425,7 +638,7 @@ export function SessionEditor({ userId, initialSession, participants, onSaved, o
                                     <div className="w-16 h-16 rounded-2xl bg-muted/50 flex items-center justify-center">
                                         <FileText className="w-8 h-8 text-muted-foreground" />
                                     </div>
-                                    <p className="text-muted-foreground">No transactions yet. Add your first expense!</p>
+                                    <p className="text-muted-foreground">{t.session.noTransactions}</p>
                                 </motion.div>
                             )}
                         </div>

@@ -1,7 +1,36 @@
 import admin from "@/lib/firebase/admin";
-import { Session, UserData } from "@/types";
+import { Session, Transaction, UserData } from "@/types";
 
 const db = admin.firestore();
+
+/**
+ * Maps legacy Firestore transaction data (which uses `assigned_to`) to the
+ * app's Transaction interface (which uses `payer` and `splitWith`).
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const normalizeTransaction = (raw: any): Transaction => {
+  // If `payer` already exists, use the new format as-is
+  if (raw.payer !== undefined) {
+    return {
+      description: raw.description || "",
+      amount: Number(raw.amount) || 0,
+      payer: raw.payer,
+      splitWith: raw.splitWith || [],
+      date: raw.date || "",
+    };
+  }
+
+  // Legacy format: `assigned_to` is an array of participant names
+  // The first entry is the payer; all entries share the split
+  const assignedTo: string[] = raw.assigned_to || [];
+  return {
+    description: raw.description || "",
+    amount: Number(raw.amount) || 0,
+    payer: assignedTo[0] || "",
+    splitWith: assignedTo.length > 0 ? assignedTo : [],
+    date: raw.date || "",
+  };
+};
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const serializeTimestamps = (data: any): any => {
@@ -85,12 +114,17 @@ export const firestoreService = {
       .orderBy("createdAt", "desc")
       .get();
 
-    return sessionsSnapshot.docs.map((doc) =>
-      serializeTimestamps({
+    return sessionsSnapshot.docs.map((doc) => {
+      const raw = serializeTimestamps({
         id: doc.id,
         ...doc.data(),
-      }),
-    ) as Session[];
+      });
+      // Normalize transactions from legacy format if needed
+      if (raw.transactions && Array.isArray(raw.transactions)) {
+        raw.transactions = raw.transactions.map(normalizeTransaction);
+      }
+      return raw as Session;
+    });
   },
 
   async saveSession(userId: string, session: Omit<Session, "id">) {

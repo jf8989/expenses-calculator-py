@@ -14,6 +14,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ParticlesBackground } from "@/components/ui/particles-background";
 import { useCachedData } from "@/hooks/useCachedData";
 import { useMounted } from "@/hooks/useMounted";
+import { useLanguage } from "@/context/LanguageContext";
 import { RefreshCw, Zap, Cloud, Palette, Plus } from "lucide-react";
 
 export default function Home() {
@@ -27,6 +28,7 @@ export default function Home() {
   } = useCachedData(user?.uid);
   const [activeSession, setActiveSession] = useState<Session | null>(null);
   const [isCreating, setIsCreating] = useState(false);
+  const { t } = useLanguage();
 
   const mounted = useMounted();
 
@@ -45,10 +47,10 @@ export default function Home() {
         </div>
         <div className="space-y-2">
           <p className="text-lg font-medium gradient-text animate-pulse">
-            {!mounted ? "Initializing..." : "Loading your data..."}
+            {!mounted ? t.loading.initializing : t.loading.loadingData}
           </p>
           <p className="text-sm text-muted-foreground max-w-xs mx-auto">
-            This usually takes a few seconds. If it stays like this, please try refreshing.
+            {t.loading.loadingHint}
           </p>
         </div>
 
@@ -65,7 +67,7 @@ export default function Home() {
             className="rounded-full gap-2"
           >
             <RefreshCw className="w-4 h-4" />
-            Refresh
+            {t.loading.refresh}
           </Button>
         </motion.div>
       </div>
@@ -75,20 +77,20 @@ export default function Home() {
   const features = [
     {
       icon: Zap,
-      title: "Smart Splitting",
-      desc: "Easily split any bill among multiple participants with custom shares.",
+      title: t.landing.smartSplitting,
+      desc: t.landing.smartSplittingDesc,
       color: "from-amber-500 to-orange-500"
     },
     {
       icon: Cloud,
-      title: "Sync Everywhere",
-      desc: "Your data is securely stored in the cloud and synced across all devices.",
+      title: t.landing.syncEverywhere,
+      desc: t.landing.syncEverywhereDesc,
       color: "from-cyan-500 to-blue-500"
     },
     {
       icon: Palette,
-      title: "Premium Design",
-      desc: "A beautiful, dark-themed experience with smooth animations.",
+      title: t.landing.premiumDesign,
+      desc: t.landing.premiumDesignDesc,
       color: "from-violet-500 to-purple-500"
     }
   ];
@@ -134,17 +136,16 @@ export default function Home() {
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 text-primary text-sm font-medium mb-4"
               >
                 <Zap className="w-4 h-4" />
-                Start splitting smarter today
+                {t.landing.badge}
               </motion.div>
 
               <h1 className="text-4xl sm:text-5xl md:text-display-lg font-bold tracking-tight">
-                Your <span className="gradient-text-animated">Ultimate</span>
-                <br className="sm:hidden" /> Expense Companion
+                {t.landing.heroTitle} <span className="gradient-text-animated">{t.landing.heroHighlight}</span>
+                <br className="sm:hidden" /> {t.landing.heroSubtitle}
               </h1>
 
               <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-                Split bills, track group expenses, and settle up effortlessly.
-                Experience bill splitting with a premium, modern touch.
+                {t.landing.heroDescription}
               </p>
             </motion.div>
 
@@ -160,7 +161,7 @@ export default function Home() {
                 className="group"
                 onClick={() => window.location.href = "/login"}
               >
-                Get Started Free
+                {t.landing.getStarted}
                 <motion.span
                   className="ml-2"
                   animate={{ x: [0, 5, 0] }}
@@ -225,7 +226,7 @@ export default function Home() {
                       <div>
                         <div className="flex items-center gap-3 flex-wrap">
                           <h1 className="text-3xl sm:text-4xl font-bold tracking-tight">
-                            Welcome, <span className="gradient-text">{user.displayName || "Explorer"}</span>
+                            {t.dashboard.welcome} <span className="gradient-text">{user.displayName || "Explorer"}</span>
                           </h1>
                           {isSyncing && (
                             <motion.div
@@ -234,11 +235,11 @@ export default function Home() {
                               className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-medium"
                             >
                               <RefreshCw className="w-3 h-3 animate-spin" />
-                              Syncing...
+                              {t.dashboard.syncing}
                             </motion.div>
                           )}
                         </div>
-                        <p className="text-muted-foreground mt-1.5">Here&apos;s an overview of your expense sessions.</p>
+                        <p className="text-muted-foreground mt-1.5">{t.dashboard.overview}</p>
                       </div>
                       <Button
                         size="lg"
@@ -247,7 +248,7 @@ export default function Home() {
                         className="shadow-xl w-full sm:w-auto gap-2"
                       >
                         <Plus className="w-5 h-5" />
-                        New Session
+                        {t.dashboard.newSession}
                       </Button>
                     </div>
 
@@ -275,7 +276,7 @@ export default function Home() {
         <div className="container px-4 sm:px-8 py-6 sm:py-8">
           <div className="text-center">
             <p className="text-sm text-muted-foreground">
-              © {new Date().getFullYear()} <span className="font-medium text-foreground">Expense Genie</span>. Built for seamless financial collaboration.
+              © {new Date().getFullYear()} <span className="font-medium text-foreground">{t.header.title}</span>. {t.footer.tagline}
             </p>
           </div>
         </div>

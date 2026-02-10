@@ -2,9 +2,9 @@ import { Transaction } from "@/types";
 
 export interface ParticipantSummary {
   name: string;
-  totalSpent: number;
-  totalOwed: number;
-  balance: number;
+  totalPaid: number;   // how much they actually paid out of pocket
+  fairShare: number;    // their fair portion of what they consumed
+  balance: number;      // positive = gets money back, negative = owes money
 }
 
 export interface Debt {
@@ -13,14 +13,23 @@ export interface Debt {
   amount: number;
 }
 
+/**
+ * Calculate participant summaries with optional currency conversion.
+ * @param transactions - list of transactions
+ * @param participants - list of participant names
+ * @param mainCurrency - the main currency code (all amounts normalized to this)
+ * @param currencies - exchange rates: { "EUR": 0.92, "COP": 4200 } means 1 mainCurrency = rate of that currency
+ */
 export function calculateSummary(
   transactions: Transaction[],
   participants: string[],
+  mainCurrency?: string,
+  currencies?: Record<string, number>,
 ) {
   const summaries: Record<string, ParticipantSummary> = {};
 
   participants.forEach((p) => {
-    summaries[p] = { name: p, totalSpent: 0, totalOwed: 0, balance: 0 };
+    summaries[p] = { name: p, totalPaid: 0, fairShare: 0, balance: 0 };
   });
 
   transactions.forEach((tx) => {
@@ -28,41 +37,53 @@ export function calculateSummary(
     if (tx.payer && !summaries[tx.payer]) {
       summaries[tx.payer] = {
         name: tx.payer,
-        totalSpent: 0,
-        totalOwed: 0,
+        totalPaid: 0,
+        fairShare: 0,
         balance: 0,
       };
     }
     // Add split participants to summaries if not present
     tx.splitWith?.forEach((p) => {
       if (p && !summaries[p]) {
-        summaries[p] = { name: p, totalSpent: 0, totalOwed: 0, balance: 0 };
+        summaries[p] = { name: p, totalPaid: 0, fairShare: 0, balance: 0 };
       }
     });
 
-    const amount = Number(tx.amount);
-    if (isNaN(amount) || amount <= 0) return;
+    const rawAmount = Number(tx.amount);
+    if (isNaN(rawAmount) || rawAmount <= 0) return;
+
+    // Convert to main currency if needed
+    let amount = rawAmount;
+    const txCurrency = tx.currency || mainCurrency;
+    if (txCurrency && mainCurrency && txCurrency !== mainCurrency && currencies) {
+      const rate = currencies[txCurrency];
+      if (rate && rate > 0) {
+        // rate = how many units of txCurrency per 1 mainCurrency
+        // so to convert txCurrency → mainCurrency: divide by rate
+        amount = rawAmount / rate;
+      }
+    }
 
     // The person who paid
     if (summaries[tx.payer]) {
-      summaries[tx.payer].totalSpent += amount;
+      summaries[tx.payer].totalPaid += amount;
     }
 
-    // Splitting the amount
+    // Each person's fair share of this expense
     const splitCount = tx.splitWith?.length || 0;
     if (splitCount > 0) {
       const share = amount / splitCount;
       tx.splitWith.forEach((p) => {
         if (summaries[p]) {
-          summaries[p].totalOwed += share;
+          summaries[p].fairShare += share;
         }
       });
     }
   });
 
-  // Calculate balance (Positive means they are owed money, Negative means they owe)
+  // Positive balance = gets money back (overpaid), Negative = owes money (underpaid)
   Object.values(summaries).forEach((s) => {
-    s.balance = s.totalSpent - s.totalOwed;
+    s.balance = s.totalPaid - s.fairShare;
   });
 
   return summaries;

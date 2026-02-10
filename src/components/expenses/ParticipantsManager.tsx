@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getAvatarGradient, getInitials } from "@/lib/avatarUtils";
 import { UserPlus, X, Users } from "lucide-react";
+import { useLanguage } from "@/context/LanguageContext";
 
 interface ParticipantsManagerProps {
     userId: string;
@@ -20,6 +21,7 @@ export function ParticipantsManager({ userId, initialParticipants }: Participant
     const [participants, setParticipants] = useState<string[]>(initialParticipants);
     const [newName, setNewName] = useState("");
     const [isAdding, setIsAdding] = useState(false);
+    const { t } = useLanguage();
 
     const handleAdd = async () => {
         if (!newName.trim() || participants.includes(newName.trim())) return;
@@ -56,7 +58,7 @@ export function ParticipantsManager({ userId, initialParticipants }: Participant
                     <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-md">
                         <Users className="w-4 h-4 text-white" />
                     </div>
-                    Participants
+                    {t.participants.title}
                     <span className="ml-auto text-sm font-normal text-muted-foreground bg-muted/50 px-2 py-0.5 rounded-full">
                         {participants.length}
                     </span>
@@ -66,7 +68,7 @@ export function ParticipantsManager({ userId, initialParticipants }: Participant
             <CardContent className="space-y-4 pt-4">
                 <div className="flex gap-2">
                     <Input
-                        placeholder="Add someone..."
+                        placeholder={t.participants.addPlaceholder}
                         value={newName}
                         onChange={(e) => setNewName(e.target.value)}
                         onKeyDown={(e) => e.key === "Enter" && handleAdd()}
@@ -122,7 +124,7 @@ export function ParticipantsManager({ userId, initialParticipants }: Participant
                                 <Users className="w-6 h-6 text-muted-foreground" />
                             </div>
                             <p className="text-sm text-muted-foreground text-center">
-                                No participants yet.<br />Add someone to get started!
+                                {t.participants.noParticipants}<br />{t.participants.getStarted}
                             </p>
                         </motion.div>
                     )}

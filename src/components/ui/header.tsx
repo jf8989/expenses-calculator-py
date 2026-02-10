@@ -70,10 +70,10 @@ export function Header() {
               className="text-base sm:text-lg font-bold tracking-tight gradient-text whitespace-nowrap"
               whileHover={{ scale: 1.02 }}
             >
-              Expense Genie
+              {t.header.title}
             </motion.span>
             <span className="text-[10px] text-muted-foreground font-medium tracking-wide hidden sm:block">
-              Split smarter
+              {t.header.splitSmarter}
             </span>
           </div>
         </Link>
@@ -83,7 +83,7 @@ export function Header() {
           {user ? (
             <>
               <div className="hidden md:flex flex-col items-end mr-3 pr-3 border-r border-border/50">
-                <span className="text-[10px] font-semibold text-primary uppercase tracking-wider">Signed in</span>
+                <span className="text-[10px] font-semibold text-primary uppercase tracking-wider">{t.header.signedIn}</span>
                 <span className="text-sm text-muted-foreground leading-tight max-w-[200px] truncate">
                   {user.email}
                 </span>

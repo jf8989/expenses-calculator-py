@@ -8,6 +8,8 @@ import { localDB } from "@/lib/storage/indexedDb";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Calendar, Users, CreditCard, Trash2, Sparkles } from "lucide-react";
+import { useLanguage } from "@/context/LanguageContext";
+import { formatCurrency } from "@/lib/utils";
 
 interface SessionsListProps {
     userId: string;
@@ -17,6 +19,7 @@ interface SessionsListProps {
 
 export function SessionsList({ userId, initialSessions, onSelect }: SessionsListProps) {
     const [sessions, setSessions] = useState<Session[]>(initialSessions);
+    const { t } = useLanguage();
 
     // Sync with parent prop when it changes (e.g. after save/delete/refresh)
     useEffect(() => {
@@ -25,7 +28,7 @@ export function SessionsList({ userId, initialSessions, onSelect }: SessionsList
 
     const handleDelete = async (id: string, e: React.MouseEvent) => {
         e.stopPropagation();
-        if (!confirm("Are you sure you want to delete this session?")) return;
+        if (!confirm(t.dashboard.deleteConfirm)) return;
 
         try {
             await deleteSession(userId, id);
@@ -54,7 +57,7 @@ export function SessionsList({ userId, initialSessions, onSelect }: SessionsList
             <div className="flex items-center gap-3 mb-6">
                 <div className="w-1.5 h-8 rounded-full bg-gradient-to-b from-primary to-accent" />
                 <h2 className="text-2xl font-bold tracking-tight">
-                    Your <span className="gradient-text">Sessions</span>
+                    {t.dashboard.yourSessions} <span className="gradient-text">{t.dashboard.sessionsHighlight}</span>
                 </h2>
             </div>
 
@@ -93,7 +96,7 @@ export function SessionsList({ userId, initialSessions, onSelect }: SessionsList
                                         </Button>
                                     </div>
                                     <CardDescription className="line-clamp-2 min-h-[40px]">
-                                        {session.description || "No description provided."}
+                                        {session.description || t.dashboard.noDescription}
                                     </CardDescription>
                                 </CardHeader>
 
@@ -102,21 +105,21 @@ export function SessionsList({ userId, initialSessions, onSelect }: SessionsList
                                         <div className="flex flex-wrap gap-2">
                                             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 text-primary font-medium">
                                                 <CreditCard className="w-3 h-3" />
-                                                {session.transactions.length} transactions
+                                                {session.transactions.length} {t.dashboard.transactions}
                                             </span>
                                             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-accent/10 text-accent font-medium">
                                                 <Users className="w-3 h-3" />
-                                                {session.participants.length} people
+                                                {session.participants.length} {t.dashboard.people}
                                             </span>
                                             {session.transactions.length > 0 && (
                                                 <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold">
-                                                    ${session.transactions.reduce((sum, tx) => sum + (Number(tx.amount) || 0), 0).toFixed(2)}
+                                                    {formatCurrency(session.transactions.reduce((sum, tx) => sum + (Number(tx.amount) || 0), 0), session.mainCurrency || "USD")}
                                                 </span>
                                             )}
                                         </div>
                                         <span className="inline-flex items-center gap-1.5">
                                             <Calendar className="w-3 h-3" />
-                                            {session.createdAt?.seconds ? new Date(session.createdAt.seconds * 1000).toLocaleDateString() : "No date"}
+                                            {session.createdAt?.seconds ? new Date(session.createdAt.seconds * 1000).toLocaleDateString() : t.dashboard.noDate}
                                         </span>
                                     </div>
                                 </CardContent>
@@ -137,29 +140,29 @@ export function SessionsList({ userId, initialSessions, onSelect }: SessionsList
                                 <Sparkles className="w-8 h-8 text-primary" />
                             </div>
                             <div className="space-y-1.5">
-                                <h3 className="text-lg font-bold">No sessions yet</h3>
-                                <p className="text-sm text-muted-foreground">Get started in 3 easy steps:</p>
+                                <h3 className="text-lg font-bold">{t.dashboard.noSessionsTitle}</h3>
+                                <p className="text-sm text-muted-foreground">{t.dashboard.noSessionsSubtitle}</p>
                             </div>
                             <div className="grid gap-3 text-left w-full">
                                 <div className="flex items-start gap-3 p-3 rounded-xl bg-muted/30 border border-border/50">
                                     <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary/10 text-primary text-xs font-bold shrink-0 mt-0.5">1</span>
                                     <div>
-                                        <p className="text-sm font-medium">Add participants</p>
-                                        <p className="text-xs text-muted-foreground">Use the panel on the right to add people to your group.</p>
+                                        <p className="text-sm font-medium">{t.dashboard.step1Title}</p>
+                                        <p className="text-xs text-muted-foreground">{t.dashboard.step1Desc}</p>
                                     </div>
                                 </div>
                                 <div className="flex items-start gap-3 p-3 rounded-xl bg-muted/30 border border-border/50">
                                     <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary/10 text-primary text-xs font-bold shrink-0 mt-0.5">2</span>
                                     <div>
-                                        <p className="text-sm font-medium">Create a session</p>
-                                        <p className="text-xs text-muted-foreground">Click &quot;New Session&quot; to start tracking expenses.</p>
+                                        <p className="text-sm font-medium">{t.dashboard.step2Title}</p>
+                                        <p className="text-xs text-muted-foreground">{t.dashboard.step2Desc}</p>
                                     </div>
                                 </div>
                                 <div className="flex items-start gap-3 p-3 rounded-xl bg-muted/30 border border-border/50">
                                     <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary/10 text-primary text-xs font-bold shrink-0 mt-0.5">3</span>
                                     <div>
-                                        <p className="text-sm font-medium">Settle up</p>
-                                        <p className="text-xs text-muted-foreground">Expense Genie calculates who owes what automatically!</p>
+                                        <p className="text-sm font-medium">{t.dashboard.step3Title}</p>
+                                        <p className="text-xs text-muted-foreground">{t.dashboard.step3Desc}</p>
                                     </div>
                                 </div>
                             </div>

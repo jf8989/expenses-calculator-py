@@ -4,14 +4,20 @@ import { motion } from "framer-motion";
 import { Debt, ParticipantSummary } from "@/lib/calculations";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowRight, TrendingUp, TrendingDown, CheckCircle2, Wallet } from "lucide-react";
+import { useLanguage } from "@/context/LanguageContext";
+import { formatCurrency } from "@/lib/utils";
 
 interface SettleUpProps {
     summaries: Record<string, ParticipantSummary>;
     debts: Debt[];
+    mainCurrency?: string;
 }
 
-export function SettleUp({ summaries, debts }: SettleUpProps) {
+export function SettleUp({ summaries, debts, mainCurrency = "USD" }: SettleUpProps) {
     const sortedSummaries = Object.values(summaries).sort((a, b) => b.balance - a.balance);
+    const { t } = useLanguage();
+
+    const fmt = (amount: number) => formatCurrency(Math.abs(amount), mainCurrency);
 
     return (
         <div className="space-y-6">
@@ -22,7 +28,7 @@ export function SettleUp({ summaries, debts }: SettleUpProps) {
                     <CardHeader className="pb-2">
                         <CardTitle className="text-xl font-bold flex items-center gap-2">
                             <Wallet className="w-5 h-5 text-primary" />
-                            Balances
+                            {t.settle.balances}
                         </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-2">
@@ -49,12 +55,12 @@ export function SettleUp({ summaries, debts }: SettleUpProps) {
                                             <span className="font-medium">{s.name}</span>
                                         </div>
                                         <span className={`font-bold tabular-nums ${isPositive ? "text-emerald-500" : "text-red-500"}`}>
-                                            {isPositive ? "+" : ""}${s.balance.toFixed(2)}
+                                            {isPositive ? t.settle.getsBack : t.settle.owes} {fmt(s.balance)}
                                         </span>
                                     </div>
                                     <div className="flex gap-4 mt-1.5 ml-6 text-xs text-muted-foreground">
-                                        <span>Spent: <strong className="text-foreground">${s.totalSpent.toFixed(2)}</strong></span>
-                                        <span>Owed: <strong className="text-foreground">${s.totalOwed.toFixed(2)}</strong></span>
+                                        <span>{t.settle.paid}: <strong className="text-foreground">{fmt(s.totalPaid)}</strong></span>
+                                        <span>{t.settle.fairShare}: <strong className="text-foreground">{fmt(s.fairShare)}</strong></span>
                                     </div>
                                 </motion.div>
                             );
@@ -68,7 +74,7 @@ export function SettleUp({ summaries, debts }: SettleUpProps) {
                     <CardHeader className="pb-2">
                         <CardTitle className="text-xl font-bold flex items-center gap-2">
                             <ArrowRight className="w-5 h-5 text-primary" />
-                            Suggested Payments
+                            {t.settle.suggestedPayments}
                         </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-3">
@@ -83,9 +89,9 @@ export function SettleUp({ summaries, debts }: SettleUpProps) {
                                 >
                                     <div className="flex flex-col">
                                         <span className="text-sm text-muted-foreground">
-                                            <span className="font-bold text-foreground">{debt.from}</span> pays
+                                            <span className="font-bold text-foreground">{debt.from}</span> {t.settle.pays}
                                         </span>
-                                        <span className="text-2xl font-bold gradient-text">${debt.amount.toFixed(2)}</span>
+                                        <span className="text-2xl font-bold gradient-text">{fmt(debt.amount)}</span>
                                     </div>
                                     <div className="flex items-center gap-3">
                                         <motion.div
@@ -109,8 +115,8 @@ export function SettleUp({ summaries, debts }: SettleUpProps) {
                                     <CheckCircle2 className="w-8 h-8 text-emerald-500" />
                                 </div>
                                 <div>
-                                    <p className="font-medium text-emerald-500">All settled up!</p>
-                                    <p className="text-sm text-muted-foreground">No debts to settle. Everything is balanced.</p>
+                                    <p className="font-medium text-emerald-500">{t.settle.allSettled}</p>
+                                    <p className="text-sm text-muted-foreground">{t.settle.noDebts}</p>
                                 </div>
                             </motion.div>
                         )}
@@ -120,3 +126,4 @@ export function SettleUp({ summaries, debts }: SettleUpProps) {
         </div>
     );
 }
+

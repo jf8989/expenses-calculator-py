@@ -3,6 +3,7 @@ import { Session, UserData } from "@/types";
 
 const db = admin.firestore();
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const serializeTimestamps = (data: any): any => {
   if (!data || typeof data !== "object") return data;
 

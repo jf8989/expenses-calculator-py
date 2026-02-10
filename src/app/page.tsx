@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
 import { ParticlesBackground } from "@/components/ui/particles-background";
 import { useCachedData } from "@/hooks/useCachedData";
+import { useMounted } from "@/hooks/useMounted";
 import { RefreshCw, Zap, Cloud, Palette, Plus } from "lucide-react";
 
 export default function Home() {
@@ -27,16 +28,46 @@ export default function Home() {
   const [activeSession, setActiveSession] = useState<Session | null>(null);
   const [isCreating, setIsCreating] = useState(false);
 
-  if (authLoading || (loading && !sessions.length)) {
+  const mounted = useMounted();
+
+  if (!mounted || authLoading || (loading && !sessions.length)) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-4">
+      <div className="min-h-screen flex flex-col items-center justify-center gap-6 p-4 text-center">
+        <div className="relative">
+          <motion.div
+            animate={{ rotate: 360 }}
+            transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
+            className="w-16 h-16 rounded-full border-t-2 border-primary"
+          />
+          <div className="absolute inset-0 flex items-center justify-center">
+            <Spinner className="w-6 h-6 text-primary/50" />
+          </div>
+        </div>
+        <div className="space-y-2">
+          <p className="text-lg font-medium gradient-text animate-pulse">
+            {!mounted ? "Initializing..." : "Loading your data..."}
+          </p>
+          <p className="text-sm text-muted-foreground max-w-xs mx-auto">
+            This usually takes a few seconds. If it stays like this, please try refreshing.
+          </p>
+        </div>
+
+        {/* Fallback button if stuck */}
         <motion.div
-          animate={{ rotate: 360 }}
-          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 8 }} // Show after 8s
         >
-          <Spinner className="w-10 h-10 text-primary" />
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => window.location.reload()}
+            className="rounded-full gap-2"
+          >
+            <RefreshCw className="w-4 h-4" />
+            Refresh
+          </Button>
         </motion.div>
-        <p className="text-sm text-muted-foreground animate-pulse">Loading your data...</p>
       </div>
     );
   }

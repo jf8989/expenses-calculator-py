@@ -6,6 +6,17 @@ import { getSessions } from "@/app/actions/sessions";
 import { getUserData } from "@/app/actions/participants";
 import { Session } from "@/types";
 
+const FETCH_TIMEOUT_MS = 10_000; // 10 second timeout for server actions
+
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error("Request timed out")), ms)
+    ),
+  ]);
+}
+
 export function useCachedData(userId: string | undefined) {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [participants, setParticipants] = useState<string[]>([]);
@@ -30,13 +41,16 @@ export function useCachedData(userId: string | undefined) {
           }
         }
 
-        // 2. Background Refresh / Initial Load from Firestore
+        // 2. Background Refresh / Initial Load from Firestore (with timeout)
         setIsSyncing(true);
 
-        const [freshSessions, freshUserData] = await Promise.all([
-          getSessions(userId),
-          getUserData(userId),
-        ]);
+        const [freshSessions, freshUserData] = await withTimeout(
+          Promise.all([
+            getSessions(userId),
+            getUserData(userId),
+          ]),
+          FETCH_TIMEOUT_MS,
+        );
 
         // 3. Update Local Cache with fresh data
         await localDB.saveSessions(freshSessions);
@@ -78,3 +92,4 @@ export function useCachedData(userId: string | undefined) {
     refresh: () => fetchData(true),
   };
 }
+

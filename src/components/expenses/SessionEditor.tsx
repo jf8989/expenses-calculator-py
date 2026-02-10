@@ -22,8 +22,11 @@ import {
     Check,
     TrendingUp,
     TrendingDown,
-    DollarSign
+    CheckSquare,
+    Square,
+    CheckCircle2
 } from "lucide-react";
+import { getAvatarColor } from "@/lib/avatarUtils";
 
 interface SessionEditorProps {
     userId: string;
@@ -33,21 +36,7 @@ interface SessionEditorProps {
     onCancel: () => void;
 }
 
-// Get avatar color based on name
-const getAvatarColor = (name: string) => {
-    const colors = [
-        "bg-violet-500",
-        "bg-blue-500",
-        "bg-emerald-500",
-        "bg-orange-500",
-        "bg-pink-500",
-        "bg-red-500",
-        "bg-indigo-500",
-        "bg-lime-500",
-    ];
-    const index = name.charCodeAt(0) % colors.length;
-    return colors[index];
-};
+
 
 export function SessionEditor({ userId, initialSession, participants, onSaved, onCancel }: SessionEditorProps) {
     const [name, setName] = useState(initialSession?.name || "");
@@ -62,6 +51,7 @@ export function SessionEditor({ userId, initialSession, participants, onSaved, o
     const [showSettleUp, setShowSettleUp] = useState(false);
     const [bulkText, setBulkText] = useState("");
     const [showBulk, setShowBulk] = useState(false);
+    const [saveSuccess, setSaveSuccess] = useState(false);
 
     // Calculate summaries and debts memoized
     const { summaries, debts } = useMemo(() => {
@@ -90,6 +80,8 @@ export function SessionEditor({ userId, initialSession, participants, onSaved, o
                 const newId = await saveSession(userId, sessionData);
                 onSaved(newId);
             }
+            setSaveSuccess(true);
+            setTimeout(() => setSaveSuccess(false), 3000);
         } catch (error) {
             console.error("Error saving session", error);
         } finally {
@@ -136,6 +128,12 @@ export function SessionEditor({ userId, initialSession, participants, onSaved, o
         }
     };
 
+    const toggleAllParticipants = (txIdx: number) => {
+        const tx = transactions[txIdx];
+        const allSelected = participants.every(p => tx.splitWith?.includes(p));
+        updateTransaction(txIdx, "splitWith", allSelected ? [] : [...participants]);
+    };
+
     return (
         <div className="space-y-6 max-w-5xl mx-auto">
             {/* Sticky Action Bar */}
@@ -168,6 +166,21 @@ export function SessionEditor({ userId, initialSession, participants, onSaved, o
                     </Button>
                 </div>
             </motion.div>
+
+            {/* Save Success Toast */}
+            <AnimatePresence>
+                {saveSuccess && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 50 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 50 }}
+                        className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2.5 px-5 py-3 rounded-2xl bg-emerald-500 text-white shadow-2xl shadow-emerald-500/30 font-medium"
+                    >
+                        <CheckCircle2 className="w-5 h-5" />
+                        Session saved successfully!
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             <AnimatePresence mode="wait">
                 {showSettleUp ? (
@@ -241,7 +254,7 @@ export function SessionEditor({ userId, initialSession, participants, onSaved, o
                                             )}
                                         </div>
                                         <div className={`text-xl font-bold tabular-nums ${isPositive ? "text-emerald-500" : "text-red-500"}`}>
-                                            {isPositive ? "+" : ""}{s.balance.toFixed(2)}
+                                            {isPositive ? "+" : ""}${s.balance.toFixed(2)}
                                         </div>
                                     </motion.div>
                                 );
@@ -337,11 +350,24 @@ export function SessionEditor({ userId, initialSession, participants, onSaved, o
                                             <div className="min-w-[200px] bg-muted/30 p-4 rounded-xl border border-border/50">
                                                 <div className="flex justify-between items-center mb-3">
                                                     <label className="block text-xs font-semibold uppercase tracking-widest text-muted-foreground">Split With</label>
-                                                    {tx.amount > 0 && tx.splitWith?.length > 0 && (
-                                                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary">
-                                                            ${(tx.amount / (tx.splitWith?.length || 1)).toFixed(2)} each
-                                                        </span>
-                                                    )}
+                                                    <div className="flex items-center gap-2">
+                                                        {tx.amount > 0 && tx.splitWith?.length > 0 && (
+                                                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary">
+                                                                ${(tx.amount / (tx.splitWith?.length || 1)).toFixed(2)} each
+                                                            </span>
+                                                        )}
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => toggleAllParticipants(idx)}
+                                                            className="flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-muted/50 text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors"
+                                                        >
+                                                            {participants.every(p => tx.splitWith?.includes(p)) ? (
+                                                                <><Square className="w-2.5 h-2.5" /> None</>
+                                                            ) : (
+                                                                <><CheckSquare className="w-2.5 h-2.5" /> All</>
+                                                            )}
+                                                        </button>
+                                                    </div>
                                                 </div>
                                                 <div className="space-y-2">
                                                     {participants.map(p => {
@@ -403,9 +429,10 @@ export function SessionEditor({ userId, initialSession, participants, onSaved, o
                                 </motion.div>
                             )}
                         </div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
-        </div>
+                    </motion.div >
+                )
+                }
+            </AnimatePresence >
+        </div >
     );
 }

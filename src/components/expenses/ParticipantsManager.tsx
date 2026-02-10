@@ -6,6 +6,7 @@ import { addParticipant, removeParticipant } from "@/app/actions/participants";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { getAvatarGradient, getInitials } from "@/lib/avatarUtils";
 import { UserPlus, X, Users } from "lucide-react";
 
 interface ParticipantsManagerProps {
@@ -13,26 +14,7 @@ interface ParticipantsManagerProps {
     initialParticipants: string[];
 }
 
-// Generate avatar color based on name
-const getAvatarColor = (name: string) => {
-    const colors = [
-        "from-violet-500 to-purple-600",
-        "from-blue-500 to-cyan-500",
-        "from-emerald-500 to-teal-500",
-        "from-orange-500 to-amber-500",
-        "from-pink-500 to-rose-500",
-        "from-red-500 to-orange-500",
-        "from-indigo-500 to-blue-500",
-        "from-lime-500 to-green-500",
-    ];
-    const index = name.charCodeAt(0) % colors.length;
-    return colors[index];
-};
 
-// Get initials from name
-const getInitials = (name: string) => {
-    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
-};
 
 export function ParticipantsManager({ userId, initialParticipants }: ParticipantsManagerProps) {
     const [participants, setParticipants] = useState<string[]>(initialParticipants);
@@ -113,7 +95,7 @@ export function ParticipantsManager({ userId, initialParticipants }: Participant
                             >
                                 <div className="flex items-center gap-3">
                                     {/* Avatar */}
-                                    <div className={`w-9 h-9 rounded-xl bg-gradient-to-br ${getAvatarColor(p)} flex items-center justify-center text-white text-xs font-bold shadow-sm`}>
+                                    <div className={`w-9 h-9 rounded-xl bg-gradient-to-br ${getAvatarGradient(p)} flex items-center justify-center text-white text-xs font-bold shadow-sm`}>
                                         {getInitials(p)}
                                     </div>
                                     <span className="font-medium text-sm">{p}</span>

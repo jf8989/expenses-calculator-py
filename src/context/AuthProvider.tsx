@@ -4,7 +4,6 @@
 import React, { createContext, useState, useEffect, ReactNode } from "react";
 import { User, onAuthStateChanged } from "firebase/auth";
 import { auth } from "@/lib/firebase/client"; // This can now be null
-import { Spinner } from "@/components/icons/spinner";
 
 interface AuthContextType {
   user: User | null;
@@ -26,29 +25,35 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const isFirebaseActive = !!auth;
 
   useEffect(() => {
-    // --- THIS IS THE FIX ---
-    // We directly check if 'auth' exists. This serves as a type guard for TypeScript.
+    // Check if the auth object was successfully initialized
     if (!auth) {
+      console.warn("Firebase Auth not initialized, skipping auth check.");
       setLoading(false);
-      return; // Exit if Firebase is not configured
+      return;
     }
 
-    // If we get here, TypeScript now knows 'auth' is of type 'Auth', not 'Auth | null'.
+    let resolved = false;
+
+    // Safety timeout: If Firebase takes too long to respond, proceed anyway
+    const safetyTimeout = setTimeout(() => {
+      if (!resolved) {
+        console.warn("Auth state check timed out after 5s, proceeding as unauthenticated.");
+        setLoading(false);
+      }
+    }, 5000);
+
     const unsubscribe = onAuthStateChanged(auth, (user) => {
+      resolved = true;
+      clearTimeout(safetyTimeout);
       setUser(user);
       setLoading(false);
     });
 
-    return () => unsubscribe();
-  }, []); // The dependency array is empty because 'auth' will not change during the component's lifecycle.
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen" suppressHydrationWarning>
-        <Spinner />
-      </div>
-    );
-  }
+    return () => {
+      clearTimeout(safetyTimeout);
+      unsubscribe();
+    };
+  }, []);
 
   return (
     <AuthContext.Provider value={{ user, loading, isFirebaseActive }}>

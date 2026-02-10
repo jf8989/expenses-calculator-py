@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Session } from "@/types";
 import { deleteSession } from "@/app/actions/sessions";
@@ -17,6 +17,11 @@ interface SessionsListProps {
 
 export function SessionsList({ userId, initialSessions, onSelect }: SessionsListProps) {
     const [sessions, setSessions] = useState<Session[]>(initialSessions);
+
+    // Sync with parent prop when it changes (e.g. after save/delete/refresh)
+    useEffect(() => {
+        setSessions(initialSessions);
+    }, [initialSessions]);
 
     const handleDelete = async (id: string, e: React.MouseEvent) => {
         e.stopPropagation();
@@ -103,6 +108,11 @@ export function SessionsList({ userId, initialSessions, onSelect }: SessionsList
                                                 <Users className="w-3 h-3" />
                                                 {session.participants.length} people
                                             </span>
+                                            {session.transactions.length > 0 && (
+                                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold">
+                                                    ${session.transactions.reduce((sum, tx) => sum + (Number(tx.amount) || 0), 0).toFixed(2)}
+                                                </span>
+                                            )}
                                         </div>
                                         <span className="inline-flex items-center gap-1.5">
                                             <Calendar className="w-3 h-3" />
@@ -121,12 +131,38 @@ export function SessionsList({ userId, initialSessions, onSelect }: SessionsList
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                 >
-                    <Card className="border-dashed border-2 py-12 text-center bg-transparent" hover={false}>
-                        <div className="flex flex-col items-center gap-3">
-                            <div className="w-16 h-16 rounded-2xl bg-muted/50 flex items-center justify-center">
-                                <Sparkles className="w-8 h-8 text-muted-foreground" />
+                    <Card className="border-dashed border-2 py-10 px-6 text-center bg-transparent" hover={false}>
+                        <div className="flex flex-col items-center gap-5 max-w-md mx-auto">
+                            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
+                                <Sparkles className="w-8 h-8 text-primary" />
                             </div>
-                            <p className="text-muted-foreground">No sessions yet. Create your first one!</p>
+                            <div className="space-y-1.5">
+                                <h3 className="text-lg font-bold">No sessions yet</h3>
+                                <p className="text-sm text-muted-foreground">Get started in 3 easy steps:</p>
+                            </div>
+                            <div className="grid gap-3 text-left w-full">
+                                <div className="flex items-start gap-3 p-3 rounded-xl bg-muted/30 border border-border/50">
+                                    <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary/10 text-primary text-xs font-bold shrink-0 mt-0.5">1</span>
+                                    <div>
+                                        <p className="text-sm font-medium">Add participants</p>
+                                        <p className="text-xs text-muted-foreground">Use the panel on the right to add people to your group.</p>
+                                    </div>
+                                </div>
+                                <div className="flex items-start gap-3 p-3 rounded-xl bg-muted/30 border border-border/50">
+                                    <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary/10 text-primary text-xs font-bold shrink-0 mt-0.5">2</span>
+                                    <div>
+                                        <p className="text-sm font-medium">Create a session</p>
+                                        <p className="text-xs text-muted-foreground">Click &quot;New Session&quot; to start tracking expenses.</p>
+                                    </div>
+                                </div>
+                                <div className="flex items-start gap-3 p-3 rounded-xl bg-muted/30 border border-border/50">
+                                    <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary/10 text-primary text-xs font-bold shrink-0 mt-0.5">3</span>
+                                    <div>
+                                        <p className="text-sm font-medium">Settle up</p>
+                                        <p className="text-xs text-muted-foreground">Expense Genie calculates who owes what automatically!</p>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </Card>
                 </motion.div>

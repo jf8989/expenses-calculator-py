@@ -22,22 +22,20 @@ export const viewport: Viewport = {
 // METADATA OBJECT - Enhanced for SEO and social sharing
 export const metadata: Metadata = {
   title: {
-    default: "Next.js Template | Professional Starter Kit",
-    template: "%s | Next.js Template",
+    default: "Expense Genie | Split Bills Effortlessly",
+    template: "%s | Expense Genie",
   },
   description:
-    "A stunning, production-ready Next.js template with Tailwind CSS, Framer Motion animations, Firebase authentication, and WCAG AAA accessibility. Built for modern web development.",
+    "Split bills, track group expenses, and settle up effortlessly. A premium expense-splitting app with real-time sync, smart calculations, and a beautiful modern interface.",
   keywords: [
+    "Expense Splitting",
+    "Bill Splitter",
+    "Group Expenses",
+    "Settle Up",
+    "Debt Calculator",
+    "Firebase",
     "Next.js",
     "React",
-    "TypeScript",
-    "Tailwind CSS",
-    "Framer Motion",
-    "Firebase",
-    "Template",
-    "Starter Kit",
-    "Accessible",
-    "WCAG AAA",
   ],
   authors: [{ name: "Juan Francisco Marcenaro A." }],
   creator: "Juan Francisco Marcenaro A.",
@@ -65,16 +63,16 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "en_US",
-    title: "Next.js Template | Professional Starter Kit",
+    title: "Expense Genie | Split Bills Effortlessly",
     description:
-      "A stunning, production-ready Next.js template with modern UI and full accessibility.",
-    siteName: "Next.js Template",
+      "Split bills, track group expenses, and settle up effortlessly with a premium modern interface.",
+    siteName: "Expense Genie",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Next.js Template | Professional Starter Kit",
+    title: "Expense Genie | Split Bills Effortlessly",
     description:
-      "A stunning, production-ready Next.js template with modern UI and full accessibility.",
+      "Split bills, track group expenses, and settle up effortlessly with a premium modern interface.",
   },
 };
 

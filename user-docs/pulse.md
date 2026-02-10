@@ -1,5 +1,30 @@
 # Pulse Tracking
 
+## [2026-02-09] [x] Loading Stability Fixes ✅
+
+- Refactored `AuthProvider` to be non-blocking (always renders children shell).
+- Added `useMounted` hydration safety to `page.tsx`.
+- Added a 5-second safety timeout to `AuthProvider` on-mount auth check.
+- Added an 8-second manual "Refresh" button to the loading state in `page.tsx`.
+- Fixed potential infinite loading due to stalled Firestore server actions.
+- Build: 0 errors, 0 warnings.
+
+## [2026-02-09] [x] Phase 8: Codebase Audit & Improvements ✅
+
+- Fixed SEO metadata in `layout.tsx` — was still "Next.js Template", now "Expense Genie".
+- Fixed `SessionsList` stale state bug — list now syncs with parent via `useEffect`.
+- Added total expense amount to session cards.
+- Added "Select All / Deselect All" toggle for split-with participants in `SessionEditor`.
+- Added save success toast notification with animated transition.
+- Added `$` currency symbol to balance displays in `SessionEditor` and `SettleUp`.
+- Enhanced `SettleUp` with spent/owed detail rows and improved mobile responsiveness.
+- Improved empty-state for new users with a 3-step quick-start guide.
+- Expanded i18n from header-only to full app coverage (EN + ES).
+- Extracted `getAvatarColor`/`getInitials` into shared `lib/avatarUtils.ts`.
+- Removed unused `DollarSign` import from `SessionEditor`.
+- Fixed pre-existing ESLint `no-explicit-any` error in `service.ts`.
+- Build: 0 errors, 0 warnings.
+
 ## [2026-02-06] [x] Repo Cleanup ✅
 
 - Removed legacy log files (`app.log`).

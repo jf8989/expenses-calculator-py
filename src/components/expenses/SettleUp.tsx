@@ -34,22 +34,28 @@ export function SettleUp({ summaries, debts }: SettleUpProps) {
                                     initial={{ opacity: 0, x: -10 }}
                                     animate={{ opacity: 1, x: 0 }}
                                     transition={{ delay: idx * 0.05 }}
-                                    className={`flex justify-between items-center p-3 rounded-xl border transition-colors ${isPositive
-                                            ? "bg-emerald-500/5 border-emerald-500/20 hover:bg-emerald-500/10"
-                                            : "bg-red-500/5 border-red-500/20 hover:bg-red-500/10"
+                                    className={`p-3 rounded-xl border transition-colors ${isPositive
+                                        ? "bg-emerald-500/5 border-emerald-500/20 hover:bg-emerald-500/10"
+                                        : "bg-red-500/5 border-red-500/20 hover:bg-red-500/10"
                                         }`}
                                 >
-                                    <div className="flex items-center gap-2">
-                                        {isPositive ? (
-                                            <TrendingUp className="w-4 h-4 text-emerald-500" />
-                                        ) : (
-                                            <TrendingDown className="w-4 h-4 text-red-500" />
-                                        )}
-                                        <span className="font-medium">{s.name}</span>
+                                    <div className="flex justify-between items-center">
+                                        <div className="flex items-center gap-2">
+                                            {isPositive ? (
+                                                <TrendingUp className="w-4 h-4 text-emerald-500" />
+                                            ) : (
+                                                <TrendingDown className="w-4 h-4 text-red-500" />
+                                            )}
+                                            <span className="font-medium">{s.name}</span>
+                                        </div>
+                                        <span className={`font-bold tabular-nums ${isPositive ? "text-emerald-500" : "text-red-500"}`}>
+                                            {isPositive ? "+" : ""}${s.balance.toFixed(2)}
+                                        </span>
                                     </div>
-                                    <span className={`font-bold tabular-nums ${isPositive ? "text-emerald-500" : "text-red-500"}`}>
-                                        {isPositive ? "+" : ""}{s.balance.toFixed(2)}
-                                    </span>
+                                    <div className="flex gap-4 mt-1.5 ml-6 text-xs text-muted-foreground">
+                                        <span>Spent: <strong className="text-foreground">${s.totalSpent.toFixed(2)}</strong></span>
+                                        <span>Owed: <strong className="text-foreground">${s.totalOwed.toFixed(2)}</strong></span>
+                                    </div>
                                 </motion.div>
                             );
                         })}
@@ -73,7 +79,7 @@ export function SettleUp({ summaries, debts }: SettleUpProps) {
                                     initial={{ opacity: 0, scale: 0.95 }}
                                     animate={{ opacity: 1, scale: 1 }}
                                     transition={{ delay: idx * 0.1 }}
-                                    className="p-4 rounded-xl bg-gradient-to-r from-primary/5 to-accent/5 border border-primary/20 flex items-center justify-between group hover:from-primary/10 hover:to-accent/10 transition-colors"
+                                    className="p-4 rounded-xl bg-gradient-to-r from-primary/5 to-accent/5 border border-primary/20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 group hover:from-primary/10 hover:to-accent/10 transition-colors"
                                 >
                                     <div className="flex flex-col">
                                         <span className="text-sm text-muted-foreground">

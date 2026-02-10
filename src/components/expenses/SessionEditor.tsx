@@ -43,7 +43,7 @@ interface SessionEditorProps {
 
 // Common currencies
 const CURRENCY_OPTIONS = [
-    "USD", "EUR", "GBP", "COP", "MXN", "ARS", "BRL", "JPY",
+    "USD", "EUR", "GBP", "COP", "PEN", "MXN", "ARS", "BRL", "JPY",
     "CAD", "AUD", "CHF", "INR", "CNY", "KRW", "SEK", "NOK",
     "DKK", "NZD", "ZAR", "CLP",
 ];
@@ -76,7 +76,7 @@ export function SessionEditor({ userId, initialSession, participants, onSaved, o
                 ...initialSession,
                 transactions: initialSession.transactions.map(tx => ({
                     ...tx,
-                    splitWith: tx.splitWith || [],
+                    assigned_to: tx.assigned_to || (tx as any).splitWith || [],
                     currency: tx.currency || undefined,
                 }))
             });
@@ -166,8 +166,7 @@ export function SessionEditor({ userId, initialSession, participants, onSaved, o
         const newTx: Transaction = {
             description: "",
             amount: 0,
-            payer: participants[0] || "",
-            splitWith: [...participants],
+            assigned_to: [...participants],
             date: new Date().toISOString().split('T')[0],
             currency: mainCurrency,
         };
@@ -180,11 +179,11 @@ export function SessionEditor({ userId, initialSession, participants, onSaved, o
 
     const toggleSplitParticipant = (txIdx: number, pName: string) => {
         const tx = transactions[txIdx];
-        const currentSplitWith = tx.splitWith || [];
-        const splitWith = currentSplitWith.includes(pName)
-            ? currentSplitWith.filter(p => p !== pName)
-            : [...currentSplitWith, pName];
-        updateTransaction(txIdx, "splitWith", splitWith);
+        const currentAssignedTo = tx.assigned_to || [];
+        const assigned_to = currentAssignedTo.includes(pName)
+            ? currentAssignedTo.filter(p => p !== pName)
+            : [...currentAssignedTo, pName];
+        updateTransaction(txIdx, "assigned_to", assigned_to);
     };
 
     const removeTransaction = (index: number) => {
@@ -202,8 +201,8 @@ export function SessionEditor({ userId, initialSession, participants, onSaved, o
 
     const toggleAllParticipants = (txIdx: number) => {
         const tx = transactions[txIdx];
-        const allSelected = participants.every(p => tx.splitWith?.includes(p));
-        updateTransaction(txIdx, "splitWith", allSelected ? [] : [...participants]);
+        const allSelected = participants.every(p => tx.assigned_to?.includes(p));
+        updateTransaction(txIdx, "assigned_to", allSelected ? [] : [...participants]);
     };
 
     const addExtraCurrency = () => {
@@ -585,27 +584,69 @@ export function SessionEditor({ userId, initialSession, participants, onSaved, o
                                                         onChange={(e) => updateTransaction(idx, "amount", parseFloat(e.target.value) || 0)}
                                                     />
                                                     {/* Per-transaction currency toggle */}
-                                                    {availableCurrencies.length > 1 && (
-                                                        <div>
-                                                            <label className="block text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-2">{t.session.currency}</label>
-                                                            <select
-                                                                className="w-full h-12 rounded-xl bg-background/50 border-2 border-border px-3 text-sm focus:border-primary focus:shadow-[0_0_0_4px_hsl(var(--primary)/0.1)] outline-none transition-all hover:border-muted-foreground/30"
-                                                                value={tx.currency || mainCurrency}
-                                                                onChange={(e) => updateTransaction(idx, "currency", e.target.value)}
-                                                            >
-                                                                {availableCurrencies.map(c => <option key={c} value={c}>{c}</option>)}
-                                                            </select>
-                                                        </div>
-                                                    )}
                                                     <div>
-                                                        <label className="block text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-2">{t.session.paidBy}</label>
-                                                        <select
-                                                            className="w-full h-12 rounded-xl bg-background/50 border-2 border-border px-4 text-sm focus:border-primary focus:shadow-[0_0_0_4px_hsl(var(--primary)/0.1)] outline-none transition-all hover:border-muted-foreground/30"
-                                                            value={tx.payer}
-                                                            onChange={(e) => updateTransaction(idx, "payer", e.target.value)}
+                                                        <label className="block text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-2">{t.session.currency}</label>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => {
+                                                                if (availableCurrencies.length <= 1) return;
+                                                                const currentCurrency = tx.currency || mainCurrency;
+                                                                const currentIndex = availableCurrencies.indexOf(currentCurrency);
+                                                                const nextIndex = (currentIndex + 1) % availableCurrencies.length;
+                                                                updateTransaction(idx, "currency", availableCurrencies[nextIndex]);
+                                                            }}
+                                                            className={`w-full h-12 rounded-xl border-2 flex items-center justify-center font-bold transition-all ${availableCurrencies.length > 1
+                                                                ? "bg-primary/5 border-primary/20 hover:border-primary/40 hover:bg-primary/10 cursor-pointer"
+                                                                : "bg-muted/30 border-border/50 cursor-default"
+                                                                }`}
                                                         >
-                                                            {participants.map(p => <option key={p} value={p}>{p}</option>)}
-                                                        </select>
+                                                            <span className="gradient-text">{tx.currency || mainCurrency}</span>
+                                                        </button>
+                                                    </div>
+                                                    <div className="flex flex-col gap-2">
+                                                        <label className="block text-xs font-semibold uppercase tracking-widest text-muted-foreground">{t.session.paidBy}</label>
+                                                        <AnimatePresence mode="wait">
+                                                            {tx.payer ? (
+                                                                <motion.div
+                                                                    key="payer-select"
+                                                                    initial={{ opacity: 0, height: 0 }}
+                                                                    animate={{ opacity: 1, height: "auto" }}
+                                                                    exit={{ opacity: 0, height: 0 }}
+                                                                    className="flex items-center gap-2"
+                                                                >
+                                                                    <select
+                                                                        className="flex-1 h-12 rounded-xl bg-background/50 border-2 border-border px-4 text-sm focus:border-primary focus:shadow-[0_0_0_4px_hsl(var(--primary)/0.1)] outline-none transition-all hover:border-muted-foreground/30"
+                                                                        value={tx.payer}
+                                                                        onChange={(e) => updateTransaction(idx, "payer", e.target.value)}
+                                                                    >
+                                                                        {participants.map(p => <option key={p} value={p}>{p}</option>)}
+                                                                    </select>
+                                                                    <Button
+                                                                        variant="ghost"
+                                                                        size="icon"
+                                                                        onClick={() => updateTransaction(idx, "payer", undefined)}
+                                                                        className="h-12 w-12 rounded-xl text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                                                                    >
+                                                                        <X className="w-4 h-4" />
+                                                                    </Button>
+                                                                </motion.div>
+                                                            ) : (
+                                                                <motion.div
+                                                                    key="payer-button"
+                                                                    initial={{ opacity: 0, height: 0 }}
+                                                                    animate={{ opacity: 1, height: "auto" }}
+                                                                    exit={{ opacity: 0, height: 0 }}
+                                                                >
+                                                                    <Button
+                                                                        variant="outline"
+                                                                        onClick={() => updateTransaction(idx, "payer", participants[0])}
+                                                                        className="w-full h-12 rounded-xl border-dashed border-2 text-muted-foreground hover:text-primary hover:border-primary transition-all text-xs"
+                                                                    >
+                                                                        {t.session.whoPaid || "Who paid?"}
+                                                                    </Button>
+                                                                </motion.div>
+                                                            )}
+                                                        </AnimatePresence>
                                                     </div>
                                                 </div>
                                             </div>
@@ -614,9 +655,9 @@ export function SessionEditor({ userId, initialSession, participants, onSaved, o
                                                 <div className="flex justify-between items-center mb-3">
                                                     <label className="block text-xs font-semibold uppercase tracking-widest text-muted-foreground">{t.session.splitWith}</label>
                                                     <div className="flex items-center gap-2">
-                                                        {tx.amount > 0 && tx.splitWith?.length > 0 && (
+                                                        {tx.amount > 0 && tx.assigned_to?.length > 0 && (
                                                             <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary">
-                                                                {formatCurrency(tx.amount / (tx.splitWith?.length || 1), tx.currency || mainCurrency)} {t.session.each}
+                                                                {formatCurrency(tx.amount / (tx.assigned_to?.length || 1), tx.currency || mainCurrency)} {t.session.each}
                                                             </span>
                                                         )}
                                                         <button
@@ -624,7 +665,7 @@ export function SessionEditor({ userId, initialSession, participants, onSaved, o
                                                             onClick={() => toggleAllParticipants(idx)}
                                                             className="flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-muted/50 text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors"
                                                         >
-                                                            {participants.every(p => tx.splitWith?.includes(p)) ? (
+                                                            {participants.every(p => tx.assigned_to?.includes(p)) ? (
                                                                 <><Square className="w-2.5 h-2.5" /> {t.session.none}</>
                                                             ) : (
                                                                 <><CheckSquare className="w-2.5 h-2.5" /> {t.session.all}</>
@@ -634,7 +675,7 @@ export function SessionEditor({ userId, initialSession, participants, onSaved, o
                                                 </div>
                                                 <div className="space-y-2">
                                                     {participants.map(p => {
-                                                        const isSelected = tx.splitWith?.includes(p) || false;
+                                                        const isSelected = tx.assigned_to?.includes(p) || false;
                                                         return (
                                                             <label
                                                                 key={p}

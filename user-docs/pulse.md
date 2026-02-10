@@ -16,13 +16,22 @@
     - Cleaned up legacy `indexedDb.ts` implementation.
     - Verified build and type safety with `npx tsc`.
 
-## [2026-02-10] Phase 2: Per-Transaction Hybrid Model [NEXT]
+## [2026-02-10] Phase 2: Per-Transaction Hybrid Model [COMPLETED]
 - **Goal**: Allow each transaction to independently choose its splitting mode (Simple vs. Payer-focused).
-- **Core Strategy**: 
-    - Implement a subtle "Who paid?" UI element in each transaction row for progressive disclosure.
-    - Expand `Transaction` type to include optional `paid_by` and `mode`.
-    - Update `calculateSummary` to handle both simple (split among checked) and advanced (payer-based) calculations simultaneously.
-- **Reference Files**:
-    - [IMPLEMENTATION_PHASES.md](file:///c:/00%20Development/expenses-calculator-py/user-docs/planning/IMPLEMENTATION_PHASES.md#L93-L160) (Detailed Phase 2 design)
-    - [index.ts](file:///c:/00%20Development/expenses-calculator-py/src/types/index.ts) (Type updates)
-    - [calculations.ts](file:///c:/00%20Development/expenses-calculator-py/src/lib/calculations.ts) (Calculation engine)
+- **Accomplishments**:
+    - Renamed `splitWith` to `assigned_to` across the app for legacy compatibility.
+    - Updated `calculateSummary` to handle transactions with and without `payer`.
+    - Implemented progressive disclosure UI for payer selection in `SessionEditor`.
+    - Added `PEN` currency support.
+    - Verified build and type safety with `npm run build`.
+
+## [2026-02-10] Phase 3: Currency System — Toggle + Multi-Currency [COMPLETED]
+- **Goal**: Keep multi-currency rates but bring back per-transaction label toggle.
+- **Accomplishments**:
+    - Implemented clickable currency toggle badge in `SessionEditor` rows.
+    - Ensured `Transaction.currency` defaults to `mainCurrency`.
+    - Verified all summary and settle-up displays are normalized to `mainCurrency`.
+    - Confirmed exchange rate math in `calculations.ts` handles per-transaction overrides.
+    - Verified build and type safety with `npm run build`.
+
+## [2026-02-10] Phase 4: Missing Features — Feature Parity with Python [NEXT]

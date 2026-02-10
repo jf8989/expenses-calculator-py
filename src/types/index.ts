@@ -6,8 +6,8 @@ export interface Timestamp {
 export interface Transaction {
   description: string;
   amount: number;
-  payer: string;
-  splitWith: string[];
+  payer?: string;
+  assigned_to: string[];
   date: string;
   currency?: string; // currency code for this transaction (defaults to session's mainCurrency)
 }

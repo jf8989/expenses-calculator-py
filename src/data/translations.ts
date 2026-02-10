@@ -84,6 +84,7 @@ export const translations = {
       noCurrencyHint: "Add extra currencies with their exchange rates",
       rateHint: "per 1",
       currency: "Currency",
+      whoPaid: "Who paid?",
     },
     settle: {
       financialSummary: "Financial",
@@ -216,6 +217,7 @@ export const translations = {
       noCurrencyHint: "Agrega monedas extra con sus tasas de cambio",
       rateHint: "por 1",
       currency: "Moneda",
+      whoPaid: "¿Quién pagó?",
     },
     settle: {
       financialSummary: "Resumen",

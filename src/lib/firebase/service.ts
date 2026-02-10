@@ -9,26 +9,16 @@ const db = admin.firestore();
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const normalizeTransaction = (raw: any): Transaction => {
-  // If `payer` already exists, use the new format as-is
-  if (raw.payer !== undefined) {
-    return {
-      description: raw.description || "",
-      amount: Number(raw.amount) || 0,
-      payer: raw.payer,
-      splitWith: raw.splitWith || [],
-      date: raw.date || "",
-    };
-  }
+  // Use new field name `assigned_to` if present, otherwise fall back to `splitWith`
+  const assigned_to = raw.assigned_to || raw.splitWith || [];
 
-  // Legacy format: `assigned_to` is an array of participant names
-  // The first entry is the payer; all entries share the split
-  const assignedTo: string[] = raw.assigned_to || [];
   return {
     description: raw.description || "",
     amount: Number(raw.amount) || 0,
-    payer: assignedTo[0] || "",
-    splitWith: assignedTo.length > 0 ? assignedTo : [],
+    payer: raw.payer || undefined,
+    assigned_to: assigned_to,
     date: raw.date || "",
+    currency: raw.currency || undefined,
   };
 };
 

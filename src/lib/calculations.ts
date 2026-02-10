@@ -43,7 +43,7 @@ export function calculateSummary(
       };
     }
     // Add split participants to summaries if not present
-    tx.splitWith?.forEach((p) => {
+    tx.assigned_to?.forEach((p) => {
       if (p && !summaries[p]) {
         summaries[p] = { name: p, totalPaid: 0, fairShare: 0, balance: 0 };
       }
@@ -58,22 +58,20 @@ export function calculateSummary(
     if (txCurrency && mainCurrency && txCurrency !== mainCurrency && currencies) {
       const rate = currencies[txCurrency];
       if (rate && rate > 0) {
-        // rate = how many units of txCurrency per 1 mainCurrency
-        // so to convert txCurrency → mainCurrency: divide by rate
         amount = rawAmount / rate;
       }
     }
 
-    // The person who paid
-    if (summaries[tx.payer]) {
+    // Payer Mode: The person who paid gets credit
+    if (tx.payer && summaries[tx.payer]) {
       summaries[tx.payer].totalPaid += amount;
     }
 
-    // Each person's fair share of this expense
-    const splitCount = tx.splitWith?.length || 0;
+    // Each person's fair share of this expense (Simple OR Payer Mode)
+    const splitCount = tx.assigned_to?.length || 0;
     if (splitCount > 0) {
       const share = amount / splitCount;
-      tx.splitWith.forEach((p) => {
+      tx.assigned_to.forEach((p) => {
         if (summaries[p]) {
           summaries[p].fairShare += share;
         }

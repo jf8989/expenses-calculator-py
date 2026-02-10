@@ -17,8 +17,7 @@ export function parseTransactions(text: string, defaultPayer: string, allPartici
           date,
           description: description.trim(),
           amount,
-          payer: defaultPayer,
-          splitWith: [...allParticipants],
+          assigned_to: [...allParticipants],
         } as Transaction;
       }
       return null;

@@ -27,6 +27,10 @@ export default function LoginPage() {
     }, [user, router]);
 
     const handleGoogleSignIn = async () => {
+        if (!isFirebaseActive) {
+            alert("Firebase is not configured. Please check your .env.local file.");
+            return;
+        }
         if (!auth || isSigningIn) return;
 
         setIsSigningIn(true);
@@ -133,10 +137,14 @@ export default function LoginPage() {
 
                             <Button
                                 onClick={handleGoogleSignIn}
-                                disabled={!isFirebaseActive || isSigningIn}
+                                disabled={isSigningIn}
                                 variant="outline"
-                                className="w-full h-14 flex items-center justify-center gap-4 text-base border-2 border-border/50 bg-background/50 hover:bg-primary/5 hover:border-primary/30 transition-all duration-300"
+                                className="w-full h-14 flex items-center justify-center gap-4 text-base border-2 border-border/50 bg-background/50 hover:bg-primary/5 hover:border-primary/30 transition-all duration-300 relative group overflow-hidden"
                             >
+                                {!isFirebaseActive && (
+                                    <div className="absolute inset-x-0 -bottom-1 h-1 bg-destructive/50" />
+                                )}
+
                                 {isSigningIn ? (
                                     <>
                                         <Spinner className="w-6 h-6" />
@@ -166,6 +174,26 @@ export default function LoginPage() {
                                     </>
                                 )}
                             </Button>
+
+                            {!isFirebaseActive && (
+                                <motion.div
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    className="p-4 rounded-xl bg-destructive/10 border border-destructive/20 flex items-start gap-3"
+                                >
+                                    <div className="w-5 h-5 rounded-full bg-destructive flex items-center justify-center shrink-0 mt-0.5">
+                                        <Shield className="w-3 h-3 text-white" />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <p className="text-sm font-bold text-destructive">
+                                            {t.header.firebaseNotConfigured}
+                                        </p>
+                                        <p className="text-xs text-muted-foreground leading-relaxed">
+                                            Configure <code>.env.local</code> with your Firebase credentials to enable cloud sync and authentication.
+                                        </p>
+                                    </div>
+                                </motion.div>
+                            )}
 
                             <motion.div
                                 initial={{ opacity: 0 }}

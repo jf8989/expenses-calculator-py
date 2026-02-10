@@ -1,5 +1,11 @@
 # Project Pulse - Next.js Migration Enhancements
 
+> [!IMPORTANT]
+> **AI Continuity Protocol**: Any AI assistant working on this project MUST:
+> 1.  **Read this file first** to understand current progress.
+> 2.  **Update this file** after completing each implementation phase.
+> 3.  **Include References**: Always include links to implementation plans, reference files, and key components for the next phase to avoid redundant instruction and research.
+
 ## [2026-02-10] Phase 1: Global State Management (Zustand) [COMPLETED]
 - **Goal**: Implement centralized state management with Zustand and IndexedDB persistence.
 - **Accomplishments**:

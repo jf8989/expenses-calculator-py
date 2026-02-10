@@ -53,19 +53,24 @@
     - Added translation support for PDF labels in English and Spanish.
     - Verified build and type safety with `npm run build`.
 
-## [2026-02-10] Phase 6: Polish & UI Fixes [COMPLETED]
-- **Goal**: Final UI refinements and fixing participant visibility bugs.
-- **Accomplishments**:
-    - **UI FIX**: Resolved issue where "Split With" checkboxes were invisible in `SessionEditor.tsx` when the global participants list was empty.
-    - Switched transaction-level participant rendering to use `sessionParticipants` (which correctly falls back to session data).
-    - Verified build and hydration with `npm run build`.
+## Extra Enhancements & Polish
 
-## [2026-02-10] Phase 7: Per-Currency Balances [COMPLETED]
+### Per-Currency Balances [COMPLETED]
 - **Goal**: Separate balances and debts by currency to avoid misleading exchange rate conversions.
 - **Accomplishments**:
-    - Implemented `calculateMultiCurrencySummary` and `calculateMultiCurrencyDebts` in [calculations.ts](file:///c:/00%20Development/expenses-calculator-py/src/lib/calculations.ts).
-    - **No-Conversion Architecture**: Each currency now maintains its own independent balance sheet.
-    - Updated `SettleUp.tsx` to group balances and suggested payments by currency with visual badges.
-    - Updated `SessionEditor.tsx` live summary widget to show per-currency breakdowns.
-    - Enhanced PDF export in [pdfExport.ts](file:///c:/00%20Development/expenses-calculator-py/src/lib/pdfExport.ts) to include multiple summary tables (one per currency).
-    - Verified production build: `Compiled successfully`.
+    - Implemented `calculateMultiCurrencySummary` and `calculateMultiCurrencyDebts`.
+    - **No-Conversion Architecture**: Each currency maintains its own independent balance sheet.
+    - Updated `SettleUp.tsx` and `SessionEditor.tsx` with per-currency UI badges and grouping.
+    - Enhanced PDF export to include multiple summary tables.
+
+### Session-Only Participants [COMPLETED]
+- **Goal**: Add participants to a specific session without cluttering the global list.
+- **Accomplishments**:
+    - Added "Session Participants" UI card to `SessionEditor.tsx`.
+    - Implemented local state for adding/removing people within the session context.
+    - Ensured session-only names flow into transaction "Paid By" and "Split With" logic.
+
+### UI Fixes & Refinements [COMPLETED]
+- **Accomplishments**:
+    - **UI FIX**: Resolved issue where "Split With" checkboxes were invisible when global participants list was empty.
+    - Verified build and hydration with `npm run build`.

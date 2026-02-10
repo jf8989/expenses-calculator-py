@@ -54,6 +54,7 @@ export const translations = {
       removeTitle: "Remove Participant",
       removeConfirm: "Are you sure you want to remove",
       removeWarning: "Their assignments will be cleared.",
+      alreadyAdded: "This person is already in the session.",
     },
     session: {
       create: "Create",
@@ -105,6 +106,9 @@ export const translations = {
       confirmOverwrite: "Overwrite Session?",
       confirmOverwriteMsg: "Overwrite this session with current data?",
       exportPdf: "Export PDF",
+      sessionParticipants: "Session Participants",
+      addParticipant: "Add Participant",
+      participantName: "Name...",
     },
     settle: {
       financialSummary: "Financial",
@@ -207,6 +211,7 @@ export const translations = {
       removeTitle: "Eliminar Participante",
       removeConfirm: "¿Estás seguro de que quieres eliminar a",
       removeWarning: "Sus asignaciones serán borradas.",
+      alreadyAdded: "Esta persona ya está en la sesión.",
     },
     session: {
       create: "Crear",
@@ -258,6 +263,9 @@ export const translations = {
       confirmOverwrite: "¿Sobrescribir Sesión?",
       confirmOverwriteMsg: "¿Sobrescribir esta sesión con los datos actuales?",
       exportPdf: "Exportar PDF",
+      sessionParticipants: "Participantes de Sesión",
+      addParticipant: "Agregar Participante",
+      participantName: "Nombre...",
     },
     settle: {
       financialSummary: "Resumen",

@@ -30,6 +30,7 @@ import {
     X,
     Search,
     Filter,
+    Users,
 } from "lucide-react";
 import { getAvatarColor } from "@/lib/avatarUtils";
 import { useLanguage } from "@/context/LanguageContext";
@@ -76,6 +77,7 @@ export function SessionEditor({ userId, initialSession, participants, onSaved, o
     const [newCurrencyCode, setNewCurrencyCode] = useState("");
     const [newCurrencyRate, setNewCurrencyRate] = useState("");
     const [isExporting, setIsExporting] = useState(false);
+    const [participantInput, setParticipantInput] = useState("");
 
     // Dialog states
     const [txToDelete, setTxToDelete] = useState<number | null>(null);
@@ -275,6 +277,37 @@ export function SessionEditor({ userId, initialSession, participants, onSaved, o
         setNewCurrencyRate("");
     };
 
+    const addSessionParticipant = () => {
+        const name = participantInput.trim();
+        if (!name) return;
+
+        const currentParticipants = activeSession?.participants || [];
+        if (currentParticipants.includes(name)) {
+            showToast(t.participants.alreadyAdded || "Already added", "error");
+            return;
+        }
+
+        updateActiveSession({
+            participants: [...currentParticipants, name]
+        });
+        setParticipantInput("");
+    };
+
+    const removeSessionParticipant = (participant: string) => {
+        const currentParticipants = activeSession?.participants || [];
+        updateActiveSession({
+            participants: currentParticipants.filter(p => p !== participant)
+        });
+
+        // Also cleanup transactions if they were assigned to this person
+        const updatedTransactions = transactions.map(tx => ({
+            ...tx,
+            payer: tx.payer === participant ? undefined : tx.payer,
+            assigned_to: tx.assigned_to.filter(p => p !== participant)
+        }));
+        updateActiveSession({ transactions: updatedTransactions });
+    };
+
     const removeExtraCurrency = (code: string) => {
         updateActiveSession(prev => {
             const nextCurrencies = { ...prev.currencies };
@@ -415,6 +448,64 @@ export function SessionEditor({ userId, initialSession, participants, onSaved, o
                                     onChange={(e) => setDescription(e.target.value)}
                                     className="bg-background/50 min-h-[48px]"
                                 />
+                            </CardContent>
+                        </Card>
+
+                        {/* Session Participants Card */}
+                        <Card className="border-border/50 bg-card/50 backdrop-blur-xl shadow-xl overflow-hidden" hover={false}>
+                            <div className="h-1.5 w-full bg-gradient-to-r from-violet-500 via-purple-500 to-violet-500" />
+                            <CardHeader>
+                                <CardTitle className="text-xl font-bold flex items-center gap-2">
+                                    <Users className="w-5 h-5 text-violet-500" />
+                                    {t.session.sessionParticipants}
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                                <div className="flex gap-2">
+                                    <Input
+                                        placeholder={t.session.participantName}
+                                        value={participantInput}
+                                        onChange={(e) => setParticipantInput(e.target.value)}
+                                        onKeyDown={(e) => e.key === "Enter" && addSessionParticipant()}
+                                        className="bg-background/50"
+                                    />
+                                    <Button
+                                        variant="outline"
+                                        onClick={addSessionParticipant}
+                                        className="gap-2"
+                                    >
+                                        <Plus className="w-4 h-4" />
+                                        <span className="hidden sm:inline">{t.session.addParticipant}</span>
+                                    </Button>
+                                </div>
+
+                                <div className="flex flex-wrap gap-2 pt-2">
+                                    {sessionParticipants.map((p) => (
+                                        <motion.div
+                                            key={p}
+                                            initial={{ opacity: 0, scale: 0.8 }}
+                                            animate={{ opacity: 1, scale: 1 }}
+                                            className="group flex items-center gap-2 px-3 py-1.5 rounded-full bg-violet-500/10 border border-violet-500/20 text-violet-500"
+                                        >
+                                            <div
+                                                className="w-2 h-2 rounded-full"
+                                                style={{ backgroundColor: getAvatarColor(p) }}
+                                            />
+                                            <span className="text-sm font-medium">{p}</span>
+                                            <button
+                                                onClick={() => removeSessionParticipant(p)}
+                                                className="p-0.5 hover:bg-violet-500/20 rounded-full transition-colors opacity-0 group-hover:opacity-100"
+                                            >
+                                                <X className="w-3 h-3" />
+                                            </button>
+                                        </motion.div>
+                                    ))}
+                                    {sessionParticipants.length === 0 && (
+                                        <p className="text-sm text-muted-foreground italic w-full text-center py-4">
+                                            {t.participants.noParticipants}
+                                        </p>
+                                    )}
+                                </div>
                             </CardContent>
                         </Card>
 

@@ -104,6 +104,7 @@ export const translations = {
       overwrite: "Overwrite",
       confirmOverwrite: "Overwrite Session?",
       confirmOverwriteMsg: "Overwrite this session with current data?",
+      exportPdf: "Export PDF",
     },
     settle: {
       financialSummary: "Financial",
@@ -256,6 +257,7 @@ export const translations = {
       overwrite: "Sobrescribir",
       confirmOverwrite: "¿Sobrescribir Sesión?",
       confirmOverwriteMsg: "¿Sobrescribir esta sesión con los datos actuales?",
+      exportPdf: "Exportar PDF",
     },
     settle: {
       financialSummary: "Resumen",

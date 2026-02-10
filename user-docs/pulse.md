@@ -44,7 +44,28 @@
     - Added **Session Overwrite** and **New Session/Reset** functionality.
     - Verified build status: `Compiled successfully`.
 
-## [2026-02-10] Phase 5: PDF Export [NEXT]
+## [2026-02-10] Phase 5: PDF Export [COMPLETED]
 - **Goal**: Generate printable PDF summaries for settled-up sessions.
-- **Reference**: [IMPLEMENTATION_PHASES.md](file:///c:/00%20Development/expenses-calculator-py/user-docs/planning/IMPLEMENTATION_PHASES.md#L358-L417)
-- **Key Files**: `SettleUp.tsx`, `calculations.ts`.
+- **Accomplishments**:
+    - Implemented `exportSessionPdf` utility using `jspdf` and `jspdf-autotable`.
+    - Added professional PDF layout with headers, transaction tables, and financial summaries.
+    - Integrated PDF export buttons in `SessionsList` (dashboard) and `SessionEditor` (toolbar).
+    - Added translation support for PDF labels in English and Spanish.
+    - Verified build and type safety with `npm run build`.
+
+## [2026-02-10] Phase 6: Polish & UI Fixes [COMPLETED]
+- **Goal**: Final UI refinements and fixing participant visibility bugs.
+- **Accomplishments**:
+    - **UI FIX**: Resolved issue where "Split With" checkboxes were invisible in `SessionEditor.tsx` when the global participants list was empty.
+    - Switched transaction-level participant rendering to use `sessionParticipants` (which correctly falls back to session data).
+    - Verified build and hydration with `npm run build`.
+
+## [2026-02-10] Phase 7: Per-Currency Balances [COMPLETED]
+- **Goal**: Separate balances and debts by currency to avoid misleading exchange rate conversions.
+- **Accomplishments**:
+    - Implemented `calculateMultiCurrencySummary` and `calculateMultiCurrencyDebts` in [calculations.ts](file:///c:/00%20Development/expenses-calculator-py/src/lib/calculations.ts).
+    - **No-Conversion Architecture**: Each currency now maintains its own independent balance sheet.
+    - Updated `SettleUp.tsx` to group balances and suggested payments by currency with visual badges.
+    - Updated `SessionEditor.tsx` live summary widget to show per-currency breakdowns.
+    - Enhanced PDF export in [pdfExport.ts](file:///c:/00%20Development/expenses-calculator-py/src/lib/pdfExport.ts) to include multiple summary tables (one per currency).
+    - Verified production build: `Compiled successfully`.

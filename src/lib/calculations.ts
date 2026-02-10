@@ -125,3 +125,108 @@ export function calculateDebts(
 
   return debts;
 }
+
+// ─── Per-Currency Balances ───────────────────────────────────────────
+
+export interface CurrencyDebt extends Debt {
+  currency: string;
+}
+
+/**
+ * Multi-currency summary: Record<currency, Record<participantName, ParticipantSummary>>
+ */
+export type MultiCurrencySummaries = Record<string, Record<string, ParticipantSummary>>;
+
+/**
+ * Calculate participant summaries separated by currency.
+ * Each transaction stays in its own currency — NO conversion.
+ */
+export function calculateMultiCurrencySummary(
+  transactions: Transaction[],
+  participants: string[],
+  mainCurrency: string = "USD",
+): MultiCurrencySummaries {
+  // Group transactions by currency
+  const byCurrency: Record<string, Transaction[]> = {};
+  transactions.forEach((tx) => {
+    const cur = tx.currency || mainCurrency;
+    if (!byCurrency[cur]) byCurrency[cur] = [];
+    byCurrency[cur].push(tx);
+  });
+
+  const result: MultiCurrencySummaries = {};
+
+  Object.entries(byCurrency).forEach(([currency, txs]) => {
+    const summaries: Record<string, ParticipantSummary> = {};
+
+    // Initialize all participants for this currency
+    participants.forEach((p) => {
+      summaries[p] = { name: p, totalPaid: 0, fairShare: 0, balance: 0 };
+    });
+
+    txs.forEach((tx) => {
+      // Add payer if not present
+      if (tx.payer && !summaries[tx.payer]) {
+        summaries[tx.payer] = { name: tx.payer, totalPaid: 0, fairShare: 0, balance: 0 };
+      }
+      // Add split participants if not present
+      tx.assigned_to?.forEach((p) => {
+        if (p && !summaries[p]) {
+          summaries[p] = { name: p, totalPaid: 0, fairShare: 0, balance: 0 };
+        }
+      });
+
+      const amount = Number(tx.amount);
+      if (isNaN(amount) || amount <= 0) return;
+
+      // Credit the payer
+      if (tx.payer && summaries[tx.payer]) {
+        summaries[tx.payer].totalPaid += amount;
+      }
+
+      // Split fair share
+      const splitCount = tx.assigned_to?.length || 0;
+      if (splitCount > 0) {
+        const share = amount / splitCount;
+        tx.assigned_to.forEach((p) => {
+          if (summaries[p]) {
+            summaries[p].fairShare += share;
+          }
+        });
+      }
+    });
+
+    // Compute balances
+    Object.values(summaries).forEach((s) => {
+      s.balance = s.totalPaid - s.fairShare;
+    });
+
+    // Only include this currency if there's meaningful activity
+    const hasActivity = Object.values(summaries).some(
+      (s) => s.totalPaid > 0.01 || s.fairShare > 0.01
+    );
+    if (hasActivity) {
+      result[currency] = summaries;
+    }
+  });
+
+  return result;
+}
+
+/**
+ * Calculate debts per currency. Returns an array of CurrencyDebt.
+ */
+export function calculateMultiCurrencyDebts(
+  multiSummaries: MultiCurrencySummaries,
+): CurrencyDebt[] {
+  const allDebts: CurrencyDebt[] = [];
+
+  Object.entries(multiSummaries).forEach(([currency, summaries]) => {
+    const debts = calculateDebts(summaries);
+    debts.forEach((d) => {
+      allDebts.push({ ...d, currency });
+    });
+  });
+
+  return allDebts;
+}

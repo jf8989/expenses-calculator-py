@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { calculateSummary, calculateDebts } from "@/lib/calculations";
+import { calculateMultiCurrencySummary, calculateMultiCurrencyDebts } from "@/lib/calculations";
 import { SettleUp } from "./SettleUp";
 import { parseTransactions } from "@/lib/parser";
 import { formatCurrency } from "@/lib/utils";
@@ -36,6 +36,8 @@ import { useLanguage } from "@/context/LanguageContext";
 import { useAppStore } from "@/store/useAppStore";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { useToast } from "@/components/ui/Toast";
+import { exportSessionPdf } from "@/lib/pdfExport";
+import { FileDown, Loader2 } from "lucide-react";
 
 interface SessionEditorProps {
     userId: string;
@@ -63,7 +65,7 @@ export function SessionEditor({ userId, initialSession, participants, onSaved, o
         resetActiveSession,
     } = useAppStore();
 
-    const { t } = useLanguage();
+    const { t, language } = useLanguage();
 
     // Local UI-only state
     const [isSaving, setIsSaving] = useState(false);
@@ -73,6 +75,7 @@ export function SessionEditor({ userId, initialSession, participants, onSaved, o
     const [searchQuery, setSearchQuery] = useState("");
     const [newCurrencyCode, setNewCurrencyCode] = useState("");
     const [newCurrencyRate, setNewCurrencyRate] = useState("");
+    const [isExporting, setIsExporting] = useState(false);
 
     // Dialog states
     const [txToDelete, setTxToDelete] = useState<number | null>(null);
@@ -86,6 +89,7 @@ export function SessionEditor({ userId, initialSession, participants, onSaved, o
         if (initialSession) {
             setActiveSession({
                 ...initialSession,
+                mainCurrency: initialSession.mainCurrency || "USD",
                 transactions: initialSession.transactions.map(tx => ({
                     ...tx,
                     assigned_to: tx.assigned_to || (tx as any).splitWith || [],
@@ -142,19 +146,34 @@ export function SessionEditor({ userId, initialSession, participants, onSaved, o
         );
     }, [transactions, searchQuery]);
 
-    // Calculate summaries and debts memoized (with currency conversion)
-    const { summaries, debts } = useMemo(() => {
-        const s = calculateSummary(
+    // Calculate per-currency summaries and debts (no conversion — each currency stays separate)
+    const { multiSummaries, multiDebts } = useMemo(() => {
+        const ms = calculateMultiCurrencySummary(
             transactions,
             activeSession?.participants || participants,
             mainCurrency,
-            currencies,
         );
-        const d = calculateDebts(s);
-        return { summaries: s, debts: d };
-    }, [transactions, participants, activeSession?.participants, mainCurrency, currencies]);
+        const md = calculateMultiCurrencyDebts(ms);
+        return { multiSummaries: ms, multiDebts: md };
+    }, [transactions, participants, activeSession?.participants, mainCurrency]);
 
-    const fmt = (amount: number) => formatCurrency(Math.abs(amount), mainCurrency);
+    const sessionParticipants = activeSession?.participants || participants;
+
+    const fmt = (amount: number, currency?: string) => formatCurrency(Math.abs(amount), currency || mainCurrency);
+
+    const handleExport = async () => {
+        if (!activeSession) return;
+        setIsExporting(true);
+        try {
+            await exportSessionPdf(activeSession, language);
+            showToast("PDF exported successfully");
+        } catch (error) {
+            console.error("Error exporting PDF", error);
+            showToast(t.common?.error || "Error", "error");
+        } finally {
+            setIsExporting(false);
+        }
+    };
 
     const handleSave = async () => {
         if (!name.trim() || !activeSession) return;
@@ -190,7 +209,7 @@ export function SessionEditor({ userId, initialSession, participants, onSaved, o
         const newTx: Transaction = {
             description: "",
             amount: 0,
-            assigned_to: [...participants],
+            assigned_to: [...sessionParticipants],
             date: new Date().toISOString().split('T')[0],
             currency: mainCurrency,
         };
@@ -239,8 +258,8 @@ export function SessionEditor({ userId, initialSession, participants, onSaved, o
 
     const toggleAllParticipants = (txIdx: number) => {
         const tx = transactions[txIdx];
-        const allSelected = participants.every(p => tx.assigned_to?.includes(p));
-        updateTransaction(txIdx, "assigned_to", allSelected ? [] : [...participants]);
+        const allSelected = sessionParticipants.every(p => tx.assigned_to?.includes(p));
+        updateTransaction(txIdx, "assigned_to", allSelected ? [] : [...sessionParticipants]);
     };
 
     const addExtraCurrency = () => {
@@ -324,6 +343,19 @@ export function SessionEditor({ userId, initialSession, participants, onSaved, o
                         {showSettleUp ? t.session.edit : t.session.settleUp}
                     </Button>
                     <Button
+                        variant="outline"
+                        onClick={handleExport}
+                        disabled={isExporting || !activeSession}
+                        className="rounded-xl gap-2 flex-1 sm:flex-none"
+                    >
+                        {isExporting ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                            <FileDown className="w-4 h-4" />
+                        )}
+                        {t.session.exportPdf}
+                    </Button>
+                    <Button
                         onClick={handleSave}
                         disabled={isSaving || !name.trim()}
                         variant="gradient"
@@ -349,7 +381,7 @@ export function SessionEditor({ userId, initialSession, participants, onSaved, o
                             <h2 className="text-3xl font-bold tracking-tight">{t.settle.financialSummary} <span className="gradient-text">{t.settle.summaryHighlight}</span></h2>
                             <p className="text-muted-foreground">{t.settle.howToSettle}</p>
                         </div>
-                        <SettleUp summaries={summaries} debts={debts} mainCurrency={mainCurrency} />
+                        <SettleUp multiSummaries={multiSummaries} multiDebts={multiDebts} mainCurrency={mainCurrency} />
                     </motion.div>
                 ) : (
                     <motion.div
@@ -507,35 +539,55 @@ export function SessionEditor({ userId, initialSession, participants, onSaved, o
                             </CardContent>
                         </Card>
 
-                        {/* Live Summary Widget */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                            {Object.values(summaries).map((s) => {
-                                const isPositive = s.balance >= 0;
+                        {/* Live Summary Widget — per currency */}
+                        <div className="space-y-4">
+                            {Object.entries(multiSummaries).map(([currency, summaries]) => {
+                                const activeSummaries = Object.values(summaries).filter(
+                                    s => Math.abs(s.balance) > 0.01 || s.totalPaid > 0.01 || s.fairShare > 0.01
+                                );
+                                if (activeSummaries.length === 0) return null;
                                 return (
-                                    <motion.div
-                                        key={s.name}
-                                        layout
-                                        className={`p-4 rounded-2xl border backdrop-blur-md transition-all ${isPositive
-                                            ? "bg-emerald-500/5 border-emerald-500/20"
-                                            : "bg-red-500/5 border-red-500/20"
-                                            }`}
-                                    >
-                                        <div className="flex justify-between items-center mb-1">
-                                            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{s.name}</span>
-                                            {isPositive ? (
-                                                <TrendingUp className="w-3.5 h-3.5 text-emerald-500" />
-                                            ) : (
-                                                <TrendingDown className="w-3.5 h-3.5 text-red-500" />
-                                            )}
+                                    <div key={currency}>
+                                        {Object.keys(multiSummaries).length > 1 && (
+                                            <div className="flex items-center gap-2 mb-2">
+                                                <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary uppercase tracking-wider">
+                                                    {currency}
+                                                </span>
+                                                <div className="flex-1 h-px bg-border/50" />
+                                            </div>
+                                        )}
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                                            {activeSummaries.map((s) => {
+                                                const isPositive = s.balance >= 0;
+                                                return (
+                                                    <motion.div
+                                                        key={`${currency}-${s.name}`}
+                                                        layout
+                                                        className={`p-4 rounded-2xl border backdrop-blur-md transition-all ${isPositive
+                                                            ? "bg-emerald-500/5 border-emerald-500/20"
+                                                            : "bg-red-500/5 border-red-500/20"
+                                                            }`}
+                                                    >
+                                                        <div className="flex justify-between items-center mb-1">
+                                                            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{s.name}</span>
+                                                            {isPositive ? (
+                                                                <TrendingUp className="w-3.5 h-3.5 text-emerald-500" />
+                                                            ) : (
+                                                                <TrendingDown className="w-3.5 h-3.5 text-red-500" />
+                                                            )}
+                                                        </div>
+                                                        <div className={`text-lg font-bold tabular-nums ${isPositive ? "text-emerald-500" : "text-red-500"}`}>
+                                                            {isPositive ? t.settle.getsBack : t.settle.owes} {fmt(s.balance, currency)}
+                                                        </div>
+                                                        <div className="flex gap-3 mt-1 text-[10px] text-muted-foreground">
+                                                            <span>{t.settle.paid}: {fmt(s.totalPaid, currency)}</span>
+                                                            <span>{t.settle.fairShare}: {fmt(s.fairShare, currency)}</span>
+                                                        </div>
+                                                    </motion.div>
+                                                );
+                                            })}
                                         </div>
-                                        <div className={`text-lg font-bold tabular-nums ${isPositive ? "text-emerald-500" : "text-red-500"}`}>
-                                            {isPositive ? t.settle.getsBack : t.settle.owes} {fmt(s.balance)}
-                                        </div>
-                                        <div className="flex gap-3 mt-1 text-[10px] text-muted-foreground">
-                                            <span>{t.settle.paid}: {fmt(s.totalPaid)}</span>
-                                            <span>{t.settle.fairShare}: {fmt(s.fairShare)}</span>
-                                        </div>
-                                    </motion.div>
+                                    </div>
                                 );
                             })}
                         </div>
@@ -668,7 +720,7 @@ export function SessionEditor({ userId, initialSession, participants, onSaved, o
                                                                         value={tx.payer}
                                                                         onChange={(e) => updateTransaction(originalIdx, "payer", e.target.value)}
                                                                     >
-                                                                        {participants.map(p => <option key={p} value={p}>{p}</option>)}
+                                                                        {sessionParticipants.map(p => <option key={p} value={p}>{p}</option>)}
                                                                     </select>
                                                                     <Button
                                                                         variant="ghost"
@@ -688,7 +740,7 @@ export function SessionEditor({ userId, initialSession, participants, onSaved, o
                                                                 >
                                                                     <Button
                                                                         variant="outline"
-                                                                        onClick={() => updateTransaction(originalIdx, "payer", participants[0])}
+                                                                        onClick={() => updateTransaction(originalIdx, "payer", sessionParticipants[0])}
                                                                         className="w-full h-12 rounded-xl border-dashed border-2 text-muted-foreground hover:text-primary hover:border-primary transition-all text-xs"
                                                                     >
                                                                         {t.session.whoPaid || "Who paid?"}
@@ -714,7 +766,7 @@ export function SessionEditor({ userId, initialSession, participants, onSaved, o
                                                             onClick={() => toggleAllParticipants(originalIdx)}
                                                             className="flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-muted/50 text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors"
                                                         >
-                                                            {participants.every(p => tx.assigned_to?.includes(p)) ? (
+                                                            {sessionParticipants.every(p => tx.assigned_to?.includes(p)) ? (
                                                                 <><Square className="w-2.5 h-2.5" /> {t.session.none}</>
                                                             ) : (
                                                                 <><CheckSquare className="w-2.5 h-2.5" /> {t.session.all}</>
@@ -723,7 +775,7 @@ export function SessionEditor({ userId, initialSession, participants, onSaved, o
                                                     </div>
                                                 </div>
                                                 <div className="space-y-2">
-                                                    {participants.map(p => {
+                                                    {sessionParticipants.map(p => {
                                                         const isSelected = tx.assigned_to?.includes(p) || false;
                                                         return (
                                                             <label

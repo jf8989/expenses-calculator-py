@@ -6,7 +6,7 @@ import { Session } from "@/types";
 import { deleteSession } from "@/app/actions/sessions";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Calendar, Users, CreditCard, Trash2, Sparkles, Save } from "lucide-react";
+import { Calendar, Users, CreditCard, Trash2, Sparkles, Save, FileDown, Loader2 } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
 import { formatCurrency } from "@/lib/utils";
 import { useAppStore } from "@/store/useAppStore";
@@ -14,6 +14,7 @@ import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { useToast } from "@/components/ui/Toast";
 import { useState } from "react";
 import { updateSession as updateSessionAction } from "@/app/actions/sessions";
+import { exportSessionPdf } from "@/lib/pdfExport";
 
 interface SessionsListProps {
     userId: string;
@@ -22,11 +23,12 @@ interface SessionsListProps {
 }
 export function SessionsList({ userId, initialSessions, onSelect }: SessionsListProps) {
     const { sessions, setSessions, activeSession } = useAppStore();
-    const { t } = useLanguage();
+    const { t, language } = useLanguage();
     const { showToast } = useToast();
     const [sessionToDelete, setSessionToDelete] = useState<string | null>(null);
     const [sessionToOverwrite, setSessionToOverwrite] = useState<string | null>(null);
     const [isOverwriting, setIsOverwriting] = useState(false);
+    const [exportingId, setExportingId] = useState<string | null>(null);
 
     const handleDelete = async () => {
         if (!sessionToDelete) return;
@@ -40,6 +42,20 @@ export function SessionsList({ userId, initialSessions, onSelect }: SessionsList
             showToast(t.common?.error || "Error", "error");
         } finally {
             setSessionToDelete(null);
+        }
+    };
+
+    const handleExport = async (e: React.MouseEvent, session: Session) => {
+        e.stopPropagation();
+        setExportingId(session.id || null);
+        try {
+            await exportSessionPdf(session, language);
+            showToast("PDF exported successfully");
+        } catch (error) {
+            console.error("Error exporting PDF", error);
+            showToast(t.common?.error || "Error", "error");
+        } finally {
+            setExportingId(null);
         }
     };
 
@@ -128,6 +144,20 @@ export function SessionsList({ userId, initialSessions, onSelect }: SessionsList
                                                     <Save className="w-4 h-4" />
                                                 </Button>
                                             )}
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={(e) => handleExport(e, session)}
+                                                disabled={exportingId === session.id}
+                                                className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 hover:text-emerald-500 hover:bg-emerald-500/10 transition-all"
+                                                title={t.session.exportPdf}
+                                            >
+                                                {exportingId === session.id ? (
+                                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                                ) : (
+                                                    <FileDown className="w-4 h-4" />
+                                                )}
+                                            </Button>
                                             <Button
                                                 variant="ghost"
                                                 size="sm"

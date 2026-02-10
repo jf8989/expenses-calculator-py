@@ -113,7 +113,10 @@ export const firestoreService = {
       if (raw.transactions && Array.isArray(raw.transactions)) {
         raw.transactions = raw.transactions.map(normalizeTransaction);
       }
-      return raw as Session;
+      return {
+        ...raw,
+        mainCurrency: raw.mainCurrency || "USD",
+      } as Session;
     });
   },
 

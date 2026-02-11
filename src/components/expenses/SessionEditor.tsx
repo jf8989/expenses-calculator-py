@@ -96,7 +96,7 @@ export function SessionEditor({ userId, initialSession, participants, onSaved, o
             setActiveSession({
                 ...initialSession,
                 mainCurrency: initialSession.mainCurrency || "USD",
-                transactions: initialSession.transactions.map(tx => ({
+                transactions: (initialSession.transactions || []).map(tx => ({
                     ...tx,
                     assigned_to: tx.assigned_to || (tx as any).splitWith || [],
                     currency: tx.currency || undefined,
@@ -111,8 +111,12 @@ export function SessionEditor({ userId, initialSession, participants, onSaved, o
                 mainCurrency: "USD",
                 currencies: {},
             });
+        } else if (!initialSession && activeSession.participants.length === 0 && participants.length > 0) {
+            // Case where we are creating a new session and global participants were loaded or added
+            // and the session currently has 0. We should probably offer to sync or auto-sync if it's brand new.
+            // For now, let's just make sure they are available in the 'suggested' list which we'll add below.
         }
-    }, [initialSession, setActiveSession, participants, activeSession?.id]);
+    }, [initialSession, setActiveSession, participants, activeSession?.id, activeSession?.participants?.length]);
 
     // Computed states from activeSession
     const name = activeSession?.name || "";
@@ -163,7 +167,11 @@ export function SessionEditor({ userId, initialSession, participants, onSaved, o
         return { multiSummaries: ms, multiDebts: md };
     }, [transactions, participants, activeSession?.participants, mainCurrency]);
 
-    const sessionParticipants = activeSession?.participants || participants;
+    const sessionParticipants = activeSession?.participants || [];
+
+    const suggestedParticipants = useMemo(() => {
+        return participants.filter(p => !sessionParticipants.includes(p));
+    }, [participants, sessionParticipants]);
 
     const fmt = (amount: number, currency?: string) => formatCurrency(Math.abs(amount), currency || mainCurrency);
 
@@ -510,6 +518,31 @@ export function SessionEditor({ userId, initialSession, participants, onSaved, o
                                         </p>
                                     )}
                                 </div>
+
+                                {suggestedParticipants.length > 0 && (
+                                    <div className="pt-4 space-y-2">
+                                        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground px-1">
+                                            {t.session.suggestedParticipants || "Suggested from your list"}
+                                        </p>
+                                        <div className="flex flex-wrap gap-2">
+                                            {suggestedParticipants.map((p) => (
+                                                <button
+                                                    key={p}
+                                                    onClick={() => {
+                                                        const currentParticipants = activeSession?.participants || [];
+                                                        updateActiveSession({
+                                                            participants: [...currentParticipants, p]
+                                                        });
+                                                    }}
+                                                    className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-muted/50 border border-border hover:bg-violet-500/10 hover:border-violet-500/30 hover:text-violet-500 transition-all text-sm group"
+                                                >
+                                                    <Plus className="w-3 h-3 text-muted-foreground group-hover:text-violet-500" />
+                                                    {p}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
                             </CardContent>
                         </Card>
 

@@ -109,6 +109,7 @@ export const translations = {
       sessionParticipants: "Session Participants",
       addParticipant: "Add Participant",
       participantName: "Name...",
+      suggestedParticipants: "Suggested from your list",
     },
     settle: {
       financialSummary: "Financial",
@@ -266,6 +267,7 @@ export const translations = {
       sessionParticipants: "Participantes de Sesión",
       addParticipant: "Agregar Participante",
       participantName: "Nombre...",
+      suggestedParticipants: "Sugeridos de tu lista",
     },
     settle: {
       financialSummary: "Resumen",

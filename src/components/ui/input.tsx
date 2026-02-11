@@ -6,13 +6,13 @@ import { cn } from "@/lib/utils";
 
 export interface InputProps
   extends React.InputHTMLAttributes<HTMLInputElement> {
-  label?: string;
+  label?: React.ReactNode;
   error?: string;
 }
 
 const Input = React.forwardRef<HTMLInputElement, InputProps>(
   ({ className, type, label, error, id, ...props }, ref) => {
-    const inputId = id || `input-${label?.toLowerCase().replace(/\s/g, "-")}`;
+    const inputId = id || `input-${typeof label === 'string' ? label.toLowerCase().replace(/\s/g, "-") : Math.random().toString(36).substring(7)}`;
 
     return (
       <div className="w-full group">

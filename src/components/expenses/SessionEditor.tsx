@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Session, Transaction } from "@/types";
 import { saveSession, updateSession } from "@/app/actions/sessions";
@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { calculateMultiCurrencySummary, calculateMultiCurrencyDebts } from "@/lib/calculations";
 import { SettleUp } from "./SettleUp";
+import { TransactionCard } from "./TransactionCard";
 import { parseTransactions } from "@/lib/parser";
 import { formatCurrency } from "@/lib/utils";
 import {
@@ -31,6 +32,9 @@ import {
     Search,
     Filter,
     Users,
+    ChevronDown,
+    Layout,
+    Pencil,
 } from "lucide-react";
 import { getAvatarColor } from "@/lib/avatarUtils";
 import { useLanguage } from "@/context/LanguageContext";
@@ -38,7 +42,8 @@ import { useAppStore } from "@/store/useAppStore";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { useToast } from "@/components/ui/Toast";
 import { exportSessionPdf } from "@/lib/pdfExport";
-import { FileDown, Loader2 } from "lucide-react";
+import { FileDown, Loader2, ArrowDownCircle } from "lucide-react";
+import { useInView } from "react-intersection-observer";
 
 interface SessionEditorProps {
     userId: string;
@@ -78,13 +83,12 @@ export function SessionEditor({ userId, initialSession, participants, onSaved, o
     const [newCurrencyRate, setNewCurrencyRate] = useState("");
     const [isExporting, setIsExporting] = useState(false);
     const [participantInput, setParticipantInput] = useState("");
+    const { showToast } = useToast();
 
     // Dialog states
     const [txToDelete, setTxToDelete] = useState<number | null>(null);
     const [showClearAllConfirm, setShowClearAllConfirm] = useState(false);
     const [showResetConfirm, setShowResetConfirm] = useState(false);
-
-    const { showToast } = useToast();
 
     // Initialize/Sync active session with initialSession
     useEffect(() => {
@@ -145,7 +149,6 @@ export function SessionEditor({ userId, initialSession, participants, onSaved, o
         return Array.from(set);
     }, [mainCurrency, secondaryCurrency, currencies]);
 
-    // Filtered transactions for visual search
     const filteredTransactions = useMemo(() => {
         if (!searchQuery.trim()) return transactions;
         const query = searchQuery.toLowerCase();
@@ -155,6 +158,24 @@ export function SessionEditor({ userId, initialSession, participants, onSaved, o
             tx.date.includes(query)
         );
     }, [transactions, searchQuery]);
+
+    // Performance: Paginated/Infinite scroll for transactions
+    const [visibleCount, setVisibleCount] = useState(20);
+    const { ref: loadMoreRef, inView } = useInView({
+        threshold: 0.1,
+        rootMargin: '200px',
+    });
+
+    useEffect(() => {
+        if (inView && visibleCount < filteredTransactions.length) {
+            setVisibleCount(prev => prev + 20);
+        }
+    }, [inView, filteredTransactions.length, visibleCount]);
+
+    // Reset visible count when search query changes
+    useEffect(() => {
+        setVisibleCount(20);
+    }, [searchQuery]);
 
     // Calculate per-currency summaries and debts (no conversion — each currency stays separate)
     const { multiSummaries, multiDebts } = useMemo(() => {
@@ -230,18 +251,18 @@ export function SessionEditor({ userId, initialSession, participants, onSaved, o
         addStoreTransaction(newTx);
     };
 
-    const updateTransaction = <K extends keyof Transaction>(index: number, field: K, value: Transaction[K]) => {
+    const updateTransaction = useCallback(<K extends keyof Transaction>(index: number, field: K, value: Transaction[K]) => {
         updateStoreTransaction(index, { [field]: value });
-    };
+    }, [updateStoreTransaction]);
 
-    const toggleSplitParticipant = (txIdx: number, pName: string) => {
+    const toggleSplitParticipant = useCallback((txIdx: number, pName: string) => {
         const tx = transactions[txIdx];
         const currentAssignedTo = tx.assigned_to || [];
         const assigned_to = currentAssignedTo.includes(pName)
             ? currentAssignedTo.filter(p => p !== pName)
             : [...currentAssignedTo, pName];
         updateTransaction(txIdx, "assigned_to", assigned_to);
-    };
+    }, [transactions, updateTransaction]);
 
     const removeTransaction = () => {
         if (txToDelete !== null) {
@@ -270,11 +291,36 @@ export function SessionEditor({ userId, initialSession, participants, onSaved, o
         }
     };
 
-    const toggleAllParticipants = (txIdx: number) => {
+    const handleDescriptionBlur = useCallback((txIdx: number, description: string) => {
+        if (!description.trim()) return;
+
+        // Find if this description (or similar) was used before in this session
+        // and had a non-default participant assignment
+        const historicalTx = transactions.find((tx, idx) =>
+            idx !== txIdx &&
+            tx.description.toLowerCase().trim() === description.toLowerCase().trim() &&
+            tx.assigned_to.length > 0 &&
+            tx.assigned_to.length < sessionParticipants.length
+        );
+
+        if (historicalTx) {
+            const currentTx = transactions[txIdx];
+            // Only auto-assign if the current tx is still at default (everyone assigned)
+            const isDefault = currentTx.assigned_to.length === sessionParticipants.length &&
+                sessionParticipants.every(p => currentTx.assigned_to.includes(p));
+
+            if (isDefault) {
+                updateTransaction(txIdx, "assigned_to", [...historicalTx.assigned_to]);
+                showToast(`Auto-assigned for "${description}"`);
+            }
+        }
+    }, [transactions, sessionParticipants, updateTransaction]);
+
+    const toggleAllParticipants = useCallback((txIdx: number) => {
         const tx = transactions[txIdx];
         const allSelected = sessionParticipants.every(p => tx.assigned_to?.includes(p));
         updateTransaction(txIdx, "assigned_to", allSelected ? [] : [...sessionParticipants]);
-    };
+    }, [transactions, sessionParticipants, updateTransaction]);
 
     const addExtraCurrency = () => {
         const code = newCurrencyCode.trim().toUpperCase();
@@ -416,6 +462,34 @@ export function SessionEditor({ userId, initialSession, participants, onSaved, o
                 </div>
             </motion.div>
 
+            {/* Section Quick Navigation - Floating/Sticky Side bar on large screens, or row below actions on mobile */}
+            {!showSettleUp && (
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="flex lg:flex-col items-center justify-center gap-2 p-2 bg-muted/30 backdrop-blur-md rounded-2xl border border-border/50 z-30 lg:fixed lg:right-6 lg:top-1/2 lg:-translate-y-1/2 shadow-xl"
+                >
+                    {[
+                        { id: 'info', icon: Layout, label: t.session.sessionLabel },
+                        { id: 'participants', icon: Users, label: t.participants.title },
+                        { id: 'currencies', icon: Coins, label: t.session.currencySettings },
+                        { id: 'transactions', icon: FileText, label: t.session.transactions }
+                    ].map((item) => (
+                        <button
+                            key={item.id}
+                            onClick={() => document.getElementById(item.id)?.scrollIntoView({ behavior: 'smooth', block: 'center' })}
+                            className="p-3 rounded-xl hover:bg-primary/20 hover:text-primary transition-all group relative"
+                            title={item.label}
+                        >
+                            <item.icon className="w-5 h-5" />
+                            <span className="absolute right-full mr-3 px-2 py-1 rounded bg-popover border border-border text-xs whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity hidden lg:block pointer-events-none">
+                                {item.label}
+                            </span>
+                        </button>
+                    ))}
+                </motion.div>
+            )}
+
 
             <AnimatePresence mode="wait">
                 {showSettleUp ? (
@@ -441,7 +515,7 @@ export function SessionEditor({ userId, initialSession, participants, onSaved, o
                         className="space-y-8"
                     >
                         {/* Session Info Card */}
-                        <Card className="border-border/50 bg-card/50 backdrop-blur-xl shadow-xl overflow-hidden" hover={false}>
+                        <Card id="info" className="border-border/50 bg-card/50 backdrop-blur-xl shadow-xl overflow-hidden" hover={false}>
                             <div className="h-1.5 w-full bg-gradient-to-r from-primary via-accent to-primary" />
                             <CardHeader>
                                 <CardTitle className="text-2xl font-bold flex items-center gap-2">
@@ -451,14 +525,14 @@ export function SessionEditor({ userId, initialSession, participants, onSaved, o
                             </CardHeader>
                             <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <Input
-                                    label={t.session.sessionName}
+                                    label={<div className="flex items-center gap-1.5">{t.session.sessionName} <Pencil className="w-3 h-3 text-muted-foreground/50" /></div>}
                                     placeholder={t.session.sessionNamePlaceholder}
                                     value={name}
                                     onChange={(e) => setName(e.target.value)}
                                     className="bg-background/50"
                                 />
                                 <Textarea
-                                    label={t.session.description}
+                                    label={<div className="flex items-center gap-1.5">{t.session.description} <Pencil className="w-3 h-3 text-muted-foreground/50" /></div>}
                                     placeholder={t.session.descriptionPlaceholder}
                                     value={description}
                                     onChange={(e) => setDescription(e.target.value)}
@@ -468,7 +542,7 @@ export function SessionEditor({ userId, initialSession, participants, onSaved, o
                         </Card>
 
                         {/* Session Participants Card */}
-                        <Card className="border-border/50 bg-card/50 backdrop-blur-xl shadow-xl overflow-hidden" hover={false}>
+                        <Card id="participants" className="border-border/50 bg-card/50 backdrop-blur-xl shadow-xl overflow-hidden" hover={false}>
                             <div className="h-1.5 w-full bg-gradient-to-r from-violet-500 via-purple-500 to-violet-500" />
                             <CardHeader>
                                 <CardTitle className="text-xl font-bold flex items-center gap-2">
@@ -551,7 +625,7 @@ export function SessionEditor({ userId, initialSession, participants, onSaved, o
                         </Card>
 
                         {/* Currency Settings Card */}
-                        <Card className="border-border/50 bg-card/50 backdrop-blur-xl shadow-xl overflow-hidden" hover={false}>
+                        <Card id="currencies" className="border-border/50 bg-card/50 backdrop-blur-xl shadow-xl overflow-hidden" hover={false}>
                             <div className="h-1.5 w-full bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-500" />
                             <CardHeader>
                                 <CardTitle className="text-xl font-bold flex items-center gap-2">
@@ -726,7 +800,7 @@ export function SessionEditor({ userId, initialSession, participants, onSaved, o
 
                         {/* Transactions Section */}
                         <div className="space-y-6">
-                            <h3 className="text-xl font-bold flex items-center gap-2">
+                            <h3 id="transactions" className="text-xl font-bold flex items-center gap-2">
                                 <span className="w-2 h-6 rounded-full bg-gradient-to-b from-primary to-accent" />
                                 {t.session.transactions}
                             </h3>
@@ -790,168 +864,37 @@ export function SessionEditor({ userId, initialSession, participants, onSaved, o
 
                         {/* Transaction Cards */}
                         <div className="space-y-4">
-                            {filteredTransactions.map((tx, idx) => {
+                            {filteredTransactions.slice(0, visibleCount).map((tx, idx) => {
                                 // Need to find original index for store updates as map order might differ due to filtering
                                 const originalIdx = transactions.indexOf(tx);
                                 return (
-                                    <motion.div
+                                    <TransactionCard
                                         key={originalIdx}
-                                        layout
-                                        initial={{ opacity: 0, y: 10 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        className="p-5 sm:p-6 rounded-2xl bg-card border border-border/50 shadow-sm space-y-5 relative group"
-                                    >
-                                        <div className="flex flex-wrap gap-6 items-start">
-                                            <div className="flex-1 min-w-[250px] space-y-4">
-                                                <Input
-                                                    label={t.session.description}
-                                                    placeholder={t.session.whatWasBought}
-                                                    value={tx.description}
-                                                    onChange={(e) => updateTransaction(originalIdx, "description", e.target.value)}
-                                                />
-                                                <div className="grid grid-cols-3 gap-4">
-                                                    <Input
-                                                        label={t.session.amount}
-                                                        type="number"
-                                                        value={tx.amount || ""}
-                                                        onChange={(e) => updateTransaction(originalIdx, "amount", parseFloat(e.target.value) || 0)}
-                                                    />
-                                                    {/* Per-transaction currency toggle */}
-                                                    <div>
-                                                        <label className="block text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-2">{t.session.currency}</label>
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => {
-                                                                if (availableCurrencies.length <= 1) return;
-                                                                const currentCurrency = tx.currency || mainCurrency;
-                                                                const currentIndex = availableCurrencies.indexOf(currentCurrency);
-                                                                const nextIndex = (currentIndex + 1) % availableCurrencies.length;
-                                                                updateTransaction(originalIdx, "currency", availableCurrencies[nextIndex]);
-                                                            }}
-                                                            className={`w-full h-12 rounded-xl border-2 flex items-center justify-center font-bold transition-all ${availableCurrencies.length > 1
-                                                                ? "bg-primary/5 border-primary/20 hover:border-primary/40 hover:bg-primary/10 cursor-pointer"
-                                                                : "bg-muted/30 border-border/50 cursor-default"
-                                                                }`}
-                                                        >
-                                                            <span className="gradient-text">{tx.currency || mainCurrency}</span>
-                                                        </button>
-                                                    </div>
-                                                    <div className="flex flex-col gap-2">
-                                                        <label className="block text-xs font-semibold uppercase tracking-widest text-muted-foreground">{t.session.paidBy}</label>
-                                                        <AnimatePresence mode="wait">
-                                                            {tx.payer ? (
-                                                                <motion.div
-                                                                    key="payer-select"
-                                                                    initial={{ opacity: 0, height: 0 }}
-                                                                    animate={{ opacity: 1, height: "auto" }}
-                                                                    exit={{ opacity: 0, height: 0 }}
-                                                                    className="flex items-center gap-2"
-                                                                >
-                                                                    <select
-                                                                        className="flex-1 h-12 rounded-xl bg-background/50 border-2 border-border px-4 text-sm focus:border-primary focus:shadow-[0_0_0_4px_hsl(var(--primary)/0.1)] outline-none transition-all hover:border-muted-foreground/30"
-                                                                        value={tx.payer}
-                                                                        onChange={(e) => updateTransaction(originalIdx, "payer", e.target.value)}
-                                                                    >
-                                                                        {sessionParticipants.map(p => <option key={p} value={p}>{p}</option>)}
-                                                                    </select>
-                                                                    <Button
-                                                                        variant="ghost"
-                                                                        size="icon"
-                                                                        onClick={() => updateTransaction(originalIdx, "payer", undefined)}
-                                                                        className="h-12 w-12 rounded-xl text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                                                                    >
-                                                                        <X className="w-4 h-4" />
-                                                                    </Button>
-                                                                </motion.div>
-                                                            ) : (
-                                                                <motion.div
-                                                                    key="payer-button"
-                                                                    initial={{ opacity: 0, height: 0 }}
-                                                                    animate={{ opacity: 1, height: "auto" }}
-                                                                    exit={{ opacity: 0, height: 0 }}
-                                                                >
-                                                                    <Button
-                                                                        variant="outline"
-                                                                        onClick={() => updateTransaction(originalIdx, "payer", sessionParticipants[0])}
-                                                                        className="w-full h-12 rounded-xl border-dashed border-2 text-muted-foreground hover:text-primary hover:border-primary transition-all text-xs"
-                                                                    >
-                                                                        {t.session.whoPaid || "Who paid?"}
-                                                                    </Button>
-                                                                </motion.div>
-                                                            )}
-                                                        </AnimatePresence>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            <div className="min-w-[200px] bg-muted/30 p-4 rounded-xl border border-border/50">
-                                                <div className="flex justify-between items-center mb-3">
-                                                    <label className="block text-xs font-semibold uppercase tracking-widest text-muted-foreground">{t.session.splitWith}</label>
-                                                    <div className="flex items-center gap-2">
-                                                        {tx.amount > 0 && tx.assigned_to?.length > 0 && (
-                                                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary">
-                                                                {formatCurrency(tx.amount / (tx.assigned_to?.length || 1), tx.currency || mainCurrency)} {t.session.each}
-                                                            </span>
-                                                        )}
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => toggleAllParticipants(originalIdx)}
-                                                            className="flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-muted/50 text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors"
-                                                        >
-                                                            {sessionParticipants.every(p => tx.assigned_to?.includes(p)) ? (
-                                                                <><Square className="w-2.5 h-2.5" /> {t.session.none}</>
-                                                            ) : (
-                                                                <><CheckSquare className="w-2.5 h-2.5" /> {t.session.all}</>
-                                                            )}
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                                <div className="space-y-2">
-                                                    {sessionParticipants.map(p => {
-                                                        const isSelected = tx.assigned_to?.includes(p) || false;
-                                                        return (
-                                                            <label
-                                                                key={p}
-                                                                className={`flex items-center gap-2.5 cursor-pointer p-2 rounded-lg transition-colors ${isSelected ? 'bg-primary/10' : 'hover:bg-muted/50'}`}
-                                                            >
-                                                                <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-colors ${isSelected ? 'bg-primary border-primary' : 'border-muted-foreground/30'}`}>
-                                                                    {isSelected && <Check className="w-3 h-3 text-white" />}
-                                                                </div>
-                                                                <input
-                                                                    type="checkbox"
-                                                                    checked={isSelected}
-                                                                    onChange={() => toggleSplitParticipant(originalIdx, p)}
-                                                                    className="sr-only"
-                                                                />
-                                                                <div className={`w-6 h-6 rounded-md ${getAvatarColor(p)} flex items-center justify-center text-white text-[10px] font-bold`}>
-                                                                    {p[0].toUpperCase()}
-                                                                </div>
-                                                                <span className="text-sm font-medium">{p}</span>
-                                                            </label>
-                                                        );
-                                                    })}
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pt-4 border-t border-border/50">
-                                            <span className="text-xs text-muted-foreground flex items-center gap-1.5">
-                                                <Calendar className="w-3.5 h-3.5" />
-                                                {t.session.addedOn} {new Date(tx.date).toLocaleDateString()}
-                                            </span>
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                onClick={() => setTxToDelete(originalIdx)}
-                                                className="text-destructive hover:bg-destructive/10 rounded-xl gap-2"
-                                            >
-                                                <Trash2 className="w-4 h-4" />
-                                                {t.session.remove}
-                                            </Button>
-                                        </div>
-                                    </motion.div>
+                                        tx={tx}
+                                        index={idx}
+                                        originalIdx={originalIdx}
+                                        sessionParticipants={sessionParticipants}
+                                        availableCurrencies={availableCurrencies}
+                                        mainCurrency={mainCurrency}
+                                        t={t}
+                                        updateTransaction={updateTransaction}
+                                        toggleSplitParticipant={toggleSplitParticipant}
+                                        toggleAllParticipants={toggleAllParticipants}
+                                        setTxToDelete={setTxToDelete}
+                                        handleDescriptionBlur={handleDescriptionBlur}
+                                    />
                                 );
                             })}
+
+                            {/* Sentinel for Infinite Scroll */}
+                            {visibleCount < filteredTransactions.length && (
+                                <div ref={loadMoreRef} className="py-8 flex justify-center">
+                                    <div className="flex items-center gap-2 text-muted-foreground animate-pulse">
+                                        <Loader2 className="w-5 h-5 animate-spin" />
+                                        <span className="text-sm font-medium">{"Loading more..."}</span>
+                                    </div>
+                                </div>
+                            )}
                         </div>
 
                         {filteredTransactions.length === 0 && (

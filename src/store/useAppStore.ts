@@ -99,7 +99,7 @@ export const useAppStore = create<AppState>()(
             name: "",
             description: "",
             transactions: [],
-            participants: [...state.frequentParticipants],
+            participants: [...state.participants],
             mainCurrency: "USD",
             currencies: {},
           },

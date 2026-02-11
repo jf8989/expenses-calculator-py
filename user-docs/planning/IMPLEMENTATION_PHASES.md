@@ -434,6 +434,32 @@
 
 ---
 
+## Phase 7: UI Performance Optimization
+
+**Goal:** Ensure the application remains "smooth as fuck" even with hundreds of transactions or sessions. Eliminate lag in lists and refine interaction animations.
+
+### What Changes
+
+#### [MODIFY] [SessionEditor.tsx](file:///c:/00%20Development/expenses-calculator-py/src/components/expenses/SessionEditor.tsx)
+- **Virtualize Transaction List**: Only render rows currently in view. For a simple fixed-height card implementation, we can use a windowing slice of the array.
+- **Memoize Transaction Components**: Extract the transaction row/card into a separate component and wrap it in `React.memo` to prevent re-renders of the entire list when only one transaction's state changes.
+- **Debounced Inputs**: Add a 300ms debounce to Description and Amount inputs. This avoids triggering global state updates and summary recalculations on every single keystroke.
+- **Refined smooth scrolling**: Use a logic that ensures the scroll is buttery smooth for the sticky nav bar, potentially using a custom hook for precise positioning.
+
+#### [MODIFY] [SessionsList.tsx](file:///c:/00%20Development/expenses-calculator-py/src/components/expenses/SessionsList.tsx)
+- **Virtualize Session List**: Handle large numbers of saved sessions using virtualization or "Load More" pagination.
+- **Memoize Session Cards**: Ensure each session card only re-renders if its specific data changes.
+
+#### [MODIFY] `src/store/useAppStore.ts`
+- **Selector Optimization**: Ensure components use specific selectors to minimize unnecessary re-renders when unrelated parts of the store change.
+
+### Design Principles
+- **60 FPS Interactions**: No jank during scrolling or animations.
+- **Instant Response**: Checkboxes and simple toggles must feel immediate.
+- **Low Memory Footprint**: Prune DOM nodes for transactions not in the viewport.
+
+---
+
 ## Verification Plan
 
 ### Automated (Build Check)
@@ -508,6 +534,7 @@ graph TD
     C --> D["Phase 4: Missing Features"]
     D --> E["Phase 5: PDF Export"]
     E --> F["Phase 6: Polish"]
+    F --> G["Phase 7: Optimization"]
 ```
 
 **Why this order:**
@@ -516,6 +543,7 @@ graph TD
 - **Phase 3 → 4:** Missing features (search, filter, bulk paste) need the final data model
 - **Phase 4 → 5:** PDF export needs to render the final UI data (both split modes, all currencies)
 - **Phase 5 → 6:** Polish happens last because toasts/dialogs span all features
+- **Phase 6 → 7:** Optimization is best done once the feature set is stable to avoid premature optimization and rework.
 
 ---
 
@@ -528,4 +556,5 @@ graph TD
 | 4. Missing Features | 5 | 2 | Medium-High | Multiple small features, one new component (confirm dialog) |
 | 5. PDF Export | 3 | 1 | High | Complex layout logic, needs careful formatting |
 | 6. Polish | 4 | 1 | Low-Medium | Toast component + sprinkling feedback throughout |
-| **Total** | **~13 unique files** | **5 new files** | | |
+| 7. Optimization | 5 | 1 | High | Virtualization, memoization, and scroll refinements |
+| **Total** | **~15 unique files** | **6 new files** | | |

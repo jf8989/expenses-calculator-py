@@ -16,6 +16,7 @@ import { useCachedData } from "@/hooks/useCachedData";
 import { useMounted } from "@/hooks/useMounted";
 import { useLanguage } from "@/context/LanguageContext";
 import { RefreshCw, Zap, Cloud, Palette, Plus } from "lucide-react";
+import { useAppStore } from "@/store/useAppStore";
 
 export default function Home() {
   const { user, loading: authLoading } = useAuth();
@@ -28,6 +29,7 @@ export default function Home() {
   } = useCachedData(user?.uid);
   const [activeSession, setActiveSession] = useState<Session | null>(null);
   const [isCreating, setIsCreating] = useState(false);
+  const { resetActiveSession } = useAppStore();
   const { t } = useLanguage();
 
   const mounted = useMounted();
@@ -209,6 +211,7 @@ export default function Home() {
                   onCancel={() => {
                     setActiveSession(null);
                     setIsCreating(false);
+                    resetActiveSession(); // Ensure store is clean when leaving editor
                   }}
                 />
               </motion.div>
@@ -244,7 +247,10 @@ export default function Home() {
                       <Button
                         size="lg"
                         variant="gradient"
-                        onClick={() => setIsCreating(true)}
+                        onClick={() => {
+                          resetActiveSession();
+                          setIsCreating(true);
+                        }}
                         className="shadow-xl w-full sm:w-auto gap-2"
                       >
                         <Plus className="w-5 h-5" />

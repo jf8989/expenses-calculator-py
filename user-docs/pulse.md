@@ -82,4 +82,7 @@
 ### UI Fixes & Refinements [COMPLETED]
 - **Accomplishments**:
     - **UI FIX**: Resolved issue where "Split With" checkboxes were invisible when global participants list was empty.
+    - Added **Section Navigation Jump Bar** for easier editor navigation.
+    - Implemented **Auto-assignment Intelligence** based on transaction descriptions.
+    - Added **Pencil Icons** to interactive labels for better visual cues.
     - Verified build and hydration with `npm run build`.

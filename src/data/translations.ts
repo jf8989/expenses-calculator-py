@@ -21,6 +21,7 @@ export const translations = {
       error: "An error occurred",
       confirm: "Confirm",
       cancel: "Cancel",
+      total: "Total",
     },
     dashboard: {
       welcome: "Welcome,",
@@ -179,6 +180,7 @@ export const translations = {
       error: "Ha ocurrido un error",
       confirm: "Confirmar",
       cancel: "Cancelar",
+      total: "Total",
     },
     dashboard: {
       welcome: "Bienvenido/a,",

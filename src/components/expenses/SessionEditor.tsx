@@ -404,9 +404,13 @@ export function SessionEditor({ userId, initialSession, participants, onSaved, o
                         onClick={handleSave}
                         disabled={isSaving || !name.trim()}
                         variant="gradient"
-                        className="rounded-xl gap-2 flex-1 sm:flex-none"
+                        className="rounded-xl gap-2 flex-1 sm:flex-none min-w-[120px]"
                     >
-                        <Save className="w-4 h-4" />
+                        {isSaving ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                            <Save className="w-4 h-4" />
+                        )}
                         {isSaving ? t.session.saving : t.session.save}
                     </Button>
                 </div>

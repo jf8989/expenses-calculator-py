@@ -131,6 +131,17 @@ export async function exportSessionPdf(session: Session, language: Language = "e
       },
     ]);
 
+    // Calculate totals for footer
+    const totalPaid = summaryList.reduce((acc, s) => acc + s.totalPaid, 0);
+    const totalFairShare = summaryList.reduce((acc, s) => acc + s.fairShare, 0);
+
+    const totalRow = [
+      { content: t.common?.total || "Total", styles: { fontStyle: "bold" as const } },
+      { content: `${totalPaid.toFixed(2)} ${currency}`, styles: { fontStyle: "bold" as const } },
+      { content: `${totalFairShare.toFixed(2)} ${currency}`, styles: { fontStyle: "bold" as const } },
+      "" // Empty balance total
+    ];
+
     const headerLabel = usedCurrencies.length > 1
       ? `${t.settle.financialSummary} (${currency})`
       : t.settle.financialSummary;
@@ -138,7 +149,7 @@ export async function exportSessionPdf(session: Session, language: Language = "e
     autoTable(doc, {
       startY: (doc as any).lastAutoTable.finalY + 15,
       head: [[{ content: headerLabel, colSpan: 4, styles: { halign: "center", fillColor: [50, 50, 50] as RGBColor } }]],
-      body: [summaryHeaders, ...summaryData],
+      body: [summaryHeaders, ...summaryData, totalRow],
       theme: "grid",
       headStyles: { fillColor: [26, 31, 54] as RGBColor, textColor: 255, fontSize: 10 },
       bodyStyles: { fontSize: 9 },

@@ -102,6 +102,23 @@ export function SettleUp({ multiSummaries, multiDebts, mainCurrency = "USD" }: S
                                                 </motion.div>
                                             );
                                         })}
+
+                                        {/* Grand Total Row */}
+                                        <div className="mt-4 p-3 rounded-xl bg-muted/30 border border-border/50 border-dashed">
+                                            <div className="flex justify-between items-center text-sm font-bold">
+                                                <span className="text-muted-foreground uppercase tracking-wider">{t.common?.total || "Total"}</span>
+                                                <div className="flex gap-4">
+                                                    <div className="flex flex-col items-end">
+                                                        <span className="text-[10px] text-muted-foreground uppercase">{t.settle.paid}</span>
+                                                        <span>{fmt(Object.values(summaries).reduce((acc, s) => acc + s.totalPaid, 0), currency)}</span>
+                                                    </div>
+                                                    <div className="flex flex-col items-end border-l border-border/50 pl-4">
+                                                        <span className="text-[10px] text-muted-foreground uppercase">{t.settle.fairShare}</span>
+                                                        <span>{fmt(Object.values(summaries).reduce((acc, s) => acc + s.fairShare, 0), currency)}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             );

@@ -45,6 +45,7 @@ interface AppState {
   activeSession: Session | null;
   lastSyncedTimestamp: number | null;
   isSyncing: boolean;
+  hasHydrated: boolean;
   error: string | null;
 
   // Actions
@@ -57,6 +58,7 @@ interface AppState {
   resetActiveSession: () => void;
   setIsSyncing: (isSyncing: boolean) => void;
   setSyncMetadata: (timestamp: number | null) => void;
+  setHasHydrated: (hasHydrated: boolean) => void;
   setError: (error: string | null) => void;
 
   // Transaction specific actions
@@ -78,6 +80,7 @@ export const useAppStore = create<AppState>()(
       activeSession: null,
       lastSyncedTimestamp: null,
       isSyncing: false,
+      hasHydrated: false,
       error: null,
 
       setUserId: (userId) => set({ userId }),
@@ -106,6 +109,7 @@ export const useAppStore = create<AppState>()(
         })),
       setIsSyncing: (isSyncing) => set({ isSyncing }),
       setSyncMetadata: (lastSyncedTimestamp) => set({ lastSyncedTimestamp }),
+      setHasHydrated: (hasHydrated) => set({ hasHydrated }),
       setError: (error) => set({ error }),
 
       addTransaction: (transaction) =>
@@ -170,6 +174,11 @@ export const useAppStore = create<AppState>()(
         activeSession: state.activeSession,
         lastSyncedTimestamp: state.lastSyncedTimestamp,
       }),
+      onRehydrateStorage: (state) => {
+        return () => {
+          state.setHasHydrated(true);
+        };
+      },
     }
   )
 );

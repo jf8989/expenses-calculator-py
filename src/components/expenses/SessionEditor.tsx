@@ -66,9 +66,11 @@ export function SessionEditor({ userId, initialSession, participants, onSaved, o
         setActiveSession,
         updateActiveSession,
         addTransaction: addStoreTransaction,
+        addManyTransactions: addStoreManyTransactions,
         removeTransaction: removeStoreTransaction,
         updateTransaction: updateStoreTransaction,
         resetActiveSession,
+        hasHydrated,
     } = useAppStore();
 
     const { t, language } = useLanguage();
@@ -92,6 +94,9 @@ export function SessionEditor({ userId, initialSession, participants, onSaved, o
 
     // Initialize/Sync active session with initialSession
     useEffect(() => {
+        // Wait for store to hydrate to avoid overwriting recent unsaved changes with stale initial data
+        if (!hasHydrated) return;
+
         // Only initialize if we don't have an active session yet,
         // OR if the initialSession id is different from the active one (switching sessions)
         const isDifferentSession = initialSession && activeSession?.id !== initialSession.id;
@@ -115,12 +120,8 @@ export function SessionEditor({ userId, initialSession, participants, onSaved, o
                 mainCurrency: "USD",
                 currencies: {},
             });
-        } else if (!initialSession && activeSession.participants.length === 0 && participants.length > 0) {
-            // Case where we are creating a new session and global participants were loaded or added
-            // and the session currently has 0. We should probably offer to sync or auto-sync if it's brand new.
-            // For now, let's just make sure they are available in the 'suggested' list which we'll add below.
         }
-    }, [initialSession, setActiveSession, participants, activeSession?.id, activeSession?.participants?.length]);
+    }, [initialSession, setActiveSession, participants, activeSession?.id, hasHydrated]);
 
     // Computed states from activeSession
     const name = activeSession?.name || "";
@@ -280,9 +281,13 @@ export function SessionEditor({ userId, initialSession, participants, onSaved, o
 
     const handleBulkImport = () => {
         if (!bulkText.trim()) return;
-        const parsed = parseTransactions(bulkText, participants[0] || "", participants);
+
+        // Use session-specific participants if available, otherwise fallback to global
+        const currentParticipants = sessionParticipants.length > 0 ? sessionParticipants : participants;
+        const parsed = parseTransactions(bulkText, currentParticipants[0] || "", currentParticipants);
+
         if (parsed.length > 0) {
-            parsed.forEach(tx => addStoreTransaction(tx));
+            addStoreManyTransactions(parsed);
             showToast(`${parsed.length} transactions imported`);
             setBulkText("");
             setShowBulk(false);

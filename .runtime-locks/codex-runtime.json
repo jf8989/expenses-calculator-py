@@ -1,0 +1,22 @@
+{
+    "runtimeName":  "codex-runtime",
+    "runtimeVersion":  "0.8.29",
+    "payloadTreeHash":  "2a9002b862028d1edc4d401ca421a3a0beb7b308acc1d2978d0dccde49d9ec97",
+    "sourceCommit":  null,
+    "installedAtUtc":  "2026-08-19T02:48:16Z",
+    "installedFromRepo":  "C:/00 Development/_agent-runtimes/codex-runtime",
+    "ownedPaths":  [
+                       "AGENTS.md",
+                       ".agents/skills/**",
+                       ".agents/platforms/**",
+                       ".codex/**"
+                   ],
+    "sharedPaths":  [
+                        "AGENTS.md",
+                        ".agents/skills/**",
+                        ".agents/platforms/**"
+                    ],
+    "privatePaths":  [
+                         ".codex/**"
+                     ]
+}

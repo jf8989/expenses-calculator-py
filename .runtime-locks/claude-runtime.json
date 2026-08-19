@@ -1,0 +1,12 @@
+{
+    "runtimeName":  "claude-runtime",
+    "runtimeVersion":  "0.5.27",
+    "payloadTreeHash":  "fd3bc30448ad1d21fa39af15733ba0c3d636efc8cef3010804117f6a6e273ed4",
+    "sourceCommit":  null,
+    "installedAtUtc":  "2026-08-19T02:48:14Z",
+    "installedFromRepo":  "C:/00 Development/_agent-runtimes/claude-runtime",
+    "ownedPaths":  [
+                       "CLAUDE.md",
+                       ".claude/**"
+                   ]
+}

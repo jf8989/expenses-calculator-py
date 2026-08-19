@@ -1,0 +1,6 @@
+# GENERATED: kind=workflows id=model-review source=workflows/model-review.md
+interface:
+  display_name: "Model Review"
+  short_description: "Explicit-only model/task evidence capture without routing changes."
+policy:
+  allow_implicit_invocation: false

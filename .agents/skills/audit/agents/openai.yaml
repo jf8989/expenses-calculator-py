@@ -1,0 +1,6 @@
+# GENERATED: kind=workflows id=audit source=workflows/audit.md
+interface:
+  display_name: "Audit"
+  short_description: "Explicit-only read-only phase review for correctness, plan fit, edge cases, security, maintainability, and evidence gaps."
+policy:
+  allow_implicit_invocation: false

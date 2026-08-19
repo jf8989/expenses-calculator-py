@@ -1,0 +1,6 @@
+# GENERATED: kind=workflows id=status source=workflows/status.md
+interface:
+  display_name: "Status"
+  short_description: "Explicit-only read-only inventory of approved scope against implementation, including code that traces to no scope."
+policy:
+  allow_implicit_invocation: false

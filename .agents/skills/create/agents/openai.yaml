@@ -1,0 +1,6 @@
+# GENERATED: kind=workflows id=create source=workflows/create.md
+interface:
+  display_name: "Create"
+  short_description: "Explicit-only end-to-end implementation of the active approved phase with scoped validation and continuity updates."
+policy:
+  allow_implicit_invocation: false

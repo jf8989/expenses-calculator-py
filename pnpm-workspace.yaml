@@ -1,0 +1,7 @@
+allowBuilds:
+  '@firebase/util': true
+  '@tsparticles/engine': true
+  core-js: true
+  protobufjs: true
+  sharp: true
+  unrs-resolver: true

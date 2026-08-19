@@ -1,0 +1,6 @@
+# GENERATED: kind=workflows id=kickstart source=workflows/kickstart.md
+interface:
+  display_name: "Kickstart"
+  short_description: "Explicit-only new-project documentation bootstrap and discovery; establishes project truth without writing product code."
+policy:
+  allow_implicit_invocation: false

@@ -1,0 +1,6 @@
+# GENERATED: kind=workflows id=plan source=workflows/plan.md
+interface:
+  display_name: "Plan"
+  short_description: "Explicit-only decision-complete planning, draft gap analysis, risk resolution, and operator-inbox drain into approved scope."
+policy:
+  allow_implicit_invocation: false

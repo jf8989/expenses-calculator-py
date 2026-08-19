@@ -1,0 +1,6 @@
+# GENERATED: kind=workflows id=fix-terminal source=workflows/fix-terminal.md
+interface:
+  display_name: "Fix Terminal"
+  short_description: "Explicit-only diagnosis and scoped repair of terminal startup, shell profile, path, encoding, or project-toolchain failures."
+policy:
+  allow_implicit_invocation: false

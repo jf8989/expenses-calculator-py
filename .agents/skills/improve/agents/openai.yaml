@@ -1,0 +1,6 @@
+# GENERATED: kind=workflows id=improve source=workflows/improve.md
+interface:
+  display_name: "Improve"
+  short_description: "Explicit-only runtime feedback diagnosis and one approved canonical release."
+policy:
+  allow_implicit_invocation: false

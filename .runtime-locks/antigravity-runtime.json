@@ -1,0 +1,22 @@
+{
+    "runtimeName":  "antigravity-runtime",
+    "runtimeVersion":  "0.8.29",
+    "payloadTreeHash":  "099c0c85046cb07ac8bec7b16d00e57cb2c93cc44ad269188083fe7c4754a00e",
+    "sourceCommit":  null,
+    "installedAtUtc":  "2026-08-19T02:48:18Z",
+    "installedFromRepo":  "C:/00 Development/_agent-runtimes/antigravity-runtime",
+    "ownedPaths":  [
+                       "AGENTS.md",
+                       ".agents/skills/**",
+                       ".agents/platforms/**",
+                       ".agent/**"
+                   ],
+    "sharedPaths":  [
+                        "AGENTS.md",
+                        ".agents/skills/**",
+                        ".agents/platforms/**"
+                    ],
+    "privatePaths":  [
+                         ".agent/**"
+                     ]
+}

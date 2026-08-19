@@ -1,0 +1,6 @@
+# GENERATED: kind=workflows id=end-session source=workflows/end-session.md
+interface:
+  display_name: "End Session"
+  short_description: "Explicit-only closeout that synchronizes plan status, pulse, repo memory, operator notes, and evidence-based runtime friction."
+policy:
+  allow_implicit_invocation: false

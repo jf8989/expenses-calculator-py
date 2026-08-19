@@ -1,0 +1,6 @@
+# GENERATED: kind=workflows id=standardize-docs source=workflows/standardize-docs.md
+interface:
+  display_name: "Standardize Docs"
+  short_description: "Explicit-only normalization of documentation ownership, lifecycle, IDs, and links."
+policy:
+  allow_implicit_invocation: false

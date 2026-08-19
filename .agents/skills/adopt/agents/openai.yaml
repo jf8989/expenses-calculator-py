@@ -1,0 +1,6 @@
+# GENERATED: kind=workflows id=adopt source=workflows/adopt.md
+interface:
+  display_name: "Adopt"
+  short_description: "Explicit-only evidence-led migration of an existing repository into the shared documentation and planning contract."
+policy:
+  allow_implicit_invocation: false

@@ -1,0 +1,6 @@
+# GENERATED: kind=workflows id=init source=workflows/init.md
+interface:
+  display_name: "Init"
+  short_description: "Explicit-only session orientation from pulse, operator notes, the active plan, repository evidence, and one platform overlay."
+policy:
+  allow_implicit_invocation: false

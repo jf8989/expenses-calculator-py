@@ -1,0 +1,6 @@
+# GENERATED: kind=workflows id=scaffold source=workflows/scaffold.md
+interface:
+  display_name: "Scaffold"
+  short_description: "Explicit-only creation of approved structure, configuration, adapters, placeholders, and stubs before business logic."
+policy:
+  allow_implicit_invocation: false

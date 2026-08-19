@@ -1,0 +1,6 @@
+# GENERATED: kind=workflows id=check source=workflows/check.md
+interface:
+  display_name: "Check"
+  short_description: "Explicit-only validation using the repository's real lint, types, tests, build, security, and platform-specific checks."
+policy:
+  allow_implicit_invocation: false

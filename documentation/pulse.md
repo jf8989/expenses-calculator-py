@@ -12,8 +12,8 @@
 
 - Migrated workspace package manager from npm to pnpm (`pnpm import`, `pnpm-lock.yaml`, `pnpm-workspace.yaml`).
 - Installed and verified agent runtimes (Claude, Codex, Antigravity).
-- Resolved nanoid security advisory (CVE-2026-67213 / GHSA-2v37-7h3g-55p8) by updating to `nanoid@3.3.18` and adding override to `package.json`.
-- Verified production build (`pnpm build` passed).
+- Resolved all Dependabot security advisories (upgraded Next.js to `16.3.1`, jsPDF to `4.2.1`, and applied workspace overrides for `protobufjs`, `js-yaml`, `dompurify`, `websocket-driver`, `form-data`, `flatted`, `node-forge`, `fast-uri`, `postcss`, etc.).
+- Verified zero vulnerabilities (`pnpm audit` passes with 0 issues) and verified production build (`pnpm build` passed).
 
 ## Next Steps
 
